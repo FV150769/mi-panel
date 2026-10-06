@@ -3,42 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mi panel</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=25">
+<title>PETACA</title>
+<link rel="icon" href="petaca.svg" type="image/svg+xml">
+<meta name="theme-color" content="#12A150">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body class="auth">
 <main>
 <p id="aviso" class="sem" style="color:var(--warn);font-weight:700">Cargando… Si este mensaje no desaparece, la página no pudo iniciar. Cerrala y abrila de nuevo, o copiame lo que dice acá.</p>
 <header class="top">
-<div><h1>Mi panel</h1>
-<p class="sub" id="fecha"></p></div>
+<div class="marca"><img class="masc" src="petaca.svg" alt="Petaca, la mascota: un bebé rubio y gordito con camiseta de fútbol"><div><h1>PETACA</h1>
+<p class="sub" id="fecha"></p><p class="lema">Tu guita y tu agenda, ordenadas como un 5 de los de antes.</p></div></div>
 </header>
 <section id="login" style="margin-bottom:16px;display:none">
-<h2>Entrar a tu panel</h2>
+<h2>¡Salí a la cancha!</h2>
 <div class="add"><input type="text" id="le" placeholder="Email o usuario" autocomplete="username" autocapitalize="none" aria-label="Email o usuario"><input type="password" id="lp" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña"></div>
-<div class="add"><button id="lg">Entrar</button><button id="lr">Crear cuenta</button><button class="lk" id="lf">Olvidé mi contraseña</button></div>
+<div class="add"><button id="lg">Entrar</button><button id="lr" title="Crear una cuenta nueva">Ficharme</button><button class="lk" id="lf">Me olvidé la contraseña</button></div>
 <p class="sem" id="lm"></p>
 </section>
 <section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 6)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rpb">Guardar contraseña</button></div><p class="sem" id="rpm"></p></section>
 <div class="cuenta">
 <p class="sem" id="usrp" style="display:none">Usuario: <input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <span id="um"></span></p>
-<p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="ord" style="text-decoration:underline">↕ Ordenar panel</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
+<p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="ord" style="text-decoration:underline">↕ Armar la formación</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 </div>
-<div id="ordtop" style="display:none"><span>Arrastrá cada grupo o tarjeta desde su barra ⠿ y soltalo donde quieras</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">Listo</button></span></div>
+<div id="ordtop" style="display:none"><span>Armá tu formación: arrastrá cada grupo o tarjeta desde su barra ⠿</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">¡Listo!</button></span></div>
 
 <div id="alerta" style="display:none"></div>
-<div class="grupo" data-g="nota" data-name="Contale algo al panel">
+<div class="grupo" data-g="nota" data-name="Contale a Petaca">
 <section style="margin-bottom:16px">
-<h2>Contale algo al panel</h2>
+<h2>Contale a Petaca</h2>
 <textarea id="nt" rows="3" placeholder="Ej: gasté 8 mil en farmacia y el viernes a las 10 tengo trámite. O: cancelá el parcial del 13/10" aria-label="Nota"></textarea>
 <div class="add"><button id="nb">Entender nota</button><button id="un" disabled>↶ Deshacer</button></div>
 <div id="nr" class="sem"></div>
 </section>
 </div>
 
-<div class="grupo" data-g="dinero" data-name="Dinero">
-<h2 class="grp">Dinero</h2>
+<div class="grupo" data-g="dinero" data-name="La guita">
+<h2 class="grp">💸 La guita</h2>
 <div class="hero">
 <p id="frase"></p>
 <div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
@@ -51,7 +53,7 @@
 <section data-c="resumen" data-name="Resumen y consejos">
 <h2>Resumen del mes</h2>
 <div id="res" class="kpis"></div>
-<h3 class="tgh3">Consejos y avisos</h3>
+<h3 class="tgh3 charla"><img src="petaca.svg" alt="">La charla técnica de Petaca</h3>
 <div id="tips"></div>
 </section>
 <section data-c="gastos" data-name="Gastos del mes">
@@ -66,7 +68,7 @@
 </div>
 </section>
 <section class="goal" data-c="objetivo" data-name="Objetivo de ahorro">
-<h2><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 2.5 A7.5 7.5 0 1 1 3.2 6.8"/></svg>Objetivo de ahorro</h2>
+<h2>⚽ <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 2.5 A7.5 7.5 0 1 1 3.2 6.8"/></svg>Objetivo de ahorro</h2>
 <div id="metas"></div>
 <div class="add">
 <input type="number" id="am" placeholder="Monto (USD)" inputmode="decimal" aria-label="Monto a sumar">
@@ -88,8 +90,8 @@
 </div>
 </div>
 
-<div class="grupo" data-g="tiempo" data-name="Tiempo">
-<h2 class="grp">Tiempo</h2>
+<div class="grupo" data-g="tiempo" data-name="El fixture">
+<h2 class="grp">📅 El fixture</h2>
 <div class="cols">
 <section data-c="fechas" data-name="Fechas importantes">
 <h2>Fechas importantes</h2>
@@ -119,8 +121,8 @@
 </div>
 </div>
 
-<div class="grupo" data-g="ajustes" data-name="Ajustes, histórico y copia">
-<h2 class="grp">Ajustes, histórico y copia de seguridad</h2>
+<div class="grupo" data-g="ajustes" data-name="El vestuario">
+<h2 class="grp">🧰 El vestuario</h2>
 <div class="cols">
 <section class="goal" data-c="ajustes" data-name="Ajustes"><details id="aj"><summary>Ajustes</summary>
 <p class="sem" style="margin-top:0">Configurá tus categorías de gasto, tu objetivo de ahorro y tus cuentas. Se guarda en tu cuenta.</p>
@@ -144,7 +146,7 @@
 </div>
 
 <div class="grupo" data-g="avisos" data-name="Avisos">
-<h2 class="grp">Avisos</h2>
+<h2 class="grp">📣 Avisos</h2>
 <section><details id="tgd"><summary>Avisos por Telegram</summary>
 <p class="sem" style="margin-top:0">Recibí en tu Telegram los eventos marcados con 🔔.</p>
 <ol class="sem tgp">
@@ -165,6 +167,6 @@
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=25"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

@@ -43,7 +43,7 @@ async function prueba(req: Request) {
   const { data } = await sb.from("panel_state").select("data").eq("user_id", u.user.id).maybeSingle();
   const chat = (data?.data as any)?.cfg?.TGCHAT;
   if (!chat) return json({ error: "No hay chat ID guardado" }, 400);
-  const d = await tg("sendMessage", { chat_id: chat, text: "✅ Mi panel: los avisos por Telegram están funcionando." });
+  const d = await tg("sendMessage", { chat_id: chat, text: "✅ PETACA: los avisos por Telegram están funcionando. ⚽" });
   if (!d.ok) {
     const msg = String(d.description || "error");
     return json({
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     respondidos.add(id);
     await tg("sendMessage", {
       chat_id: id,
-      text: "Hola! Tu chat ID es " + id + ". Pegalo en Mi panel → Avisos por Telegram y tocá Guardar.",
+      text: "Hola! Tu chat ID es " + id + ". Pegalo en PETACA → Avisos por Telegram y tocá Guardar.",
     });
   }
   if (msgs.length) await tg("getUpdates", { offset: msgs[msgs.length - 1].update_id + 1, timeout: 0 });

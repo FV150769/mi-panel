@@ -14,7 +14,7 @@ var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v25";
+var DOC=null,VER="v26";
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
@@ -157,7 +157,7 @@ function renderGoal(){
  var h=el("div","gh");h.appendChild(el("h3","",GOAL.x));h.appendChild(el("span","",Math.floor(p)+"%"));
  var tr=el("div","track"),fl=el("div","fill");fl.style.width=p+"%";tr.appendChild(fl);
  var fin=metaFin(),dias=metaDias(),t;
- if(left<=0)t="Objetivo cumplido.";
+ if(left<=0)t="¡GOOOL! Objetivo cumplido.";
  else if(!fin)t="Te faltan "+usd(left)+".";
  else if(dias<=0)t="El plazo venció el "+fLarga(fin)+" y te faltaron "+usd(left)+". Podés ponerle un plazo nuevo en Ajustes.";
  else t="Te faltan "+usd(left)+" y quedan "+plazoTxt(dias)+" (hasta el "+fLarga(fin)+"): tenés que ahorrar "+ritmo(left,dias)+".";
@@ -180,7 +180,7 @@ function renderResumen(){
  var proy=dia>=5&&gm?gm/dia*dim:null,Q=[];
  function tip(n,t){Q.push([n,t])}
  function kpi(l,v,sub,c){var k=el("div","kpi"+(c?" "+c:""));k.appendChild(el("small","",l));k.appendChild(el("b","",v));if(sub)k.appendChild(el("span","",sub));R.appendChild(k)}
- function pinta(){var O={mal:0,ojo:1,tip:2,bien:3},N={mal:"Alerta",ojo:"Ojo",tip:"Consejo",bien:"Bien"};
+ function pinta(){var O={mal:0,ojo:1,tip:2,bien:3},N={mal:"Tarjeta roja",ojo:"Amarilla",tip:"Del DT",bien:"¡Golazo!"};
   Q.sort(function(a,b){return O[a[0]]-O[b[0]]}).slice(0,8).forEach(function(q){var r=el("div","tip "+q[0]);r.appendChild(el("i"));var t=el("span");t.appendChild(el("b","",N[q[0]]+": "));t.appendChild(document.createTextNode(q[1]));r.appendChild(t);T.appendChild(r)})}
  if(!ex.length&&!im){R.style.display="none";tip("tip","Cargá tus gastos e ingresos del mes y acá vas a ver un resumen de cómo se mueve tu plata, con consejos y avisos.");pinta();return}
  R.style.display="";
@@ -233,7 +233,7 @@ function renderResumen(){
  var ult=L.expenses.reduce(function(m,e){return e.f>m?e.f:m},"");
  if(L.expenses.length>=5&&ult<plus(today,-5)){var n=Math.round((new Date(today+"T00:00")-new Date(ult+"T00:00"))/864e5);tip("tip","Hace "+n+" días que no cargás gastos. Si gastaste algo, anotalo para que el resumen sea real.")}
  if(!im&&dia>=7&&ex.length)tip("tip","No cargaste ingresos este mes. Cargalos en \"Sumar ingreso\" para ver cuánto te sobra.");
- if(!Q.length)tip("bien","Todo en orden: no veo nada raro en cómo se mueve tu plata este mes.");
+ if(!Q.length)tip("bien","Partido tranquilo: no veo nada raro en cómo se mueve tu plata este mes.");
  pinta()}
 $("ar").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:-m});$("am").value="";save();render()};
 $("ab").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:m});$("am").value="";save();render()};
@@ -500,7 +500,7 @@ async function startSB(){
 document.getElementById("un").onclick=function(){if(!UNDO.length)return;var q=JSON.parse(UNDO.pop());applyCfg(q.cfg);L=norm(q.L);save0();PREV=snap();render();updUndo();var o=document.getElementById("nr");if(o)o.textContent="Deshice el último cambio."};
 function authMsg(t){$("lm").textContent=t}
 $("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em)return authMsg("Escribí tu email o tu usuario.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");em=await mailOf(em);if(!em)return authMsg("No encontré ese usuario.");var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+r.error.message:"")};
-$("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});authMsg(r.error?"No pude crear la cuenta: "+r.error.message:"Cuenta creada. Si Supabase te pide confirmar el email, revisá tu correo y después tocá Entrar.")};
+$("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});authMsg(r.error?"No pude crear la cuenta: "+r.error.message:"¡Fichaje confirmado! Si te pedimos confirmar el email, revisá tu correo y después tocá Entrar.")};
 $("lo").onclick=async function(){if(SB)await SB.auth.signOut()};
 async function mailOf(v){v=v.trim();if(v.indexOf("@")>0)return v;var r=await SB.rpc("login_email",{u:v.toLowerCase()});return r.data||null}
 $("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var v=$("le").value.trim();if(!v)return authMsg("Escribí arriba tu email o tu usuario y tocá de nuevo.");var em=await mailOf(v);if(em){await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname})}authMsg("Si la cuenta existe, te mandé un mail para crear una contraseña nueva. Revisá también spam.")};

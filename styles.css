@@ -337,3 +337,80 @@ body.arrgrp main>.grupo>:not(.ordbar){display:none}
 .tip.ojo>i{background:#D97706}
 .tip.bien>i{background:#16A34A}
 .tip b{font-weight:600}
+
+/* ===== PETACA: onda juvenil y futbolera ===== */
+:root{--bg:#EEF5EA;--panel:#FFFFFF;--ink:#0E1A33;--mute:#5D6B82;--line:#E1E9DD;--acc:#12A150;--acc2:#0B7F3D;--warn:#E11D48;--sun:#FFC93C;--sky:#1E88E5;--cel:#74C6F2;--teal:#12A150;--rose:#E11D48}
+body{background:var(--bg)}
+h1{font-family:Anton,Impact,"Arial Narrow Bold",sans-serif;font-weight:400;font-size:32px;line-height:1;letter-spacing:.05em;color:var(--ink)}
+.top{border-bottom:0;padding-bottom:0;align-items:center}
+.marca{display:flex;align-items:center;gap:10px}
+.masc{width:48px;height:auto;flex:none}
+.sub{margin-top:4px}
+.lema{display:none}
+h2{font-size:15px;font-weight:700}
+h2.grp{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:20px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:22px 0 8px 2px}
+summary{font-size:15px;font-weight:700}
+.hero,section{border:0;border-radius:18px;box-shadow:0 1px 0 rgba(14,26,51,.04),0 6px 18px rgba(14,26,51,.07)}
+/* Tarjeta principal: verde cancha */
+.hero{background:linear-gradient(135deg,#14AA55 0,#0B7F3D 100%);color:#fff;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:180px;height:180px;border:3px solid rgba(255,255,255,.18);border-radius:50%;pointer-events:none}
+.hero #frase{color:#fff;font-weight:800}
+.hero .legend,.hero .sem{color:rgba(255,255,255,.88)}
+.hero .track{background:rgba(255,255,255,.25)}
+.hero .fill{background:var(--sun)!important}
+.hero .fill.over{background:#FF5C7A!important}
+.hero button{background:var(--sun);border-color:var(--sun);color:var(--ink)}
+.hero :focus-visible{outline-color:#fff}
+.track{background:#E3ECDF}
+.fill,#metas .fill,#cats .cat .fill,#hist .cat .fill{background:var(--acc)!important}
+.fill.over{background:var(--warn)!important}
+#metas .fill{background:linear-gradient(90deg,var(--cel),var(--acc))!important}
+/* Botones de pique */
+button{background:var(--acc);border-color:var(--acc);color:#fff;border-radius:999px;font-weight:700;padding:8px 16px}
+button:hover{filter:brightness(1.05)}
+button:active{transform:translateY(1px);opacity:1}
+button.x{background:none;border:0;color:var(--mute);padding:0 4px;border-radius:6px}
+button.x:hover{color:var(--ink)}
+button.lk{background:none;color:var(--acc2);font-weight:600;padding:0 8px}
+#un,#ar{background:#fff;color:var(--ink);border:1.5px solid #CFDCCB}
+#ordtop{background:var(--acc2)}
+input,select,textarea{border:1.5px solid #D5E0D0;border-radius:12px;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(18,161,80,.18)}
+:focus-visible{outline:2px solid var(--acc)}
+.day.today b{background:var(--acc);color:#fff}
+.ev time{color:var(--acc2);font-weight:600}
+.mg button{border-radius:10px;padding:2px}
+.mg button.t{border:2px solid var(--acc)}
+.mg button.h{background:#DDF3E4}
+.mg i{color:var(--acc)}
+#alerta{border:0;border-left:6px solid var(--sun);border-radius:16px;background:#FFF8DB}
+.kpi{background:#F1F7EE;border-radius:14px}
+.kpi b{font-weight:800}
+/* La charla técnica: tarjetas como en la cancha */
+.charla{display:flex;align-items:center;gap:8px}
+.charla img{width:28px;height:auto}
+.tip>i{width:10px;height:14px;border-radius:2px;margin-top:3px;background:var(--sky)}
+.tip.mal>i{background:var(--warn);transform:rotate(-8deg)}
+.tip.ojo>i{background:#FACC15;transform:rotate(-8deg)}
+.tip:not(.mal):not(.ojo):not(.bien)>i{width:10px;height:10px;border-radius:50%;margin-top:5px}
+.tip.bien>i{width:auto;height:auto;background:none;margin-top:0;font-style:normal}
+.tip.bien>i::before{content:"⚽"}
+.tip.bien b{color:var(--acc2)}
+.tip.mal b{color:var(--warn)}
+
+/* ===== Pantalla de entrada: la cancha ===== */
+body.auth{background:repeating-linear-gradient(180deg,#169A4F 0 72px,#1CA85B 72px 144px) fixed}
+body.auth::before{content:"";position:fixed;left:50%;top:50%;width:min(86vw,440px);aspect-ratio:1;border:3px solid rgba(255,255,255,.3);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
+body.auth::after{content:"";position:fixed;left:0;right:0;top:50%;border-top:3px solid rgba(255,255,255,.3);pointer-events:none}
+body.auth main{position:relative;z-index:1}
+body.auth .marca{flex-direction:column;gap:4px}
+body.auth .masc{width:150px;animation:pique 2.4s ease-in-out infinite;filter:drop-shadow(0 10px 8px rgba(0,0,0,.25))}
+@keyframes pique{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media (prefers-reduced-motion:reduce){body.auth .masc{animation:none}}
+body.auth .top h1{font-size:68px;color:#fff;text-shadow:0 4px 0 #0B5F2E}
+body.auth .sub{display:none}
+body.auth .lema{display:block;color:#fff;font-weight:600;font-size:15px;margin:8px auto 0;max-width:300px;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+body.auth #login,body.auth #rec{border-radius:22px;box-shadow:0 14px 34px rgba(0,0,0,.28)}
+body.auth #login h2,body.auth #rec h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:24px;letter-spacing:.03em}
+body.auth #aviso{color:#fff!important;text-align:center}
+@media (max-width:720px){h1{font-size:28px}.masc{width:42px}body.auth .top h1{font-size:56px}body.auth .masc{width:128px}}
