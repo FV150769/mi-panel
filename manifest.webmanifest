@@ -1,0 +1,16 @@
+{
+  "name": "PETACA",
+  "short_name": "PETACA",
+  "description": "Tu guita y tu agenda, ordenadas como un 5 de los de antes.",
+  "lang": "es-AR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#169A4F",
+  "theme_color": "#12A150",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
