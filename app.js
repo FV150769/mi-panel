@@ -502,6 +502,6 @@ $("tgd").addEventListener("toggle",function(){if($("tgd").open)tgUI()});
 $("tgs").onclick=function(){var v=$("tgc").value.trim();if(!/^-?\d{5,15}$/.test(v))return($("tgm").textContent="El chat ID son solo números (ej: 123456789).");TGCHAT=v;TG=true;HAVECFG=true;save();render();tgUI()};
 $("tgx").onclick=function(){TGCHAT="";TG=false;HAVECFG=true;save();render();tgUI()};
 $("tgt").onclick=async function(){var m=$("tgm");if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");if(!TGCHAT)return(m.textContent="Primero guardá tu chat ID.");
- m.textContent="Enviando…";try{await push();var r=await SB.functions.invoke("telegram",{body:{}});
+ m.textContent="Enviando…";try{await push();var r=await SB.functions.invoke("avisos",{body:{prueba:true}});
   if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
   m.textContent="Listo, revisá tu Telegram."}catch(e){m.textContent="No pude enviarlo: "+(e&&e.message||e)}};
