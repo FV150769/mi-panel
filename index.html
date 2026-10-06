@@ -66,6 +66,15 @@ details[open] summary{margin-bottom:10px}
 .bamboo{display:block;margin:28px auto 6px;width:90px;color:var(--mute)}
 #est{text-align:center;font-size:12px}
 :focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+button.lk{background:none;color:var(--ink);border:0;text-decoration:underline;min-height:40px;padding:0 8px;font-weight:400}
+.mg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.mg button{min-height:40px;padding:2px;font-size:13px;background:var(--panel);color:var(--ink);border-color:var(--line);font-weight:400}
+.mg button.t{border:2px solid var(--ink)}
+.mg button.h{background:var(--line)}
+.mg i{display:block;font-style:normal;font-size:9px;color:var(--mute);line-height:1}
+.mg b{font-size:11px;color:var(--mute);text-align:center;font-weight:400}
+#alerta{border:1px solid var(--ink);padding:12px 16px;margin-bottom:16px;background:var(--panel)}
+#alerta b{font-family:"Shippori Mincho",Georgia,serif}
 </style>
 </head>
 <body>
@@ -105,6 +114,7 @@ details[open] summary{margin-bottom:10px}
 </section>
 <p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 
+<div id="alerta" style="display:none"></div>
 <section style="margin-bottom:16px">
 <h2>Contale algo al panel</h2>
 <textarea id="nt" rows="3" placeholder="Ej: gasté 8 mil en farmacia y el viernes a las 10 tengo trámite. O: cancelá el parcial del 13/10" aria-label="Nota"></textarea>
@@ -114,8 +124,10 @@ details[open] summary{margin-bottom:10px}
 
 <div class="cols">
 <section>
-<h2>Próximos 7 días</h2>
+<h2 id="agt">Próximos 7 días</h2>
+<div class="add" style="margin:0 0 8px"><button class="lk" id="np">‹ Semana anterior</button><button class="lk" id="nh">Hoy</button><button class="lk" id="nn">Semana siguiente ›</button></div>
 <div id="agenda"></div>
+<details style="margin-top:10px"><summary>Ver el mes</summary><div class="add" style="justify-content:space-between;align-items:center;margin:0"><button class="lk" id="mp">‹</button><b id="mt"></b><button class="lk" id="mn">›</button></div><div class="mg" id="mg"></div></details>
 <h2 style="margin-top:18px">Fechas importantes</h2>
 <div id="prox"></div>
 <div class="add">
@@ -166,6 +178,14 @@ details[open] summary{margin-bottom:10px}
 <div id="hist"></div>
 </details>
 </section>
+<section class="goal"><details id="rd"><summary>Rutinas semanales</summary>
+<p class="sem" style="margin-top:0">Lo que se repite todas las semanas (clases, gimnasio, etc.). Aparece solo en el calendario.</p>
+<div id="rl"></div>
+<div class="add"><select id="rdw" aria-label="Día"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select><input type="time" id="rt" aria-label="Desde"><input type="time" id="rt2" aria-label="Hasta"><input id="rx" placeholder="Nombre (ej: Clase de Marketing)" aria-label="Nombre"></div>
+<div class="add"><label class="sem" style="margin:0">Desde <input type="date" id="rf"></label><label class="sem" style="margin:0">Hasta (opcional) <input type="date" id="rto"></label></div>
+<div class="add"><button id="rb">Agregar rutina</button><button id="rc" class="x" style="display:none">Cancelar edición</button></div>
+<p class="sem" id="rm"></p>
+</details></section>
 <section class="goal"><details><summary>Copia de seguridad</summary>
 <p class="sem">Exportá tus datos para guardarlos o pasarlos a otra versión del panel. Para importar, pegá el texto y tocá Importar.</p>
 <textarea id="bk" rows="5" aria-label="Copia de seguridad"></textarea>
@@ -186,9 +206,10 @@ var FECHAS=[];
 var USD=[["Ahorro (sin invertir)",0],["En caja",0]];
 var ACC=[["DIARIO",0],["Ahorro",0],["Inversiones",0]];
 var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
+var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
-try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={}}catch(e){}
+try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
 var DOC=null;
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
@@ -197,7 +218,7 @@ var UNDO=[],PREV=null,HAVECFG=false;
 function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
 function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
 function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
-function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],bal:q.bal||{},fx:q.fx,week:q.week,t:q.t}}
+function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],bal:q.bal||{},rskip:q.rskip||[],fx:q.fx,week:q.week,t:q.t}}
 window.addEventListener("error",function(e){var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message}stat("Error en la página: "+e.message)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function $(i){return document.getElementById(i)}
@@ -209,29 +230,86 @@ $("fecha").textContent=now.toLocaleDateString("es-AR",{weekday:"long",day:"numer
 $("ed").value=today;
 var cs=$("gc");Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
 
-function allEvents(){
- var a=[];for(var i=0;i<7;i++){var d=new Date(now);d.setDate(d.getDate()+i);var f=iso(d);if(f<=FIN&&SKIP.indexOf(f)<0&&L.skip.indexOf(f)<0)(CLASES[d.getDay()]||[]).forEach(function(c){if(FECHAS.some(function(e){return e.f===f&&e.t===c[0]&&vis(e)}))return;a.push({f:f,t:c[0],x:c[2]+" (hasta "+c[1]+")"})})}
- return a.concat(FECHAS.filter(vis),L.events.map(function(e,i){return{f:e.f,t:e.t,x:e.x,li:i}}));
-}
+function migrate(){if(RUT.length)return;Object.keys(CLASES||{}).forEach(function(k){(CLASES[k]||[]).forEach(function(c){RUT.push({id:"r"+k+"-"+c[0].replace(":",""),d:+k,t:c[0],t2:c[1],x:c[2],from:"",to:FIN})})});CLASES={}}
+var DN=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+function plus(f,n){var d=new Date(f+"T00:00");d.setDate(d.getDate()+n);return iso(d)}
+function fd(f){return f.slice(8)+"/"+f.slice(5,7)}
+function occs(f){
+ var dw=new Date(f+"T00:00").getDay(),a=[];
+ RUT.forEach(function(r){if(r.d!==dw)return;if(r.from&&f<r.from)return;if(r.to&&f>r.to)return;
+  if(SKIP.indexOf(f)>=0||L.skip.indexOf(f)>=0||L.rskip.indexOf(r.id+"|"+f)>=0)return;
+  if(FECHAS.some(function(e){return e.f===f&&e.t===r.t&&vis(e)}))return;
+  a.push({f:f,t:r.t,x:r.x+(r.t2?" (hasta "+r.t2+")":""),r:r})});
+ FECHAS.forEach(function(e){if(e.f===f&&vis(e))a.push({f:f,t:e.t,x:e.x,o:e,k:"F"})});
+ L.events.forEach(function(e){if(e.f===f)a.push({f:f,t:e.t,x:e.x,o:e,k:"E"})});
+ return a}
 function allExp(){
  var a=SEED.expenses.map(function(e){var d=Math.min(e.d,now.getDate());return{f:ym+"-"+String(d).padStart(2,"0"),m:e.m,c:e.c,x:e.x}});
  return a.concat(L.expenses.filter(function(e){return e.f.slice(0,7)===ym}).map(function(e,i){return{f:e.f,m:e.m,c:e.c,x:e.x,li:L.expenses.indexOf(e)}}));
 }
 function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.textContent=h;return e}
 
+function evBtns(row,it,f,box){
+ var b=el("button","x","✎");b.setAttribute("aria-label","Editar");b.onclick=function(){if(it.r)openRut(it.r);else editEv(box||row,it.o)};
+ var c=el("button","x","×");c.setAttribute("aria-label","Borrar");c.onclick=function(){if(it.r)L.rskip.push(it.r.id+"|"+f);else if(it.k==="E")drop(L.events,it.o);else drop(FECHAS,it.o);save();render()};
+ row.appendChild(b);row.appendChild(c)}
+function editEv(row,o){
+ row.innerHTML="";row.style.flexWrap="wrap";
+ var d=document.createElement("input");d.type="date";d.value=o.f;var h=document.createElement("input");h.type="time";h.value=o.t||"";var x=document.createElement("input");x.value=o.x;
+ var ok=el("button","","Guardar"),no=el("button","x","Cancelar");
+ ok.onclick=function(){if(!d.value||!x.value.trim())return;o.f=d.value;o.t=h.value;o.x=x.value.trim();save();render()};no.onclick=function(){render()};
+ [d,h,x,ok,no].forEach(function(n){row.appendChild(n)})}
+function renderAlerta(){
+ var a=$("alerta"),q=[];
+ FECHAS.filter(vis).concat(L.events).forEach(function(e){var n=Math.round((new Date(e.f+"T00:00")-new Date(today+"T00:00"))/864e5);if(n>=0&&n<=7)q.push([n,e])});
+ q.sort(function(a,b){return a[0]-b[0]||(a[1].t||"").localeCompare(b[1].t||"")});
+ if(!q.length){a.style.display="none";return}
+ a.style.display="";a.innerHTML="";a.appendChild(el("b","","En los próximos 7 días"));
+ q.forEach(function(p){var r=el("div","row");r.appendChild(el("span","",(p[1].t?p[1].t+" ":"")+p[1].x));r.appendChild(el("span","",fd(p[1].f)+(p[0]===0?" · hoy":p[0]===1?" · mañana":" · en "+p[0]+" días")));a.appendChild(r)})}
+function renderMes(){
+ var g=$("mg");g.innerHTML="";
+ var b=MON||new Date(now.getFullYear(),now.getMonth(),1),st=VSTART||today;
+ $("mt").textContent=b.toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+ ["L","M","M","J","V","S","D"].forEach(function(n){g.appendChild(el("b","",n))});
+ var lead=(b.getDay()+6)%7,dm=new Date(b.getFullYear(),b.getMonth()+1,0).getDate();
+ for(var i=0;i<lead;i++)g.appendChild(el("span"));
+ for(var k=1;k<=dm;k++){(function(k){var f=iso(new Date(b.getFullYear(),b.getMonth(),k)),n=occs(f).length,c=el("button",(f===today?"t":"")+(f>=st&&f<=plus(st,6)?" h":""));
+  c.appendChild(document.createTextNode(k));c.appendChild(el("i","",n?"●".repeat(Math.min(n,3)):"\u00a0"));c.onclick=function(){VSTART=f;render()};g.appendChild(c)})(k)}}
+function renderRut(){
+ var l=$("rl");l.innerHTML="";
+ RUT.slice().sort(function(a,b){return((a.d+6)%7)-((b.d+6)%7)||a.t.localeCompare(b.t)}).forEach(function(r){
+  var row=el("div","row"),s=el("span","",DN[r.d]+" "+r.t+(r.t2?"–"+r.t2:"")+" · "+r.x);
+  if(r.from||r.to)s.appendChild(el("small","","  "+(r.from?"desde "+fd(r.from):"")+(r.to?" hasta "+fd(r.to):"")));
+  var rt=el("span",""),b=el("button","x","✎"),c=el("button","x","×");
+  b.onclick=function(){openRut(r)};c.onclick=function(){drop(RUT,r);save();render()};
+  rt.appendChild(b);rt.appendChild(c);row.appendChild(s);row.appendChild(rt);l.appendChild(row)});
+ if(!RUT.length)l.appendChild(el("div","none","Todavía no cargaste rutinas."))}
+function openRut(r){REDIT=r;$("rdw").value=r.d;$("rt").value=r.t;$("rt2").value=r.t2||"";$("rx").value=r.x;$("rf").value=r.from||"";$("rto").value=r.to||"";$("rb").textContent="Guardar cambios";$("rc").style.display="";$("rd").open=true;if($("rd").scrollIntoView)$("rd").scrollIntoView()}
+function closeRut(){REDIT=null;$("rx").value="";$("rt").value="";$("rt2").value="";$("rto").value="";$("rf").value=today;$("rb").textContent="Agregar rutina";$("rc").style.display="none"}
+$("rc").onclick=closeRut;
+$("rb").onclick=function(){var x=$("rx").value.trim(),t=$("rt").value;if(!x||!t){$("rm").textContent="Falta el nombre o la hora de inicio.";return}
+ var o={d:+$("rdw").value,t:t,t2:$("rt2").value,x:x,from:$("rf").value,to:$("rto").value};
+ if(o.from&&o.to&&o.to<o.from){$("rm").textContent="La fecha final es anterior a la inicial.";return}
+ if(REDIT){var i=RUT.indexOf(REDIT);o.id=REDIT.id;if(i>=0)RUT[i]=o;else RUT.push(o)}else{o.id="r"+Date.now().toString(36);RUT.push(o)}
+ $("rm").textContent="Rutina guardada.";closeRut();save();render()};
+$("np").onclick=function(){VSTART=plus(VSTART||today,-7);render()};
+$("nn").onclick=function(){VSTART=plus(VSTART||today,7);render()};
+$("nh").onclick=function(){VSTART=null;MON=null;render()};
+$("mp").onclick=function(){var b=MON||new Date(now.getFullYear(),now.getMonth(),1);MON=new Date(b.getFullYear(),b.getMonth()-1,1);renderMes()};
+$("mn").onclick=function(){var b=MON||new Date(now.getFullYear(),now.getMonth(),1);MON=new Date(b.getFullYear(),b.getMonth()+1,1);renderMes()};
 function render(){
- var ag=$("agenda");ag.innerHTML="";var ev=allEvents(),any=false;
+ var ag=$("agenda");ag.innerHTML="";var st=VSTART||today;
+ $("agt").textContent=st===today?"Próximos 7 días":"Del "+fd(st)+" al "+fd(plus(st,6));
  for(var i=0;i<7;i++){
-  var d=new Date(now);d.setDate(d.getDate()+i);var f=iso(d);
-  var list=ev.filter(function(e){return e.f===f}).sort(function(a,b){return(a.t||"").localeCompare(b.t||"")});
-  var box=el("div","day"+(i===0?" today":""));
-  box.appendChild(el("b","",i===0?"Hoy":d.toLocaleDateString("es-AR",{weekday:"long",day:"numeric"})));
+  var f=plus(st,i),d=new Date(f+"T00:00");
+  var list=occs(f).sort(function(a,b){return(a.t||"").localeCompare(b.t||"")});
+  var box=el("div","day"+(f===today?" today":""));
+  box.appendChild(el("b","",f===today?"Hoy":d.toLocaleDateString("es-AR",st===today?{weekday:"long",day:"numeric"}:{weekday:"long",day:"numeric",month:"short"})));
   if(!list.length){box.appendChild(el("div","none","Sin nada agendado"))}
-  list.forEach(function(e){any=true;var r=el("div","ev");r.appendChild(el("time","",e.t||"Todo el día"));r.appendChild(el("span","",e.x));
-   if(e.li!=null){var b=el("button","x","×");b.setAttribute("aria-label","Borrar evento");b.onclick=function(){L.events.splice(e.li,1);save();render()};r.appendChild(b)}
-   box.appendChild(r)});
+  list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.t||"Todo el día"));r.appendChild(el("span","",e.x));evBtns(r,e,f);box.appendChild(r)});
   ag.appendChild(box);
  }
+ renderMes();renderRut();renderAlerta();
  var ex=allExp(),tot=0,by={};
  ex.forEach(function(e){tot+=e.m;by[e.c]=(by[e.c]||0)+e.m});
  var bt=0;for(var k in BUDGET)bt+=BUDGET[k];
@@ -295,10 +373,11 @@ function mon(){var d=new Date(now);d.setDate(d.getDate()-((d.getDay()+6)%7));ret
 function renderExtra(){
  renderHist();renderMov();
  var pr=$("prox");pr.innerHTML="";
- FECHAS.filter(function(e){return e.f>=today&&vis(e)}).concat(L.events.filter(function(e){return e.f>=today}).map(function(e){return{f:e.f,t:e.t,x:e.x,mine:e}})).sort(function(a,b){return(a.f+a.t).localeCompare(b.f+b.t)}).forEach(function(e){
+ FECHAS.filter(function(e){return e.f>=today&&vis(e)}).map(function(e){return{o:e,k:"F"}}).concat(L.events.filter(function(e){return e.f>=today}).map(function(e){return{o:e,k:"E"}})).sort(function(a,b){return(a.o.f+a.o.t).localeCompare(b.o.f+b.o.t)}).forEach(function(it){var e=it.o;
   var n=Math.round((new Date(e.f+"T00:00")-new Date(today+"T00:00"))/864e5),r=el("div","row");
   r.appendChild(el("span","",(e.t?e.t+" ":"")+e.x));
-  r.appendChild(el("span","",e.f.slice(8)+"/"+e.f.slice(5,7)+(n===0?" · hoy":n===1?" · mañana":" · en "+n+" días")));if(e.mine){var bx=el("button","x","×");bx.setAttribute("aria-label","Borrar evento");bx.onclick=function(){drop(L.events,e.mine);save();render()};r.lastChild.appendChild(bx)}pr.appendChild(r)});
+  var rt=el("span","",fd(e.f)+(n===0?" · hoy":n===1?" · mañana":" · en "+n+" días"));if(n<=7)r.style.fontWeight="700";
+  evBtns(rt,it,e.f,r);r.appendChild(rt);pr.appendChild(r)});
  var sp=0;L.expenses.forEach(function(e){sp+=e.m});
  var wk=mon(),ws=0;L.expenses.forEach(function(e){if(e.f>=wk)ws+=e.m});
  var wi=null;L.ing.forEach(function(e){if(e.k===wk)wi=(wi||0)+e.v});
@@ -318,7 +397,7 @@ $("eb").onclick=function(){var t=$("et").value.trim();if(!t||!$("ed").value)retu
  L.events.push({f:$("ed").value,t:$("eh").value,x:t});$("et").value="";save();render()};
 $("gb").onclick=function(){var m=parseFloat($("gm").value);if(!(m>0))return;
  L.expenses.push({f:today,m:m,c:$("gc").value,x:$("gt").value.trim()});$("gm").value="";$("gt").value="";save();render()};
-render();
+closeRut();render();
 
 var busy=false;
 function monOf(f){var d=new Date(f+"T00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)}
@@ -387,9 +466,11 @@ var CATS=[["Supermercado",/super|coto|carrefour|verdura|almacen|mercado|supermer
 function pCat(c){for(var i=0;i<CATS.length;i++)if(CATS[i][1].test(c))return CATS[i][0];return"Otros"}
 function limpio(t){return t.replace(/\b(agreg|anot|agend|sum|gast|pagu|compr|me entr)[a-záéíóúñ]*/ig,"").replace(/\b(tengo|que)\b/ig,"").replace(/a las?\s*\d{1,2}([:.]\d{2})?\s*(hs|h|am|pm)?/ig,"").replace(/\d{1,2}:\d{2}/g,"").replace(/\d{1,2}\s*(am|pm)\b/ig,"").replace(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g,"").replace(/\b(manana|mañana|hoy|ayer|pasado|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|el|la|los|las|en|de|por|un|una|mil|lucas?)\b/ig,"").replace(/\$?\d[\d.,]*/g,"").replace(/\s+/g," ").trim()}
 function localParse(txt,C){
- var o={gastos:[],eventos:[],ingresos:[],ahorro_usd:null,cotizacion:null,cancelar:[],sin_clases:[]},last="g";
+ var o={gastos:[],eventos:[],ingresos:[],ahorro_usd:null,cotizacion:null,cancelar:[],sin_clases:[],rutinas:[]},last="g";
  txt.split(/[,;\n]|\.(?!\d)|\s+y\s+/).forEach(function(raw){
   raw=raw.trim();if(!raw)return;var c=n2(raw),mo=pMonto(c),f=pFecha(c);
+  var mr=c.match(/\btodos los (lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/),hh=pHora(c);
+  if(mr&&hh){var tt=limpio(raw.replace(/todos los \S+/i,""))||"Rutina";o.rutinas.push({dia:["domingo","lunes","martes","miercoles","jueves","viernes","sabado"].indexOf(mr[1]),hora:hh,titulo:tt.charAt(0).toUpperCase()+tt.slice(1)});return}
   if(/\b(cancel|anul|borr|elimin|sac[aá]|quit[aá]|suspend|no voy|no tengo|no hay|se suspendio)/.test(c)){
    var hd=/\d{1,2}\/\d{1,2}|manana|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\bel \d{1,2}\b/.test(c);
    if(/clase/.test(c)&&!/parcial|examen|turno/.test(c)){o.sin_clases.push(f);return}
@@ -417,7 +498,7 @@ function cands(){var o={},t=[];
  return{o:o,list:t.join(" | ")}}
 function drop(a,x){var i=a.indexOf(x);if(i>=0)a.splice(i,1)}
 function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d}
-function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares. Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\"}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo] y, si dice que no va a clase algún día, \"sin_clases\":[\"YYYY-MM-DD\"]. Lista actual: "+C.list+". Nota: "+txt}
+function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares. Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\"}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo] y, si dice que no va a clase algún día, \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas, devolvé también \"rutinas\":[{\"dia\":0 a 6 (0=domingo),\"hora\":\"HH:MM\",\"titulo\":string}]. Lista actual: "+C.list+". Nota: "+txt}
 $("nb").onclick=async function(){
  var txt=$("nt").value.trim(),out=$("nr");if(!txt||busy)return;
  out.textContent="Entendiendo tu nota…";
@@ -432,8 +513,9 @@ $("nb").onclick=async function(){
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
   var NS=(r.sin_clases||[]).filter(function(d){return ok.test(d)});
+  var RU=(r.rutinas||[]).filter(function(u){return u&&u.dia>=0&&u.dia<=6&&/^\d{2}:\d{2}$/.test(u.hora||"")&&u.titulo}).map(function(u){return{id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),d:+u.dia,t:u.hora,t2:"",x:String(u.titulo),from:today,to:""}});
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
-  if(!G.length&&!E.length&&!IN.length&&A==null&&!Cn.length&&!NS.length&&FX==null){out.textContent="No encontré gastos, eventos ni ingresos en esa nota. Probá con más detalle.";return}
+  if(!G.length&&!E.length&&!IN.length&&A==null&&!Cn.length&&!NS.length&&!RU.length&&FX==null){out.textContent="No encontré gastos, eventos ni ingresos en esa nota. Probá con más detalle.";return}
   var fd=function(f){return f.slice(8)+"/"+f.slice(5,7)};
   G.forEach(function(g){out.appendChild(lineEl("Gasto: "+money(g.m)+" en "+g.c+(g.x?" ("+g.x+")":"")+" · "+fd(g.f)))});
   E.forEach(function(e){out.appendChild(lineEl("Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")))});
@@ -442,17 +524,18 @@ $("nb").onclick=async function(){
   if(FX!=null)out.appendChild(lineEl("Cotización del dólar: "+money(FX)));
   Cn.forEach(function(c){out.appendChild(lineEl("Cancelar: "+(c.t==="X"?"gasto de "+money(c.e.m)+" en "+c.e.c:c.e.x)+" · "+fd(c.e.f)))});
   NS.forEach(function(d){out.appendChild(lineEl("Sin clases el "+fd(d)))});
+  RU.forEach(function(u){out.appendChild(lineEl("Rutina: todos los "+DN[u.d].toLowerCase()+" "+u.t+" · "+u.x))});
   var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
   yes.style.marginTop="10px";
-  yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NS.forEach(function(d){L.skip.push(d)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FX!=null)L.fx=FX;if(A!=null)L.saves.push({f:today,m:A});$("nt").value="";out.innerHTML="";save();render()};
+  yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NS.forEach(function(d){L.skip.push(d)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FX!=null)L.fx=FX;if(A!=null)L.saves.push({f:today,m:A});$("nt").value="";out.innerHTML="";save();render()};
   no.onclick=function(){out.innerHTML=""};
   out.appendChild(yes);out.appendChild(no);
  }catch(e){out.textContent="No pude procesar la nota: "+(e&&(e.message||e.code)||"error")}
  finally{busy=false}
 };
 
-function cfgObj(){return{ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;
+function cfgObj(){return{ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
 $("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;applyCfg(o.cfg);HAVECFG=true;L=norm(o.L);save();UNDO.length=0;updUndo();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
