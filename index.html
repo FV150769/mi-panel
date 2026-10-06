@@ -29,7 +29,7 @@ h2 svg{vertical-align:-3px;margin-right:6px}
 .fill.over{background:repeating-linear-gradient(135deg,var(--ink) 0 3px,var(--panel) 3px 6px);outline:1px solid var(--ink)}
 .mark{position:absolute;top:-5px;width:3px;height:18px;background:var(--mark)}
 .legend{display:flex;justify-content:space-between;color:var(--mute);font-size:13px;margin-top:10px;gap:8px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}.rcol{display:flex;flex-direction:column;gap:16px}.rcol section{margin:0}
 @media (max-width:720px){.cols{grid-template-columns:1fr}}
 .day{padding:8px 0;border-top:1px solid var(--line)}
 .day:first-of-type{border-top:0}
@@ -182,6 +182,7 @@ summary::before{color:var(--acc);font-weight:700}
 </div>
 </section>
 
+<div class="rcol">
 <section>
 <h2>Gastos del mes</h2>
 <div id="cats"></div>
@@ -193,15 +194,6 @@ summary::before{color:var(--acc);font-weight:700}
 <button id="gb">Agregar gasto</button>
 </div>
 </section>
-</div>
-
-<section class="goal">
-<details><summary>Cuentas</summary>
-<div id="ctas"></div>
-<div class="add"><input type="number" id="fx" placeholder="Cotización del dólar (pesos por US$)" inputmode="decimal" aria-label="Cotización del dólar"><button id="fb">Guardar cotización</button></div>
-</details>
-</section>
-
 <section class="goal">
 <h2><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 2.5 A7.5 7.5 0 1 1 3.2 6.8"/></svg>Objetivo de ahorro</h2>
 <div id="metas"></div>
@@ -211,10 +203,20 @@ summary::before{color:var(--acc);font-weight:700}
 </div>
 </section>
 <section class="goal">
+<details><summary>Cuentas</summary>
+<div id="ctas"></div>
+<div class="add"><input type="number" id="fx" placeholder="Cotización del dólar (pesos por US$)" inputmode="decimal" aria-label="Cotización del dólar"><button id="fb">Guardar cotización</button></div>
+</details>
+</section>
+<section class="goal">
 <details><summary>Movimientos cargados</summary>
 <div id="mov"></div>
 </details>
 </section>
+</div>
+</div>
+
+
 
 <section class="goal">
 <details>
@@ -367,11 +369,13 @@ function render(){
  $("gastado").textContent="Gastaste "+money(spd)+" de "+money(base);
  var cb=$("cats");cb.innerHTML="";
  var mx=0;Object.keys(BUDGET).forEach(function(k){mx=Math.max(mx,by[k]||0)});
- Object.keys(BUDGET).sort(function(a,b){return (by[b]||0)-(by[a]||0)}).forEach(function(k){
+ var Z=[];Object.keys(BUDGET).sort(function(a,b){return (by[b]||0)-(by[a]||0)}).forEach(function(k){
+  if(!(by[k]||0)){Z.push(k);return}
   var u=by[k]||0,p=mx?u/mx*100:0,c=el("div","cat"),t=el("div");
   t.appendChild(el("span","",k));t.appendChild(el("span","",money(u)));
   var tr=el("div","track"),fl=el("div","fill");fl.style.width=Math.min(p,100)+"%";tr.appendChild(fl);
   c.appendChild(t);c.appendChild(tr);cb.appendChild(c)});
+ if(Z.length){var zl=el("div","","Sin gastos: "+Z.join(", "));zl.style.cssText="font-size:13px;color:var(--mute,#8a7f78);margin:6px 0 4px";cb.appendChild(zl)}
  renderGoal();renderExtra();
  var gl=$("gastos");gl.innerHTML="";
  ex.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,8).forEach(function(e){
