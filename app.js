@@ -330,19 +330,48 @@ $("nb").onclick=async function(){
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
   if(!G.length&&!E.length&&!IN.length&&A==null&&!Cn.length&&!NS.length&&!RU.length&&FX==null){out.textContent="No encontré gastos, eventos ni ingresos en esa nota. Probá con más detalle.";return}
   var fd=function(f){return f.slice(8)+"/"+f.slice(5,7)};
-  G.forEach(function(g){out.appendChild(lineEl("Gasto: "+money(g.m)+" en "+g.c+(g.x?" ("+g.x+")":"")+" · "+fd(g.f)))});
-  E.forEach(function(e){out.appendChild(lineEl("Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")+(e.imp?" · 🔔 te aviso por Telegram":"")))});
-  IN.forEach(function(i){out.appendChild(lineEl("Ingreso: "+money(i.v)+" · "+fd(i.f)))});
-  if(A!=null)out.appendChild(lineEl((A<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(A))));
-  if(FX!=null)out.appendChild(lineEl("Cotización del dólar: "+money(FX)));
-  Cn.forEach(function(c){out.appendChild(lineEl("Cancelar: "+(c.t==="X"?"gasto de "+money(c.e.m)+" en "+c.e.c:c.e.x)+" · "+fd(c.e.f)))});
-  NS.forEach(function(d){out.appendChild(lineEl("Sin clases el "+fd(d)))});
-  RU.forEach(function(u){out.appendChild(lineEl("Rutina: todos los "+DN[u.d].toLowerCase()+" "+u.t+" · "+u.x))});
-  var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
-  yes.style.marginTop="10px";
-  yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NS.forEach(function(d){L.skip.push(d)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FX!=null)L.fx=FX;if(A!=null)L.saves.push({f:today,m:A});$("nt").value="";out.innerHTML="";save();render()};
-  no.onclick=function(){out.innerHTML=""};
-  out.appendChild(yes);out.appendChild(no);
+  // Vista previa editable: cada ítem se puede corregir (✎) o quitar (×) antes de guardar.
+  var AA=A!=null?[{m:A}]:[],FF=FX!=null?[{v:FX}]:[],NSo=NS.map(function(d){return{f:d}});
+  var CAT=Object.keys(BUDGET).map(function(c){return[c,c]}),DIA=DN.map(function(n,i){return[i,n]});
+  var K=[
+   {a:G,t:function(g){return"Gasto: "+money(g.m)+" en "+g.c+(g.x?" ("+g.x+")":"")+" · "+fd(g.f)},f:[["m","Monto","number"],["c","Categoría",CAT],["x","Detalle","text"],["f","Fecha","date"]]},
+   {a:E,t:function(e){return"Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")+(e.imp?" · 🔔 te aviso por Telegram":"")},f:[["x","Qué","text"],["f","Fecha","date"],["t","Hora","time"],["imp","Avisarme por Telegram","check"]]},
+   {a:IN,t:function(i){return"Ingreso: "+money(i.v)+" · "+fd(i.f)},f:[["v","Monto","number"],["f","Fecha","date"]]},
+   {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
+   {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
+   {a:Cn,t:function(c){return"Cancelar: "+(c.t==="X"?"gasto de "+money(c.e.m)+" en "+c.e.c:c.e.x)+" · "+fd(c.e.f)}},
+   {a:NSo,t:function(d){return"Sin clases el "+fd(d.f)},f:[["f","Fecha","date"]]},
+   {a:RU,t:function(u){return"Rutina: todos los "+DN[u.d].toLowerCase()+" "+u.t+" · "+u.x},f:[["d","Día",DIA],["t","Hora","time"],["x","Qué","text"]]}];
+  var head=out.firstChild&&out.firstChild.tagName==="P"?out.firstChild:null;
+  function editor(k,o,row){
+   var box=el("div","add"),inp={};box.style.margin="6px 0";
+   k.f.forEach(function(s){var i;
+    if(Array.isArray(s[2])){i=el("select");s[2].forEach(function(p){var op=el("option","",p[1]);op.value=p[0];if(String(o[s[0]])===String(p[0]))op.selected=true;i.appendChild(op)})}
+    else if(s[2]==="check"){var lb=el("label","sem");lb.style.margin="0";i=el("input");i.type="checkbox";i.checked=!!o[s[0]];i.style.flex="none";i.style.minHeight="0";lb.appendChild(i);lb.appendChild(document.createTextNode(" "+s[1]));box.appendChild(lb);inp[s[0]]=i;return}
+    else{i=el("input");i.type=s[2];i.value=o[s[0]]==null?"":o[s[0]];i.placeholder=s[1];if(s[2]==="number")i.inputMode="decimal"}
+    i.setAttribute("aria-label",s[1]);box.appendChild(i);inp[s[0]]=i});
+   var b=el("button","","Listo"),c=el("button","x","Cancelar");
+   b.onclick=function(){k.f.forEach(function(s){var i=inp[s[0]],v;
+     if(s[2]==="check")v=i.checked;
+     else if(s[2]==="number"){v=parseFloat(String(i.value).replace(",","."));if(!isFinite(v)||v===0||(v<0&&k.a!==AA))return}
+     else if(s[2]==="date"){v=i.value;if(!ok.test(v))return}
+     else if(Array.isArray(s[2])){v=s[0]==="d"?+i.value:i.value}
+     else{v=String(i.value).trim();if(!v&&s[2]!=="time"&&k.a!==G)return}
+     o[s[0]]=v});draw()};
+   c.onclick=draw;box.appendChild(b);box.appendChild(c);row.replaceWith(box);var f=box.querySelector("input,select");if(f)f.focus()}
+  function draw(){
+   out.innerHTML="";if(head)out.appendChild(head);var n=0;
+   K.forEach(function(k){k.a.forEach(function(o,ix){n++;var row=lineEl(k.t(o)),bt=el("span");
+    if(k.f){var e=el("button","x","✎");e.setAttribute("aria-label","Corregir");e.title="Corregir";e.onclick=function(){editor(k,o,row)};bt.appendChild(e)}
+    var x=el("button","x","×");x.setAttribute("aria-label","Quitar");x.title="Quitar";x.onclick=function(){k.a.splice(k.a.indexOf(o),1);draw()};bt.appendChild(x);
+    row.appendChild(bt);out.appendChild(row)})});
+   if(!n){out.appendChild(el("p","sem","No queda nada para guardar."));var cl=el("button","x","Cerrar");cl.onclick=function(){out.innerHTML=""};out.appendChild(cl);return}
+   var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
+   yes.style.marginTop="10px";
+   yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FF.length)L.fx=FF[0].v;if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render()};
+   no.onclick=function(){out.innerHTML=""};
+   out.appendChild(yes);out.appendChild(no)}
+  draw();
  }catch(e){out.textContent="No pude procesar la nota: "+(e&&(e.message||e.code)||"error")}
  finally{busy=false}
 };

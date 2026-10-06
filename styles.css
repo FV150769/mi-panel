@@ -208,3 +208,8 @@ img,svg{max-width:100%}
 .ev button.x,.x-sp{flex:none;width:32px;padding:0;text-align:center}
 .x-sp{display:inline-block}
 .row button.x{width:32px;padding:0;text-align:center}
+
+/* Vista previa de la nota: texto a la izquierda, ✎ y × a la derecha */
+#nr .row>span:first-child{flex:1 1 auto}
+#nr .row>span:last-child{display:flex;flex:none}
+#nr .add label{display:flex;align-items:center;gap:6px}
