@@ -393,7 +393,9 @@ async function pull(){
  var r=await SB.from("panel_state").select("data").eq("user_id",UID).maybeSingle();
  if(r.error){stat("No pude leer tu nube: "+r.error.message);return}
  var q=r.data&&r.data.data;
- if(q&&q.L){if(!HAVECFG&&q.cfg){applyCfg(q.cfg);HAVECFG=true;render()}if((q.L.t||0)>=(L.t||0))adopt(q);else await push();stat("Sincronizado con tu nube · v10")}
+ if(q&&q.L){if(!HAVECFG&&q.cfg){applyCfg(q.cfg);HAVECFG=true;render()}
+  // Nunca pisar datos con una copia vacía: si un lado está vacío y el otro no, gana el que tiene datos.
+  var ev=vacio(q.L),lv=vacio(L);if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();stat("Sincronizado con tu nube · v10")}
  else{HAVECFG=true;await push();stat("Nube inicializada · v10")}
 }
 async function enter(session){
@@ -432,7 +434,7 @@ async function blue(force){
   var r=await fetch("https://dolarapi.com/v1/dolares/blue",{cache:"no-store"});if(!r.ok)return;
   var d=await r.json(),v=Number(d.venta);if(!(v>0))return;
   var at=new Date(d.fechaActualizacion||Date.now()),s=pad(at.getDate())+"/"+pad(at.getMonth()+1)+" "+pad(at.getHours())+":"+pad(at.getMinutes());
-  if(v!==L.fx||s!==L.fxAt||force){L.fx=v;L.fxAt=s;save0();PREV=snap()}
+  if(v!==L.fx||s!==L.fxAt||force){L.fx=v;L.fxAt=s;if(UID||!SB){save0();PREV=snap()}}
   render()
  }catch(e){}
 }
@@ -488,3 +490,4 @@ function ajSave(){
  save();render();ajForm();$("ajm").textContent="Ajustes guardados."}
 $("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
 $("ajs").onclick=ajSave;$("ajc").onclick=ajForm;
+function vacio(x){return!x||!((x.events||[]).length||(x.expenses||[]).length||(x.ing||[]).length||(x.saves||[]).length)}
