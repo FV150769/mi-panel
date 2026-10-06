@@ -14,7 +14,7 @@ var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v19";
+var DOC=null,VER="v20";
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
@@ -382,8 +382,8 @@ $("nb").onclick=async function(){
  finally{busy=false}
 };
 
-function cfgObj(){return{TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -426,6 +426,28 @@ $("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("
 async function loadUser(){try{var r=await SB.from("profiles").select("username").eq("user_id",UID).maybeSingle();$("uname").value=(r.data&&r.data.username)||""}catch(e){}}
 $("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});$("um").textContent=r.error?(r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo."):"Guardado. Ya podés entrar con "+u+".";if(!r.error)$("uname").value=u};
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}if(UID)pull().catch(function(){})});
+// Orden personalizado: el usuario mueve grupos y tarjetas con ↑ ↓ (se guarda en su cuenta).
+var LAYOUT=null;
+function grupos(){return[].slice.call(document.querySelectorAll("main>.grupo"))}
+function tarjetas(g){return[].slice.call(g.querySelectorAll(":scope>.cols>section[data-c]"))}
+var DEFLAY={g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){DEFLAY.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});
+function ordenar(par,nodos,ids,antes){var by={};nodos.forEach(function(n){by[n.dataset.g||n.dataset.c]=n});
+ ids.filter(function(i){return by[i]}).concat(nodos.map(function(n){return n.dataset.g||n.dataset.c}).filter(function(i){return ids.indexOf(i)<0})).forEach(function(i){par.insertBefore(by[i],antes||null)})}
+function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main");
+ ordenar(m,grupos(),Y.g||DEFLAY.g,$("est"));
+ grupos().forEach(function(g){var c=g.querySelector(":scope>.cols");if(c)ordenar(c,tarjetas(g),(Y.c||{})[g.dataset.g]||DEFLAY.c[g.dataset.g]||[])})}
+function saveLayout(){LAYOUT={g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){LAYOUT.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});HAVECFG=true;save()}
+function mover(n,d){var p=n.parentNode,h=[].filter.call(p.children,function(x){return x.matches(n.matches(".grupo")?"main>.grupo":".cols>section[data-c]")}),i=h.indexOf(n),j=i+d;
+ if(j<0||j>=h.length)return;if(d<0)p.insertBefore(n,h[j]);else p.insertBefore(h[j],n);saveLayout();n.scrollIntoView({block:"nearest"})}
+function ordBar(n){var b=el("div","ordbar");b.appendChild(el("span","",n.dataset.name));var s=el("span");
+ [["↑",-1,"Subir"],["↓",1,"Bajar"]].forEach(function(a){var x=el("button","x",a[0]);x.setAttribute("aria-label",a[2]+" "+n.dataset.name);x.onclick=function(e){e.stopPropagation();mover(n,a[1])};s.appendChild(x)});
+ b.appendChild(s);n.insertBefore(b,n.firstChild)}
+function ordUI(on){document.body.classList.toggle("ordenando",on);$("ordtop").style.display=on?"":"none";
+ [].forEach.call(document.querySelectorAll(".ordbar"),function(b){b.remove()});
+ if(on)grupos().forEach(function(g){ordBar(g);tarjetas(g).forEach(ordBar)})}
+$("ord").onclick=function(){ordUI(!document.body.classList.contains("ordenando"));window.scrollTo({top:0,behavior:"smooth"})};
+$("ordok").onclick=function(){ordUI(false)};
+$("ordr").onclick=function(){LAYOUT=null;applyLayout();HAVECFG=true;save();ordUI(true)};
 // Datos locales por usuario: la copia del navegador se borra al cerrar sesión o si entra otra cuenta, para no mezclar datos.
 var DEFCFG=JSON.stringify(cfgObj());
 function resetLocal(){applyCfg(JSON.parse(DEFCFG));HAVECFG=false;L=norm({});UNDO.length=0;PREV=snap();updUndo();try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+"-cfg")}catch(e){}render();blue()}

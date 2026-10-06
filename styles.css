@@ -241,7 +241,7 @@ details[open] summary{margin-bottom:8px}
 section.plg>h2{cursor:pointer;user-select:none;margin-bottom:8px}
 section.plg>h2::after,summary::after{content:"";margin-left:auto;width:7px;height:7px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .15s;flex:none;margin-right:4px}
 section.cerrada>h2::after,details:not([open])>summary::after{transform:rotate(-45deg)}
-section.cerrada>:not(h2){display:none}
+section.cerrada>:not(h2):not(.ordbar){display:none}
 section.cerrada>h2{margin-bottom:0}
 summary::before{display:none}
 summary{justify-content:space-between}
@@ -293,3 +293,13 @@ body.auth #lm,body.auth #rm{text-align:center}
 .tgp li{margin:2px 0}
 .tgh3{font-size:13px;font-weight:600;margin:16px 0 0}
 #tgd .tgav label{display:flex;flex-direction:column;gap:4px;flex:1 1 120px;margin:0}
+
+/* ===== Modo "Ordenar panel" ===== */
+#ordtop{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--ink);color:#fff;border-radius:10px;padding:8px 12px;margin:0 0 12px;font-size:14px}
+#ordtop button{min-height:34px}
+#ordtop #ordok{background:#fff;color:var(--ink);border-color:#fff}
+#ordtop .x{color:#fff}
+.ordbar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--bg);border:1px dashed #C9C9CF;border-radius:8px;padding:2px 4px 2px 10px;margin:0 0 8px;font-size:12px;font-weight:600;color:var(--mute)}
+.grupo>.ordbar{background:#EDEDF0;color:var(--ink);font-size:13px;margin-top:16px}
+.ordbar button.x{width:40px;min-height:34px;font-size:18px;color:var(--ink)}
+body.ordenando .grupo{outline:1px dashed #C9C9CF;outline-offset:4px;border-radius:12px;margin-bottom:12px}
