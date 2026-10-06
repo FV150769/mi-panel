@@ -446,3 +446,42 @@ blue();setInterval(blue,30*60*1000);
 })();
 // Enter en el formulario de entrada = tocar "Entrar".
 ["le","lp"].forEach(function(i){$(i).addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("lg").click()}})});
+// Ajustes: categorías con presupuesto, objetivo de ahorro y nombres de cuentas (se guardan en la cuenta del usuario).
+var AJ={};
+function ajList(box,title,items,ph,num,fixed){
+ var w=el("div","aj"),rows=el("div");w.appendChild(el("h3","",title));w.appendChild(rows);
+ function add(n,v,o){var r=el("div","add ajr"),a=el("input");a.value=n;a.placeholder=ph;a.setAttribute("aria-label",ph);r.appendChild(a);
+  if(num){var b=el("input");b.type="number";b.inputMode="decimal";b.value=v==null?"":v;b.placeholder=num;b.setAttribute("aria-label",num);r.appendChild(b)}
+  if(o!=null&&fixed(o)){a.readOnly=a.value==="Otros";r.appendChild(el("span","x-sp"))}
+  else{var x=el("button","x","×");x.setAttribute("aria-label","Quitar");x.title="Quitar";x.onclick=function(){r.remove()};r.appendChild(x)}
+  r._o=o;rows.appendChild(r);return a}
+ items.forEach(function(it){add(it[0],it[1],it[2])});
+ var ad=el("button","lk","+ Agregar");ad.onclick=function(){add("",null,null).focus()};w.appendChild(ad);box.appendChild(w);
+ return function(){return[].map.call(rows.children,function(r){var i=r.querySelectorAll("input");return{n:i[0].value.trim(),v:i[1]?parseFloat(String(i[1].value).replace(",",".")):null,o:r._o}})}}
+function ajForm(){
+ var f=$("ajf");f.innerHTML="";$("ajm").textContent="";
+ AJ.cat=ajList(f,"Categorías y presupuesto mensual",Object.keys(BUDGET).map(function(k){return[k,BUDGET[k],k]}),"Categoría","Presupuesto ($)",function(o){return o==="Otros"});
+ var g=el("div","aj");g.appendChild(el("h3","","Objetivo de ahorro"));var gr=el("div","add ajr ajg");
+ [["x","Nombre del objetivo","text",GOAL.x],["target","Meta (US$)","number",GOAL.target],["months","En cuántos meses (0 = sin plazo)","number",GOAL.months||0]].forEach(function(s){var i=el("input");i.type=s[2];i.id="ajg-"+s[0];i.value=s[3];i.placeholder=s[1];i.title=s[1];i.setAttribute("aria-label",s[1]);if(s[2]==="number")i.inputMode="decimal";gr.appendChild(i)});
+ g.appendChild(gr);f.appendChild(g);
+ AJ.acc=ajList(f,"Cuentas en pesos (la primera es la del día a día)",ACC.map(function(a,i){return[a[0],null,i]}),"Nombre de la cuenta",null,function(o){return o===0});
+ AJ.usd=ajList(f,"Cuentas en dólares (la primera suma tus aportes al ahorro)",USD.map(function(a,i){return[a[0],null,i]}),"Nombre de la cuenta",null,function(o){return o===0})}
+function ajSave(){
+ var m=$("ajm"),C=AJ.cat(),A=AJ.acc(),U=AJ.usd(),seen={};
+ for(var i=0;i<C.length;i++){var n=C[i].n;if(!n)return(m.textContent="Hay una categoría sin nombre.");if(seen[n.toLowerCase()])return(m.textContent="La categoría \""+n+"\" está repetida.");seen[n.toLowerCase()]=1}
+ if(A.some(function(a){return!a.n})||U.some(function(a){return!a.n}))return(m.textContent="Hay una cuenta sin nombre.");
+ var gx=$("ajg-x").value.trim(),gt=parseFloat($("ajg-target").value),gm=parseInt($("ajg-months").value,10)||0;
+ if(!gx)return(m.textContent="Poné un nombre para el objetivo.");if(!(gt>0))return(m.textContent="La meta del objetivo tiene que ser mayor a 0.");
+ // Categorías: renombrar o quitar actualiza los gastos ya cargados (los de una categoría quitada pasan a "Otros").
+ var NB={},ren={};C.forEach(function(c){NB[c.n]=c.v>=0?c.v:0;if(c.o!=null)ren[c.o]=c.n});
+ L.expenses.forEach(function(e){e.c=ren[e.c]||(NB[e.c]!=null?e.c:"Otros")});
+ if(NB.Otros==null)NB.Otros=0;BUDGET=NB;
+ // Cuentas: los saldos se guardan por posición, así que se reacomodan si se quitan o mueven cuentas.
+ function remap(R,old,p){var nb={};Object.keys(L.bal).forEach(function(k){if(k.charAt(0)!==p)nb[k]=L.bal[k]});
+  var na=R.map(function(r,j){if(r.o!=null&&L.bal[p+r.o]!=null)nb[p+j]=L.bal[p+r.o];return[r.n,r.o!=null?old[r.o][1]:0]});L.bal=nb;return na}
+ ACC=remap(A,ACC,"a");USD=remap(U,USD,"u");
+ GOAL={x:gx,target:gt,saved:GOAL.saved||0,months:Math.max(0,gm)};
+ HAVECFG=true;cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
+ save();render();ajForm();$("ajm").textContent="Ajustes guardados."}
+$("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
+$("ajs").onclick=ajSave;$("ajc").onclick=ajForm;

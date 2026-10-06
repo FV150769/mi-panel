@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body class="auth">
 <main>
@@ -105,8 +105,14 @@
 </details></section>
 </div>
 
-<h2 class="grp">Histórico y copia de seguridad</h2>
+<h2 class="grp">Ajustes, histórico y copia de seguridad</h2>
 <div class="cols">
+<section class="goal"><details id="aj"><summary>Ajustes</summary>
+<p class="sem" style="margin-top:0">Configurá tus categorías de gasto, tu objetivo de ahorro y tus cuentas. Se guarda en tu cuenta.</p>
+<div id="ajf"></div>
+<div class="add"><button id="ajs">Guardar ajustes</button><button class="x" id="ajc">Descartar cambios</button></div>
+<p class="sem" id="ajm"></p>
+</details></section>
 <section>
 <details>
 <summary>Histórico</summary>
@@ -124,6 +130,6 @@
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

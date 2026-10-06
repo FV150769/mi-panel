@@ -275,3 +275,15 @@ body.auth #login .add input,body.auth #rec .add input{flex:1 1 100%;min-height:4
 body.auth #login .add button:not(.lk),body.auth #rec .add button{flex:1 1 auto;min-height:44px}
 body.auth #lf{flex:1 1 100%;justify-content:center}
 body.auth #lm,body.auth #rm{text-align:center}
+
+/* Ajustes */
+.aj h3{font-size:13px;font-weight:600;margin:14px 0 2px}
+#ajf .ajr{flex-wrap:nowrap;margin:6px 0 0;align-items:center}
+#ajf .ajr input{flex:1 1 auto;min-width:0}
+#ajf .ajr input[type=number]{flex:0 0 130px}
+#ajf .ajr input[readonly]{background:var(--bg);color:var(--mute)}
+#ajf .ajg{flex-wrap:wrap}
+#ajf .ajg input{flex:1 1 100%}
+#ajf .ajg input[type=number]{flex:1 1 calc(50% - 4px)}
+#ajf .lk{margin-top:4px;padding:0 2px}
+@media (max-width:720px){#ajf .ajr input[type=number]{flex-basis:110px}}
