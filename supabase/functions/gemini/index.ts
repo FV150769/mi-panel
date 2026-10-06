@@ -1,6 +1,7 @@
 // Edge Function "gemini": recibe el pedido del panel y lo manda a Gemini.
 // La clave se guarda como secreto GEMINI_API_KEY en Supabase y nunca llega al navegador.
-// Solo responde a usuarios con sesión iniciada (Supabase verifica el JWT antes de llegar acá).
+// Solo responde a usuarios con sesión iniciada: se verifica el usuario (la clave pública sola no alcanza).
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,11 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
+
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
+  const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const { data: u } = await sb.auth.getUser(jwt);
+  if (!u?.user) return json({ error: "Iniciá sesión para usar la IA" }, 401);
 
   const key = Deno.env.get("GEMINI_API_KEY");
   if (!key) return json({ error: "Falta el secreto GEMINI_API_KEY en Supabase" }, 500);
