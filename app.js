@@ -103,7 +103,7 @@ $("nn").onclick=function(){VSTART=plus(VSTART||today,7);render()};
 $("nh").onclick=function(){VSTART=null;MON=null;render()};
 $("mp").onclick=function(){var b=MON||new Date(now.getFullYear(),now.getMonth(),1);MON=new Date(b.getFullYear(),b.getMonth()-1,1);renderMes()};
 $("mn").onclick=function(){var b=MON||new Date(now.getFullYear(),now.getMonth(),1);MON=new Date(b.getFullYear(),b.getMonth()+1,1);renderMes()};
-function render(){
+function render(){var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
  var ag=$("agenda");ag.innerHTML="";var st=VSTART||today;
  $("agt").textContent=st===today?"Próximos 7 días":"Del "+fd(st)+" al "+fd(plus(st,6));
  for(var i=0;i<7;i++){
@@ -381,7 +381,7 @@ $("nb").onclick=async function(){
 };
 
 function cfgObj(){return{TG:TG,TGCHAT:TGCHAT,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;TG=c.TG!=null?!!c.TG:true;TGCHAT=c.TGCHAT||"";// config vieja sin TG = la cuenta original, que sí tiene Telegram
+function applyCfg(c){if(!c)return;TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -505,3 +505,4 @@ $("tgt").onclick=async function(){var m=$("tgm");if(!SB||!UID)return(m.textConte
  m.textContent="Enviando…";try{await push();var r=await SB.functions.invoke("avisos",{body:{prueba:true}});
   if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
   m.textContent="Listo, revisá tu Telegram."}catch(e){m.textContent="No pude enviarlo: "+(e&&e.message||e)}};
+$("tgo").onclick=function(){var d=$("tgd");d.open=true;tgUI();d.scrollIntoView({behavior:"smooth",block:"start"});$("tgc").focus({preventScroll:true})};
