@@ -5,7 +5,7 @@ var FIN="2000-01-01";
 var SKIP=[];
 var FECHAS=[];
 var USD=[["Ahorro (sin invertir)",0],["Colchón",0]];
-var ACC=[["Día a día",0],["Ahorro",0],["Inversiones",0]];
+var ACC=[["Día a día",0]];
 var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
 // Avisos por Telegram: solo para la cuenta que los tiene configurados (las cuentas nuevas arrancan sin avisos).
 var TG=false,TGCHAT="",TGAV={d:[7,1],h:"09:00",hs:0};
@@ -14,7 +14,7 @@ var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v24";
+var DOC=null,VER="v25";
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
@@ -277,12 +277,12 @@ function renderExtra(){
  $("sem").textContent=wi==null?"Cargá lo que te entró esta semana para ver cuánto te sobra.":"Esta semana entró "+money(wi)+" y gastaste "+money(ws)+(wi-ws>0?": te sobran "+money(wi-ws)+(L.fx>0?" (≈ "+usd((wi-ws)/L.fx)+")":"")+" para los próximos gastos.":": esta semana no sobra.");
  var c=$("ctas");c.innerHTML="";var t=0;
  ACC.forEach(function(a,i){var d=i===0,v=d?accVal(0)+ingTot()-sp:accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?a[0]+" (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){if(d)ajusteDiario(nv-v);else setBal("a"+i,nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
- var r=el("div","row");r.appendChild(el("b","","Total"));r.appendChild(el("b","",money(t)));c.appendChild(r);
+ if(ACC.length>1){var r=el("div","row");r.appendChild(el("b","","Total en pesos"));r.appendChild(el("b","",money(t)));c.appendChild(r)}
  var u=el("div","none","Dólares");u.style.marginTop="12px";c.appendChild(u);var tu=0;
  USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+v.toLocaleString("es-AR")),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
  var q=el("div","row");q.appendChild(el("b","","Total en dólares"));q.appendChild(el("b","","US$ "+tu.toLocaleString("es-AR")));c.appendChild(q);
  if(L.fx>0){var f1=el("div","row");f1.appendChild(el("span","",L.fxAuto?"Dólar blue (venta"+(L.fxAt?" · "+L.fxAt:"")+")":"Cotización usada (manual)"));f1.appendChild(el("span","",money(L.fx)+" por US$"));c.appendChild(f1);
-  var f2=el("div","row");f2.appendChild(el("b","","Todo junto en pesos"));f2.appendChild(el("b","","≈ "+money(t+tu*L.fx)));c.appendChild(f2)}
+  var f2=el("div","row");f2.appendChild(el("b","","Patrimonio (pesos + dólares)"));f2.appendChild(el("b","","≈ "+money(t+tu*L.fx)));c.appendChild(f2)}
 }
 $("fb").onclick=function(){var v=parseFloat($("fx").value);if(!(v>0))return;L.fx=v;L.fxAuto=false;$("fx").value="";save();render()};
 $("fa").onclick=function(){L.fxAuto=true;save0();blue(true)};
