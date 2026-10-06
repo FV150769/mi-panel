@@ -14,7 +14,7 @@ var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v23";
+var DOC=null,VER="v24";
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
@@ -162,6 +162,7 @@ function renderGoal(){
  else if(dias<=0)t="El plazo venció el "+fLarga(fin)+" y te faltaron "+usd(left)+". Podés ponerle un plazo nuevo en Ajustes.";
  else t="Te faltan "+usd(left)+" y quedan "+plazoTxt(dias)+" (hasta el "+fLarga(fin)+"): tenés que ahorrar "+ritmo(left,dias)+".";
  b.appendChild(h);b.appendChild(el("div","none",usd(got)+" de "+usd(GOAL.target)+" ("+USD.map(function(a){return a[0].toLowerCase()}).join(" + ")+(extra?" + aportes":"")+")"));b.appendChild(tr);b.appendChild(el("p","info",t));
+ var cp=el("button","lk",fin?"Cambiar plazo":"Ponerle un plazo");cp.style.padding="0";cp.onclick=function(){$("aj").open=true;setTimeout(function(){var u=$("ajg-u");if(u){u.scrollIntoView({block:"center",behavior:"smooth"});u.focus()}},80)};b.appendChild(cp);
  if(L.saves.length){var u=el("button","x","Deshacer último aporte o retiro");u.onclick=function(){L.saves.pop();save();render()};b.appendChild(u)}
 }
 // Resumen financiero del mes y consejos según cómo se mueve la plata (reglas fijas, sin IA).
@@ -198,7 +199,7 @@ function renderResumen(){
  else if(im&&proy&&proy>im)tip("ojo","Si seguís a este ritmo vas a gastar ≈ "+money(proy)+", más de lo que entró ("+money(im)+"). Para no pasarte, tratá de gastar hasta "+money((im-gm)/resta)+" por día lo que queda del mes.");
  // Cuánto dura lo que hay en la cuenta del día a día
  var left=accVal(0)+ingTot()-sumM(L.expenses),r14=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=plus(today,-13)&&e.f<=today}))/14;
- if(left<0)tip("mal","Tu cuenta "+ACC[0][0]+" está en negativo ("+money(left)+"). Revisá si falta cargar algún ingreso o corregí el saldo en Cuentas.");
+ if(left<0)tip("mal","Tu cuenta "+ACC[0][0]+" está en negativo (−"+money(-left)+"). Revisá si falta cargar algún ingreso o corregí el saldo en Cuentas.");
  else if(r14>0&&left/r14<resta-1)tip("ojo","Con lo que tenés en "+ACC[0][0]+" ("+money(left)+") y gastando como en las últimas dos semanas ("+money(r14)+" por día), te alcanza para unos "+Math.floor(left/r14)+" días: antes de fin de mes.");
  // Comparación con el mes pasado a la misma altura
  if(ph&&dia>=3){var d=(gm-ph)/ph;
@@ -611,8 +612,8 @@ function ajForm(){
  var P=GOAL.pl||(GOAL.months>0?{u:"m",n:GOAL.months}:null);pu.value=P?P.u:"";pn.value=P&&P.n?P.n:"";pf.value=metaFin()||"";
  function plazoUI(){var u=pu.value;pn.style.display=u&&u!=="f"?"":"none";pf.style.display=u==="f"?"":"none";var h=plazoForm();var d=h.hasta?Math.round((new Date(h.hasta+"T00:00")-new Date(today+"T00:00"))/864e5):0;ph.textContent=h.err||(h.hasta?"Fecha límite: "+fLarga(h.hasta)+(d>0?" (en "+plazoTxt(d)+")":" (ya venció)"):"El objetivo no tiene fecha límite.")}
  pu.onchange=pn.oninput=pf.oninput=plazoUI;
- [pu,pn,pf].forEach(function(x){pr.appendChild(x)});g.appendChild(pr);g.appendChild(ph);plazoUI();
- f.appendChild(g);
+ [pu,pn,pf].forEach(function(x){pr.appendChild(x)});g.appendChild(pr);g.appendChild(ph);
+ f.appendChild(g);plazoUI();
  AJ.acc=ajList(f,"Cuentas en pesos (la primera es la del día a día)",ACC.map(function(a,i){return[a[0],null,i]}),"Nombre de la cuenta",null,function(o){return o===0});
  AJ.usd=ajList(f,"Cuentas en dólares (la primera suma tus aportes al ahorro)",USD.map(function(a,i){return[a[0],null,i]}),"Nombre de la cuenta",null,function(o){return o===0})}
 // Lee el plazo del formulario. Si no cambió, conserva la fecha límite guardada (así no se corre día a día).
