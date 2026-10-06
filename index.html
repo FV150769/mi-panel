@@ -296,7 +296,9 @@ function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null
 function evBtns(row,it,f,box){
  var b=el("button","x","✎");b.setAttribute("aria-label","Editar");b.onclick=function(){if(it.r)openRut(it.r);else editEv(box||row,it.o)};
  var c=el("button","x","×");c.setAttribute("aria-label","Borrar");c.onclick=function(){if(it.r)L.rskip.push(it.r.id+"|"+f);else if(it.k==="E")drop(L.events,it.o);else drop(FECHAS,it.o);save();render()};
- row.appendChild(b);row.appendChild(c)}
+ row.appendChild(b);
+ if(!it.r&&it.o){var on=it.k==="F"?it.o.imp!==false:it.o.imp===true;var n=el("button","x",on?"🔔":"🔕");n.title=on?"Te aviso por Telegram (tocá para desactivar)":"Sin aviso (tocá para activar)";n.setAttribute("aria-label","Aviso");n.onclick=function(){it.o.imp=!on;save();render()};row.appendChild(n)}
+ row.appendChild(c)}
 function editEv(row,o){
  row.innerHTML="";row.style.flexWrap="wrap";
  var d=document.createElement("input");d.type="date";d.value=o.f;var h=document.createElement("input");h.type="time";h.value=o.t||"";var x=document.createElement("input");x.value=o.x;
@@ -554,7 +556,7 @@ $("nb").onclick=async function(){
   try{var SM=window.claude?await claude.use("sample"):null;if(SM)r=await SM.json(prompt1(txt,C),{cache:false});else why="modo sin IA"}catch(err){why=err&&err.code==="not_granted"?"no diste permiso a la página para usar Claude":(err&&(err.code||err.message))||"error"}
   if(!r||typeof r!=="object"){r=localParse(txt,C);nota="Lo entendí sin IA. Revisá bien antes de guardar."}
   var G=(r.gastos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,m:Number(g.monto),c:BUDGET[g.categoria]?g.categoria:"Otros",x:String(g.detalle||"")}});
-  var E=(r.eventos||[]).filter(function(e){return e&&ok.test(e.fecha)&&e.titulo}).map(function(e){return{f:e.fecha,t:/^\d{2}:\d{2}$/.test(e.hora||"")?e.hora:"",x:String(e.titulo)}});
+  var E=(r.eventos||[]).filter(function(e){return e&&ok.test(e.fecha)&&e.titulo}).map(function(e){return{f:e.fecha,t:/^\d{2}:\d{2}$/.test(e.hora||"")?e.hora:"",x:String(e.titulo),imp:/importante|avis/i.test(e.titulo)}});
   var IN=(r.ingresos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,v:Number(g.monto)}}),A=Number(r.ahorro_usd)||null;
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
