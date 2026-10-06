@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20">
+<link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body class="auth">
 <main>
@@ -25,7 +25,7 @@
 <p class="sem" id="usrp" style="display:none">Usuario: <input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <span id="um"></span></p>
 <p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="ord" style="text-decoration:underline">↕ Ordenar panel</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 </div>
-<div id="ordtop" style="display:none"><span>Mové los grupos y tarjetas con ↑ ↓</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">Listo</button></span></div>
+<div id="ordtop" style="display:none"><span>Arrastrá cada grupo o tarjeta desde su barra ⠿ y soltalo donde quieras</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">Listo</button></span></div>
 
 <div id="alerta" style="display:none"></div>
 <div class="grupo" data-g="nota" data-name="Contale algo al panel">
@@ -159,6 +159,6 @@
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

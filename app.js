@@ -14,7 +14,7 @@ var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v20";
+var DOC=null,VER="v21";
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
@@ -426,22 +426,48 @@ $("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("
 async function loadUser(){try{var r=await SB.from("profiles").select("username").eq("user_id",UID).maybeSingle();$("uname").value=(r.data&&r.data.username)||""}catch(e){}}
 $("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});$("um").textContent=r.error?(r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo."):"Guardado. Ya podés entrar con "+u+".";if(!r.error)$("uname").value=u};
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}if(UID)pull().catch(function(){})});
-// Orden personalizado: el usuario mueve grupos y tarjetas con ↑ ↓ (se guarda en su cuenta).
+// Orden personalizado: el usuario arrastra grupos y tarjetas (o usa ↑ ↓); se guarda en su cuenta.
 var LAYOUT=null;
 function grupos(){return[].slice.call(document.querySelectorAll("main>.grupo"))}
 function tarjetas(g){return[].slice.call(g.querySelectorAll(":scope>.cols>section[data-c]"))}
 var DEFLAY={g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){DEFLAY.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});
 function ordenar(par,nodos,ids,antes){var by={};nodos.forEach(function(n){by[n.dataset.g||n.dataset.c]=n});
  ids.filter(function(i){return by[i]}).concat(nodos.map(function(n){return n.dataset.g||n.dataset.c}).filter(function(i){return ids.indexOf(i)<0})).forEach(function(i){par.insertBefore(by[i],antes||null)})}
-function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main");
+function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main"),by={},en={},ya={};
  ordenar(m,grupos(),Y.g||DEFLAY.g,$("est"));
- grupos().forEach(function(g){var c=g.querySelector(":scope>.cols");if(c)ordenar(c,tarjetas(g),(Y.c||{})[g.dataset.g]||DEFLAY.c[g.dataset.g]||[])})}
+ // Las tarjetas pueden haberse pasado a otro grupo: cada una va al primer grupo que la lista, o al suyo de siempre.
+ function ids(g){return(Y.c||{})[g]||DEFLAY.c[g]||[]}
+ grupos().forEach(function(g){tarjetas(g).forEach(function(s){by[s.dataset.c]=s})});
+ Object.keys(DEFLAY.c).forEach(function(g){DEFLAY.c[g].forEach(function(i){en[i]=g})});
+ grupos().forEach(function(g){ids(g.dataset.g).forEach(function(i){if(!ya[i]){ya[i]=1;en[i]=g.dataset.g}})});
+ grupos().forEach(function(g){var c=g.querySelector(":scope>.cols");if(!c)return;var mine=Object.keys(by).filter(function(i){return en[i]===g.dataset.g});
+  ids(g.dataset.g).filter(function(i){return mine.indexOf(i)>=0}).concat(mine.filter(function(i){return ids(g.dataset.g).indexOf(i)<0})).forEach(function(i){c.appendChild(by[i])})})}
 function saveLayout(){LAYOUT={g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){LAYOUT.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});HAVECFG=true;save()}
 function mover(n,d){var p=n.parentNode,h=[].filter.call(p.children,function(x){return x.matches(n.matches(".grupo")?"main>.grupo":".cols>section[data-c]")}),i=h.indexOf(n),j=i+d;
  if(j<0||j>=h.length)return;if(d<0)p.insertBefore(n,h[j]);else p.insertBefore(h[j],n);saveLayout();n.scrollIntoView({block:"nearest"})}
 function ordBar(n){var b=el("div","ordbar");b.appendChild(el("span","",n.dataset.name));var s=el("span");
  [["↑",-1,"Subir"],["↓",1,"Bajar"]].forEach(function(a){var x=el("button","x",a[0]);x.setAttribute("aria-label",a[2]+" "+n.dataset.name);x.onclick=function(e){e.stopPropagation();mover(n,a[1])};s.appendChild(x)});
- b.appendChild(s);n.insertBefore(b,n.firstChild)}
+ b.appendChild(s);b.title="Arrastrá para mover";b.addEventListener("pointerdown",function(e){dragStart(n,b,e)});n.insertBefore(b,n.firstChild)}
+// Arrastrar y soltar: se agarra la barra de un grupo o tarjeta y se suelta donde quieras (las tarjetas pueden pasar a otro grupo).
+var DRAG=null;
+function dragStart(n,b,e){if(DRAG||e.button>0||e.target.closest("button"))return;e.preventDefault();
+ var br=b.getBoundingClientRect(),dx=e.clientX-br.left,dy=e.clientY-br.top,grp=n.matches(".grupo");
+ if(grp)document.body.classList.add("arrgrp");document.body.classList.add("arr");
+ var r=n.getBoundingClientRect(),ph=el("div","ph");ph.style.height=r.height+"px";n.parentNode.insertBefore(ph,n);
+ b=b.getBoundingClientRect();DRAG={n:n,ph:ph,grp:grp,dx:dx+b.left-r.left,dy:dy+b.top-r.top,x:e.clientX,y:e.clientY};
+ n.classList.add("arrastrando");n.style.width=r.width+"px";n.style.left=r.left+"px";n.style.top=r.top+"px";
+ DRAG.iv=setInterval(function(){var d=DRAG;if(!d)return;var v=d.y<70?-14:d.y>innerHeight-70?14:0;if(v){scrollBy(0,v);dragMove({clientX:d.x,clientY:d.y})}},16);
+ dragMove(e)}
+function dragMove(e){var d=DRAG;if(!d)return;d.x=e.clientX;d.y=e.clientY;
+ d.n.style.left=(e.clientX-d.dx)+"px";d.n.style.top=(e.clientY-d.dy)+"px";
+ var t=document.elementFromPoint(e.clientX,e.clientY);if(!t||t===d.ph)return;
+ var g=t.closest("main>.grupo"),s=d.grp?g:t.closest(".cols>section[data-c]");
+ if(s&&s!==d.n){var q=s.getBoundingClientRect(),a=e.clientY<q.top+q.height/2?s:s.nextSibling;if(a!==d.ph&&a!==d.ph.nextSibling)s.parentNode.insertBefore(d.ph,a)}
+ else if(!d.grp&&!s&&g){var c=g.querySelector(":scope>.cols");if(c&&d.ph.parentNode!==c)c.appendChild(d.ph)}}
+function dragEnd(){var d=DRAG;if(!d)return;DRAG=null;clearInterval(d.iv);
+ d.ph.parentNode.insertBefore(d.n,d.ph);d.ph.remove();d.n.classList.remove("arrastrando");["width","left","top"].forEach(function(k){d.n.style[k]=""});
+ document.body.classList.remove("arrgrp","arr");saveLayout();d.n.scrollIntoView({block:"nearest"})}
+addEventListener("pointermove",dragMove);addEventListener("pointerup",dragEnd);addEventListener("pointercancel",dragEnd);
 function ordUI(on){document.body.classList.toggle("ordenando",on);$("ordtop").style.display=on?"":"none";
  [].forEach.call(document.querySelectorAll(".ordbar"),function(b){b.remove()});
  if(on)grupos().forEach(function(g){ordBar(g);tarjetas(g).forEach(ordBar)})}
