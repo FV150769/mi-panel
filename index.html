@@ -367,7 +367,7 @@ function render(){
  $("gastado").textContent="Gastaste "+money(spd)+" de "+money(base);
  var cb=$("cats");cb.innerHTML="";
  var mx=0;Object.keys(BUDGET).forEach(function(k){mx=Math.max(mx,by[k]||0)});
- Object.keys(BUDGET).forEach(function(k){
+ Object.keys(BUDGET).sort(function(a,b){return (by[b]||0)-(by[a]||0)}).forEach(function(k){
   var u=by[k]||0,p=mx?u/mx*100:0,c=el("div","cat"),t=el("div");
   t.appendChild(el("span","",k));t.appendChild(el("span","",money(u)));
   var tr=el("div","track"),fl=el("div","fill");fl.style.width=Math.min(p,100)+"%";tr.appendChild(fl);
