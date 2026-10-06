@@ -452,7 +452,7 @@ function cfgObj(){return{ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,FIN:FIN,SKI
 function applyCfg(c){if(!c)return;if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
-$("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;applyCfg(o.cfg);L=norm(o.L);save();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
+$("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;applyCfg(o.cfg);L=norm(o.L);save();UNDO.length=0;updUndo();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
 // ===== Supabase =====
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
