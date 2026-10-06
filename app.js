@@ -7,6 +7,8 @@ var FECHAS=[];
 var USD=[["Ahorro (sin invertir)",0],["Colchón",0]];
 var ACC=[["Día a día",0],["Ahorro",0],["Inversiones",0]];
 var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
+// Avisos por Telegram: solo para la cuenta que los tiene configurados (las cuentas nuevas arrancan sin avisos).
+var TG=false;
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
@@ -54,7 +56,7 @@ function evBtns(row,it,f,box){
  var b=el("button","x","✎");b.setAttribute("aria-label","Editar");b.onclick=function(){if(it.r)openRut(it.r);else editEv(box||row,it.o)};
  var c=el("button","x","×");c.setAttribute("aria-label","Borrar");c.onclick=function(){if(it.r)L.rskip.push(it.r.id+"|"+f);else if(it.k==="E")drop(L.events,it.o);else drop(FECHAS,it.o);save();render()};
  row.appendChild(b);
- if(!it.r&&it.o){var on=it.k==="F"?it.o.imp!==false:it.o.imp===true;var n=el("button","x",on?"🔔":"🔕");n.title=on?"Te aviso por Telegram (tocá para desactivar)":"Sin aviso (tocá para activar)";n.setAttribute("aria-label","Aviso");n.onclick=function(){it.o.imp=!on;save();render()};row.appendChild(n)}else row.appendChild(el("span","x-sp"))
+ if(TG&&!it.r&&it.o){var on=it.k==="F"?it.o.imp!==false:it.o.imp===true;var n=el("button","x",on?"🔔":"🔕");n.title=on?"Te aviso por Telegram (tocá para desactivar)":"Sin aviso (tocá para activar)";n.setAttribute("aria-label","Aviso");n.onclick=function(){it.o.imp=!on;save();render()};row.appendChild(n)}else if(TG)row.appendChild(el("span","x-sp"))
  row.appendChild(c)}
 function editEv(row,o){
  row.innerHTML="";row.style.flexWrap="wrap";
@@ -336,7 +338,7 @@ $("nb").onclick=async function(){
   var CAT=Object.keys(BUDGET).map(function(c){return[c,c]}),DIA=DN.map(function(n,i){return[i,n]});
   var K=[
    {a:G,t:function(g){return"Gasto: "+money(g.m)+" en "+g.c+(g.x?" ("+g.x+")":"")+" · "+fd(g.f)},f:[["m","Monto","number"],["c","Categoría",CAT],["x","Detalle","text"],["f","Fecha","date"]]},
-   {a:E,t:function(e){return"Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")+(e.imp?" · 🔔 te aviso por Telegram":"")},f:[["x","Qué","text"],["f","Fecha","date"],["t","Hora","time"],["imp","Avisarme por Telegram","check"]]},
+   {a:E,t:function(e){return"Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")+(e.imp&&TG?" · 🔔 te aviso por Telegram":"")},f:[["x","Qué","text"],["f","Fecha","date"],["t","Hora","time"]].concat(TG?[["imp","Avisarme por Telegram","check"]]:[])},
    {a:IN,t:function(i){return"Ingreso: "+money(i.v)+" · "+fd(i.f)},f:[["v","Monto","number"],["f","Fecha","date"]]},
    {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
    {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
@@ -377,8 +379,9 @@ $("nb").onclick=async function(){
  finally{busy=false}
 };
 
-function cfgObj(){return{ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
+function cfgObj(){return{TG:TG,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;TG=c.TG!=null?!!c.TG:true;// config vieja sin TG = la cuenta original, que sí tiene Telegram
+if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
 $("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;applyCfg(o.cfg);HAVECFG=true;L=norm(o.L);save();UNDO.length=0;updUndo();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
