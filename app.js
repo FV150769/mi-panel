@@ -4,8 +4,8 @@ var CLASES={};
 var FIN="2000-01-01";
 var SKIP=[];
 var FECHAS=[];
-var USD=[["Ahorro (sin invertir)",0],["En caja",0]];
-var ACC=[["DIARIO",0],["Ahorro",0],["Inversiones",0]];
+var USD=[["Ahorro (sin invertir)",0],["Colchón",0]];
+var ACC=[["Día a día",0],["Ahorro",0],["Inversiones",0]];
 var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
@@ -31,7 +31,7 @@ $("fecha").textContent=now.toLocaleDateString("es-AR",{weekday:"long",day:"numer
 $("ed").value=today;
 var cs=$("gc");Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
 
-function migrate(){if(RUT.length)return;Object.keys(CLASES||{}).forEach(function(k){(CLASES[k]||[]).forEach(function(c){RUT.push({id:"r"+k+"-"+c[0].replace(":",""),d:+k,t:c[0],t2:c[1],x:c[2],from:"",to:FIN})})});CLASES={}}
+function migrate(){ACC.forEach(function(a){if(a[0]==="DIARIO")a[0]="Día a día"});USD.forEach(function(a){if(a[0]==="En caja")a[0]="Colchón"});if(RUT.length)return;Object.keys(CLASES||{}).forEach(function(k){(CLASES[k]||[]).forEach(function(c){RUT.push({id:"r"+k+"-"+c[0].replace(":",""),d:+k,t:c[0],t2:c[1],x:c[2],from:"",to:FIN})})});CLASES={}}
 var DN=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 function plus(f,n){var d=new Date(f+"T00:00");d.setDate(d.getDate()+n);return iso(d)}
 function fd(f){return f.slice(8)+"/"+f.slice(5,7)}
@@ -120,7 +120,7 @@ function render(){
  var left=base-spd,pct=spd/base*100;
  $("fill").style.width=Math.min(pct,100)+"%";$("fill").className="fill"+(pct>=80?" over":"");
  $("mark").style.display="none";
- $("frase").textContent=left>=0?"En DIARIO te quedan "+money(left)+".":"Te pasaste "+money(-left)+" de lo que tenías en DIARIO.";
+ $("frase").textContent=left>=0?ACC[0][0]+": te quedan "+money(left)+".":"Te pasaste "+money(-left)+" de lo que tenías en "+ACC[0][0]+".";
  $("gastado").textContent="Gastaste "+money(spd)+" de "+money(base);
  var cb=$("cats");cb.innerHTML="";
  var mx=0;Object.keys(BUDGET).forEach(function(k){mx=Math.max(mx,by[k]||0)});
@@ -147,7 +147,7 @@ function renderGoal(){
  var tr=el("div","track"),fl=el("div","fill");fl.style.width=p+"%";tr.appendChild(fl);
  var dl=new Date(now.getFullYear(),now.getMonth()+GOAL.months,now.getDate());
  var t=left<=0?"Objetivo cumplido.":"Te faltan "+usd(left)+(GOAL.months?". Para llegar al "+dl.toLocaleDateString("es-AR",{day:"numeric",month:"long",year:"numeric"})+" tenés que ahorrar "+usd(left/GOAL.months)+" por mes.":".");
- b.appendChild(h);b.appendChild(el("div","none",usd(got)+" de "+usd(GOAL.target)+" (ahorro + caja"+(extra?" + aportes":"")+")"));b.appendChild(tr);b.appendChild(el("p","info",t));
+ b.appendChild(h);b.appendChild(el("div","none",usd(got)+" de "+usd(GOAL.target)+" ("+USD.map(function(a){return a[0].toLowerCase()}).join(" + ")+(extra?" + aportes":"")+")"));b.appendChild(tr);b.appendChild(el("p","info",t));
  if(L.saves.length){var u=el("button","x","Deshacer último aporte o retiro");u.onclick=function(){L.saves.pop();save();render()};b.appendChild(u)}
 }
 $("ar").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:-m});$("am").value="";save();render()};
@@ -189,7 +189,7 @@ function renderExtra(){
  var wi=null;L.ing.forEach(function(e){if(e.k===wk&&!e.adj)wi=(wi||0)+e.v});
  $("sem").textContent=wi==null?"Cargá lo que te entró esta semana para ver cuánto te sobra.":"Esta semana entró "+money(wi)+" y gastaste "+money(ws)+(wi-ws>0?": te sobran "+money(wi-ws)+(L.fx>0?" (≈ "+usd((wi-ws)/L.fx)+")":"")+" para los próximos gastos.":": esta semana no sobra.");
  var c=$("ctas");c.innerHTML="";var t=0;
- ACC.forEach(function(a,i){var d=i===0,v=d?accVal(0)+ingTot()-sp:accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?"DIARIO (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){if(d)ajusteDiario(nv-v);else setBal("a"+i,nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
+ ACC.forEach(function(a,i){var d=i===0,v=d?accVal(0)+ingTot()-sp:accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?a[0]+" (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){if(d)ajusteDiario(nv-v);else setBal("a"+i,nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
  var r=el("div","row");r.appendChild(el("b","","Total"));r.appendChild(el("b","",money(t)));c.appendChild(r);
  var u=el("div","none","Dólares");u.style.marginTop="12px";c.appendChild(u);var tu=0;
  USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+v.toLocaleString("es-AR")),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
