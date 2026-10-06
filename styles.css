@@ -250,3 +250,16 @@ summary{justify-content:space-between}
   .cols,.rcol{gap:10px}
   h2.grp{margin:16px 0 6px 2px}
 }
+
+/* ===== Sin huecos: tarjetas en mural (cada una ocupa el primer lugar libre) ===== */
+.cols{display:block;columns:2;column-gap:12px}
+.cols>section,.cols>section.goal{break-inside:avoid;margin:0 0 12px;display:block}
+.cols>section:last-child{margin-bottom:0}
+@media (max-width:720px){.cols{columns:1}.cols>section,.cols>section.goal{margin-bottom:10px}}
+/* Usuario y sesión en una sola línea */
+.cuenta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 16px;margin:0 0 12px}
+.cuenta .sem{margin:0}
+.cuenta #uname{min-height:32px}
+.cuenta #us{min-height:32px;padding:4px 12px}
+/* Títulos de grupo más pegados a sus tarjetas */
+h2.grp{margin:16px 0 6px 2px}
