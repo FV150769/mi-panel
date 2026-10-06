@@ -19,7 +19,7 @@ var UNDO=[],PREV=null,HAVECFG=false;
 function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
 function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
 function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
-function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],bal:q.bal||{},rskip:q.rskip||[],fx:q.fx,week:q.week,t:q.t}}
+function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],bal:q.bal||{},rskip:q.rskip||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
 window.addEventListener("error",function(e){var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message}stat("Error en la página: "+e.message)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function $(i){return document.getElementById(i)}
@@ -194,10 +194,11 @@ function renderExtra(){
  var u=el("div","none","Dólares");u.style.marginTop="12px";c.appendChild(u);var tu=0;
  USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+v.toLocaleString("es-AR")),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
  var q=el("div","row");q.appendChild(el("b","","Total en dólares"));q.appendChild(el("b","","US$ "+tu.toLocaleString("es-AR")));c.appendChild(q);
- if(L.fx>0){var f1=el("div","row");f1.appendChild(el("span","","Cotización usada"));f1.appendChild(el("span","",money(L.fx)+" por US$"));c.appendChild(f1);
+ if(L.fx>0){var f1=el("div","row");f1.appendChild(el("span","",L.fxAuto?"Dólar blue (venta"+(L.fxAt?" · "+L.fxAt:"")+")":"Cotización usada (manual)"));f1.appendChild(el("span","",money(L.fx)+" por US$"));c.appendChild(f1);
   var f2=el("div","row");f2.appendChild(el("b","","Todo junto en pesos"));f2.appendChild(el("b","","≈ "+money(t+tu*L.fx)));c.appendChild(f2)}
 }
-$("fb").onclick=function(){var v=parseFloat($("fx").value);if(!(v>0))return;L.fx=v;$("fx").value="";save();render()};
+$("fb").onclick=function(){var v=parseFloat($("fx").value);if(!(v>0))return;L.fx=v;L.fxAuto=false;$("fx").value="";save();render()};
+$("fa").onclick=function(){L.fxAuto=true;save0();blue(true)};
 $("wb").onclick=function(){var v=parseFloat($("wi").value);if(!(v>=0))return;setWeek(v);$("wi").value="";save();render()};
 $("eb").onclick=function(){var t=$("et").value.trim();if(!t||!$("ed").value)return;
  L.events.push({f:$("ed").value,t:$("eh").value,x:t});$("et").value="";save();render()};
@@ -368,7 +369,7 @@ $("nb").onclick=async function(){
    if(!n){out.appendChild(el("p","sem","No queda nada para guardar."));var cl=el("button","x","Cerrar");cl.onclick=function(){out.innerHTML=""};out.appendChild(cl);return}
    var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
    yes.style.marginTop="10px";
-   yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FF.length)L.fx=FF[0].v;if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render()};
+   yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render()};
    no.onclick=function(){out.innerHTML=""};
    out.appendChild(yes);out.appendChild(no)}
   draw();
@@ -387,7 +388,7 @@ var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
 function loginUI(on,email){$("login").style.display=on?"":"none";$("ses").style.display=on?"none":"";$("usrp").style.display=on?"none":"";if(email)$("sem2").textContent="Sesión: "+email}
 function push(){if(!HAVECFG)return Promise.resolve();var d=JSON.parse(JSON.stringify({L:L,cfg:cfgObj()}));return SB.from("panel_state").upsert({user_id:UID,data:d,updated_at:new Date().toISOString()}).then(function(r){if(r.error)throw r.error})}
-function adopt(q){if(q.cfg){applyCfg(q.cfg);HAVECFG=true}L=norm(q.L);PREV=snap();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}render()}
+function adopt(q){setTimeout(blue,0);if(q.cfg){applyCfg(q.cfg);HAVECFG=true}L=norm(q.L);PREV=snap();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}render()}
 async function pull(){
  var r=await SB.from("panel_state").select("data").eq("user_id",UID).maybeSingle();
  if(r.error){stat("No pude leer tu nube: "+r.error.message);return}
@@ -421,3 +422,15 @@ try{var cs0=localStorage.getItem(KEY+"-cfg");if(cs0){applyCfg(JSON.parse(cs0));H
 startSB().catch(function(e){stat("Error al iniciar Supabase: "+(e&&e.message||e))});
 PREV=snap();updUndo();
 document.getElementById("aviso").style.display="none";
+// Dólar blue automático (dolarapi.com, gratis y sin clave). Se actualiza al abrir el panel y cada 30 minutos.
+async function blue(force){
+ if(!L.fxAuto)return;
+ try{
+  var r=await fetch("https://dolarapi.com/v1/dolares/blue",{cache:"no-store"});if(!r.ok)return;
+  var d=await r.json(),v=Number(d.venta);if(!(v>0))return;
+  var at=new Date(d.fechaActualizacion||Date.now()),s=pad(at.getDate())+"/"+pad(at.getMonth()+1)+" "+pad(at.getHours())+":"+pad(at.getMinutes());
+  if(v!==L.fx||s!==L.fxAt||force){L.fx=v;L.fxAt=s;save0();PREV=snap()}
+  render()
+ }catch(e){}
+}
+blue();setInterval(blue,30*60*1000);
