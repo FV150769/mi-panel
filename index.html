@@ -242,10 +242,11 @@ function render(){
  $("frase").textContent=left>=0?"En DIARIO te quedan "+money(left)+".":"Te pasaste "+money(-left)+" de lo que tenías en DIARIO.";
  $("gastado").textContent="Gastaste "+money(spd)+" de "+money(base);
  var cb=$("cats");cb.innerHTML="";
+ var mx=0;Object.keys(BUDGET).forEach(function(k){mx=Math.max(mx,by[k]||0)});
  Object.keys(BUDGET).forEach(function(k){
-  var u=by[k]||0,p=u/BUDGET[k]*100,c=el("div","cat"),t=el("div");
-  t.appendChild(el("span","",k));t.appendChild(el("span","",money(u)+" / "+money(BUDGET[k])));
-  var tr=el("div","track"),fl=el("div","fill"+(p>100?" over":""));fl.style.width=Math.min(p,100)+"%";tr.appendChild(fl);
+  var u=by[k]||0,p=mx?u/mx*100:0,c=el("div","cat"),t=el("div");
+  t.appendChild(el("span","",k));t.appendChild(el("span","",money(u)));
+  var tr=el("div","track"),fl=el("div","fill");fl.style.width=Math.min(p,100)+"%";tr.appendChild(fl);
   c.appendChild(t);c.appendChild(tr);cb.appendChild(c)});
  renderGoal();renderExtra();
  var gl=$("gastos");gl.innerHTML="";
