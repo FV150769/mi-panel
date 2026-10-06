@@ -434,3 +434,13 @@ async function blue(force){
  }catch(e){}
 }
 blue();setInterval(blue,30*60*1000);
+// Tarjetas desplegables: tocar el título abre o cierra la sección (se recuerda en este dispositivo).
+(function(){
+ var st={};try{st=JSON.parse(localStorage.getItem("panel-cerradas")||"{}")}catch(e){}
+ document.querySelectorAll("main section").forEach(function(s){
+  var h=s.firstElementChild;if(s.id==="login"||s.id==="rec"||!h||h.tagName!=="H2")return;
+  var k=h.textContent.trim();s.classList.add("plg");h.tabIndex=0;h.setAttribute("role","button");
+  function set(c){s.classList.toggle("cerrada",c);h.setAttribute("aria-expanded",String(!c))}
+  function tg(){var c=!s.classList.contains("cerrada");set(c);st[k]=c;try{localStorage.setItem("panel-cerradas",JSON.stringify(st))}catch(e){}}
+  set(!!st[k]);h.onclick=tg;h.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();tg()}}});
+})();

@@ -217,3 +217,36 @@ img,svg{max-width:100%}
 /* Títulos de grupo: Dinero, Tiempo, Histórico */
 h2.grp{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:28px 0 10px 2px}
 @media (max-width:720px){h2.grp{margin:20px 0 8px 2px}}
+
+/* ===== Compacto y desplegable ===== */
+main{padding-top:16px}
+.top{margin-bottom:14px;padding-bottom:10px}
+.hero,section{padding:14px 16px}
+.hero{margin-bottom:12px}
+.cols,.rcol{gap:12px}
+.goal{margin-top:12px}
+.rcol .goal{margin-top:0}
+section[style*="margin-bottom:16px"]{margin-bottom:12px!important}
+h2{margin:0 0 8px}
+h2.grp{margin:20px 0 8px 2px}
+.add{margin-top:10px}
+.row{padding:5px 0}
+.day{padding:6px 0}
+.cat{margin:0 0 8px}
+.sem{margin-top:8px}
+#frase{margin-bottom:10px}
+summary{min-height:28px}
+details[open] summary{margin-bottom:8px}
+/* Flecha a la derecha en títulos y desplegables */
+section.plg>h2{cursor:pointer;user-select:none;margin-bottom:8px}
+section.plg>h2::after,summary::after{content:"";margin-left:auto;width:7px;height:7px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .15s;flex:none;margin-right:4px}
+section.cerrada>h2::after,details:not([open])>summary::after{transform:rotate(-45deg)}
+section.cerrada>:not(h2){display:none}
+section.cerrada>h2{margin-bottom:0}
+summary::before{display:none}
+summary{justify-content:space-between}
+@media (max-width:720px){
+  .hero,section{padding:12px}
+  .cols,.rcol{gap:10px}
+  h2.grp{margin:16px 0 6px 2px}
+}
