@@ -397,7 +397,7 @@ async function pull(){
  else{HAVECFG=true;await push();stat("Nube inicializada · v10")}
 }
 async function enter(session){
- UID=session.user.id;DOC={set:function(){return push()}};loginUI(false,session.user.email);
+ UID=session.user.id;var ow=null;try{ow=localStorage.getItem("panel-owner")}catch(e){}if(ow&&ow!==UID)resetLocal();try{localStorage.setItem("panel-owner",UID)}catch(e){}DOC={set:function(){return push()}};loginUI(false,session.user.email);
  loadUser();
  try{await pull()}catch(e){stat("No pude sincronizar: "+(e&&e.message||e))}
  SB.channel("ps-"+UID).on("postgres_changes",{event:"*",schema:"public",table:"panel_state",filter:"user_id=eq."+UID},function(p){var q=p.new&&p.new.data;if(q&&q.L&&(q.L.t||0)>(L.t||0))adopt(q)}).subscribe()}
@@ -406,7 +406,7 @@ async function startSB(){
  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  var r=await SB.auth.getSession();
  if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · v9")}
- SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;loginUI(true)}})}
+ SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;resetLocal();try{localStorage.removeItem("panel-owner")}catch(e){}loginUI(true)}})}
 document.getElementById("un").onclick=function(){if(!UNDO.length)return;var q=JSON.parse(UNDO.pop());applyCfg(q.cfg);L=norm(q.L);save0();PREV=snap();render();updUndo();var o=document.getElementById("nr");if(o)o.textContent="Deshice el último cambio."};
 function authMsg(t){$("lm").textContent=t}
 $("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em)return authMsg("Escribí tu email o tu usuario.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");em=await mailOf(em);if(!em)return authMsg("No encontré ese usuario.");var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+r.error.message:"")};
@@ -414,10 +414,13 @@ $("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabas
 $("lo").onclick=async function(){if(SB)await SB.auth.signOut()};
 async function mailOf(v){v=v.trim();if(v.indexOf("@")>0)return v;var r=await SB.rpc("login_email",{u:v.toLowerCase()});return r.data||null}
 $("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var v=$("le").value.trim();if(!v)return authMsg("Escribí arriba tu email o tu usuario y tocá de nuevo.");var em=await mailOf(v);if(em){await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname})}authMsg("Si la cuenta existe, te mandé un mail para crear una contraseña nueva. Revisá también spam.")};
-$("rb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("rm").textContent="Mínimo 6 caracteres.");var r=await SB.auth.updateUser({password:pw});if(r.error)return($("rm").textContent="No pude cambiarla: "+r.error.message);$("rp").value="";$("rm").textContent="";$("rec").style.display="none";try{history.replaceState(null,"",location.pathname)}catch(e){}stat("Contraseña actualizada")};
+$("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("rpm").textContent="Mínimo 6 caracteres.");var r=await SB.auth.updateUser({password:pw});if(r.error)return($("rpm").textContent="No pude cambiarla: "+r.error.message);$("rp").value="";$("rpm").textContent="";$("rec").style.display="none";try{history.replaceState(null,"",location.pathname)}catch(e){}stat("Contraseña actualizada")};
 async function loadUser(){try{var r=await SB.from("profiles").select("username").eq("user_id",UID).maybeSingle();$("uname").value=(r.data&&r.data.username)||""}catch(e){}}
 $("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});$("um").textContent=r.error?(r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo."):"Guardado. Ya podés entrar con "+u+".";if(!r.error)$("uname").value=u};
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&UID)pull().catch(function(){})});
+// Datos locales por usuario: la copia del navegador se borra al cerrar sesión o si entra otra cuenta, para no mezclar datos.
+var DEFCFG=JSON.stringify(cfgObj());
+function resetLocal(){applyCfg(JSON.parse(DEFCFG));HAVECFG=false;L=norm({});UNDO.length=0;PREV=snap();updUndo();try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+"-cfg")}catch(e){}render();blue()}
 try{var cs0=localStorage.getItem(KEY+"-cfg");if(cs0){applyCfg(JSON.parse(cs0));HAVECFG=true;render()}}catch(e){}
 startSB().catch(function(e){document.body.classList.remove("auth");stat("Error al iniciar Supabase: "+(e&&e.message||e))});
 PREV=snap();updUndo();
