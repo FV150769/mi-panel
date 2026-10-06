@@ -29,8 +29,8 @@ h2 svg{vertical-align:-3px;margin-right:6px}
 .fill.over{background:repeating-linear-gradient(135deg,var(--ink) 0 3px,var(--panel) 3px 6px);outline:1px solid var(--ink)}
 .mark{position:absolute;top:-5px;width:3px;height:18px;background:var(--mark)}
 .legend{display:flex;justify-content:space-between;color:var(--mute);font-size:13px;margin-top:10px;gap:8px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}.rcol{display:flex;flex-direction:column;gap:16px}.rcol section{margin:0}
-@media (max-width:720px){.cols{grid-template-columns:1fr}}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}.rcol{display:flex;flex-direction:column;gap:16px}.rcol section{margin:0}button.x{padding:7px 9px;min-width:32px;min-height:34px;font-size:16px}
+@media (max-width:720px){.cols{grid-template-columns:minmax(0,1fr)}}.cols>*,.rcol>*{min-width:0}
 .day{padding:8px 0;border-top:1px solid var(--line)}
 .day:first-of-type{border-top:0}
 .day b{font-size:14px;font-weight:500;letter-spacing:.04em;text-transform:capitalize}
@@ -145,7 +145,7 @@ summary::before{color:var(--acc);font-weight:700}
 <p id="frase"></p>
 <div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
 <div class="legend"><span id="gastado"></span><span>La barra se llena a medida que gastás</span></div>
-<div class="add"><input type="number" id="wi" placeholder="Plata que te entró (se suma)" inputmode="decimal" aria-label="Plata que te entró"><button id="wb">Sumar ingreso</button></div>
+<div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><button id="wb">Sumar ingreso</button></div>
 <p class="sem" id="sem"></p>
 <svg class="wave" aria-hidden="true" height="30"><defs><pattern id="sg" width="24" height="12" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width=".8"><path d="M0 12 a12 12 0 0 1 24 0"/><path d="M4 12 a8 8 0 0 1 16 0"/><path d="M8 12 a4 4 0 0 1 8 0"/><path d="M-12 6 a12 12 0 0 1 24 0"/><path d="M12 6 a12 12 0 0 1 24 0"/></g></pattern></defs><rect width="100%" height="30" fill="url(#sg)"/></svg>
 </div>
@@ -169,7 +169,7 @@ summary::before{color:var(--acc);font-weight:700}
 <div class="cols">
 <section>
 <h2 id="agt">Próximos 7 días</h2>
-<div class="add" style="margin:0 0 8px"><button class="lk" id="np">‹ Semana anterior</button><button class="lk" id="nh">Hoy</button><button class="lk" id="nn">Semana siguiente ›</button></div>
+<div class="add" style="margin:0 0 8px"><button class="lk" id="np">‹ Anterior</button><button class="lk" id="nh">Hoy</button><button class="lk" id="nn">Siguiente ›</button></div>
 <div id="agenda"></div>
 <details style="margin-top:10px"><summary>Ver el mes</summary><div class="add" style="justify-content:space-between;align-items:center;margin:0"><button class="lk" id="mp">‹</button><b id="mt"></b><button class="lk" id="mn">›</button></div><div class="mg" id="mg"></div></details>
 <h2 style="margin-top:18px">Fechas importantes</h2>
@@ -516,7 +516,7 @@ function pHora(c){
  if(!m)return"";var h=+m[1];if(/pm|de la tarde|de la noche/.test(c)&&h<12)h+=12;return pad(h)+":"+(m[2]||"00")}
 var CATS=[["Supermercado",/super|coto|carrefour|verdura|almacen|mercado|supermercado|chino/],["Transporte",/nafta|combustible|colectivo|sube|uber|taxi|peaje|estacionamiento|bondi|tren|subte/],["Salidas",/cena|restaurante|bar\b|birra|cerveza|boliche|hamburguesa|pizza|helado|cafe|salida/],["Juntadas",/juntada|asado|amigos/],["Deporte",/gym|gimnasio|cancha|futbol|entrenamiento|padel/],["Facultad",/fotocopia|libro|facultad|apunte|curso|impresion/],["Salud",/farmacia|medico|dentista|remedio|consulta|estudio/],["Regalos",/regalo|cumple/],["Viajes",/vuelo|hotel|viaje|pasaje|alquiler de auto/]];
 function pCat(c){for(var i=0;i<CATS.length;i++)if(CATS[i][1].test(c))return CATS[i][0];return"Otros"}
-function limpio(t){return t.replace(/\b(agreg|anot|agend|sum|gast|pagu|compr|me entr)[a-záéíóúñ]*/ig,"").replace(/\b(tengo|que)\b/ig,"").replace(/a las?\s*\d{1,2}([:.]\d{2})?\s*(hs|h|am|pm)?/ig,"").replace(/\d{1,2}:\d{2}/g,"").replace(/\d{1,2}\s*(am|pm)\b/ig,"").replace(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g,"").replace(/\b(manana|mañana|hoy|ayer|pasado|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|el|la|los|las|en|de|por|un|una|mil|lucas?)\b/ig,"").replace(/\$?\d[\d.,]*/g,"").replace(/\s+/g," ").trim()}
+function limpio(t){return t.replace(/\b\d[\d.,]*\s*k\b/ig,"").replace(/\b(agreg|anot|agend|sum|gast|pagu|compr|me entr)[a-záéíóúñ]*/ig,"").replace(/\b(tengo|que)\b/ig,"").replace(/a las?\s*\d{1,2}([:.]\d{2})?\s*(hs|h|am|pm)?/ig,"").replace(/\d{1,2}:\d{2}/g,"").replace(/\d{1,2}\s*(am|pm)\b/ig,"").replace(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g,"").replace(/\b(manana|mañana|hoy|ayer|pasado|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|el|la|los|las|en|de|por|un|una|mil|lucas?)\b/ig,"").replace(/\$?\d[\d.,]*/g,"").replace(/\s+/g," ").trim()}
 function localParse(txt,C){
  var o={gastos:[],eventos:[],ingresos:[],ahorro_usd:null,cotizacion:null,cancelar:[],sin_clases:[],rutinas:[]},last="g";
  txt.split(/[,;\n]|\.(?!\d)|\s+y\s+/).forEach(function(raw){
@@ -540,7 +540,7 @@ function localParse(txt,C){
   if(mo&&ing){last="i"}else if(mo&&gas){last="g"}
   if(mo&&(ing||(!gas&&!ev&&last==="i"))){o.ingresos.push({monto:mo,fecha:f});return}
   if(mo&&(gas||!ev)){var det=limpio(raw);o.gastos.push({monto:mo,categoria:pCat(c),detalle:det.slice(0,40),fecha:f});return}
-  if(ev||/manana|\d{1,2}\/\d{1,2}|lunes|martes|miercoles|jueves|viernes|sabado|domingo/.test(c)){var t=limpio(raw);if(t)o.eventos.push({fecha:f,hora:pHora(c),titulo:t.charAt(0).toUpperCase()+t.slice(1)})}});
+  if(ev||/manana|\d{1,2}\/\d{1,2}|lunes|martes|miercoles|jueves|viernes|sabado|domingo/.test(c)){var t=limpio(raw);var im=/importante|avis/.test(c);t=t.replace(/\b(importante|avis[a-záéíóúñ]*)\b/ig,"").replace(/\s+/g," ").trim();if(t)o.eventos.push({fecha:f,hora:pHora(c),titulo:t.charAt(0).toUpperCase()+t.slice(1),imp:im})}});
  return o}
 function vis(e){return L.hidden.indexOf(e.f+"|"+e.x)<0}
 function cands(){var o={},t=[];
@@ -560,7 +560,7 @@ $("nb").onclick=async function(){
   try{var SM=window.claude?await claude.use("sample"):null;if(SM)r=await SM.json(prompt1(txt,C),{cache:false});else why="modo sin IA"}catch(err){why=err&&err.code==="not_granted"?"no diste permiso a la página para usar Claude":(err&&(err.code||err.message))||"error"}
   if(!r||typeof r!=="object"){r=localParse(txt,C);nota="Lo entendí sin IA. Revisá bien antes de guardar."}
   var G=(r.gastos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,m:Number(g.monto),c:BUDGET[g.categoria]?g.categoria:"Otros",x:String(g.detalle||"")}});
-  var E=(r.eventos||[]).filter(function(e){return e&&ok.test(e.fecha)&&e.titulo}).map(function(e){return{f:e.fecha,t:/^\d{2}:\d{2}$/.test(e.hora||"")?e.hora:"",x:String(e.titulo),imp:/importante|avis/i.test(e.titulo)}});
+  var E=(r.eventos||[]).filter(function(e){return e&&ok.test(e.fecha)&&e.titulo}).map(function(e){return{f:e.fecha,t:/^\d{2}:\d{2}$/.test(e.hora||"")?e.hora:"",x:String(e.titulo),imp:!!e.imp||/importante|avis/i.test(e.titulo)}});
   var IN=(r.ingresos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,v:Number(g.monto)}}),A=Number(r.ahorro_usd)||null;
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
@@ -570,7 +570,7 @@ $("nb").onclick=async function(){
   if(!G.length&&!E.length&&!IN.length&&A==null&&!Cn.length&&!NS.length&&!RU.length&&FX==null){out.textContent="No encontré gastos, eventos ni ingresos en esa nota. Probá con más detalle.";return}
   var fd=function(f){return f.slice(8)+"/"+f.slice(5,7)};
   G.forEach(function(g){out.appendChild(lineEl("Gasto: "+money(g.m)+" en "+g.c+(g.x?" ("+g.x+")":"")+" · "+fd(g.f)))});
-  E.forEach(function(e){out.appendChild(lineEl("Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")))});
+  E.forEach(function(e){out.appendChild(lineEl("Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")+(e.imp?" · 🔔 te aviso por Telegram":"")))});
   IN.forEach(function(i){out.appendChild(lineEl("Ingreso: "+money(i.v)+" · "+fd(i.f)))});
   if(A!=null)out.appendChild(lineEl((A<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(A))));
   if(FX!=null)out.appendChild(lineEl("Cotización del dólar: "+money(FX)));
