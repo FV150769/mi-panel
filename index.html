@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body class="auth">
 <main>
@@ -127,9 +127,21 @@
 </details></section>
 </div>
 
+<h2 class="grp">Avisos</h2>
+<section><details id="tgd"><summary>Avisos por Telegram</summary>
+<p class="sem" style="margin-top:0">Recibí en tu Telegram los eventos marcados con 🔔.</p>
+<ol class="sem tgp">
+<li>En Telegram, abrí el bot del panel<span id="tgbot"></span> y tocá <b>Iniciar</b>.</li>
+<li>Copiá tu chat ID: el bot te lo manda en su respuesta (puede tardar un rato), o al instante desde <b>@userinfobot</b> (tocá <b>Iniciar</b> y copiá el número que dice <b>Id</b>).</li>
+<li>Pegalo acá abajo, tocá <b>Guardar</b> y después <b>Enviar prueba</b>.</li>
+</ol>
+<div class="add"><input id="tgc" inputmode="numeric" autocomplete="off" placeholder="Tu chat ID (ej: 123456789)" aria-label="Chat ID de Telegram"><button id="tgs">Guardar</button><button id="tgt">Enviar prueba</button><button class="x" id="tgx">Quitar</button></div>
+<p class="sem" id="tgm"></p>
+</details></section>
+
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=14"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

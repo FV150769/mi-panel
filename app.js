@@ -8,7 +8,8 @@ var USD=[["Ahorro (sin invertir)",0],["Colchón",0]];
 var ACC=[["Día a día",0],["Ahorro",0],["Inversiones",0]];
 var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
 // Avisos por Telegram: solo para la cuenta que los tiene configurados (las cuentas nuevas arrancan sin avisos).
-var TG=false;
+var TG=false,TGCHAT="";
+var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelBot"), para mostrar el link en Avisos
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
@@ -379,8 +380,8 @@ $("nb").onclick=async function(){
  finally{busy=false}
 };
 
-function cfgObj(){return{TG:TG,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;TG=c.TG!=null?!!c.TG:true;// config vieja sin TG = la cuenta original, que sí tiene Telegram
+function cfgObj(){return{TG:TG,TGCHAT:TGCHAT,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;TG=c.TG!=null?!!c.TG:true;TGCHAT=c.TGCHAT||"";// config vieja sin TG = la cuenta original, que sí tiene Telegram
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -494,3 +495,13 @@ function ajSave(){
 $("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
 $("ajs").onclick=ajSave;$("ajc").onclick=ajForm;
 function vacio(x){return!x||!((x.events||[]).length||(x.expenses||[]).length||(x.ing||[]).length||(x.saves||[]).length)}
+// Avisos por Telegram: cada cuenta guarda su chat ID; los mensajes salen del bot del panel (token como secreto en Supabase).
+function tgUI(){$("tgc").value=TGCHAT;$("tgm").textContent=TGCHAT?"Avisos activados para el chat "+TGCHAT+".":"Todavía no cargaste tu chat ID.";
+ var b=$("tgbot");b.innerHTML="";if(TG_BOT){b.appendChild(document.createTextNode(" ("));var a=el("a","","@"+TG_BOT);a.href="https://t.me/"+TG_BOT;a.target="_blank";a.rel="noopener";b.appendChild(a);b.appendChild(document.createTextNode(")"))}}
+$("tgd").addEventListener("toggle",function(){if($("tgd").open)tgUI()});
+$("tgs").onclick=function(){var v=$("tgc").value.trim();if(!/^-?\d{5,15}$/.test(v))return($("tgm").textContent="El chat ID son solo números (ej: 123456789).");TGCHAT=v;TG=true;HAVECFG=true;save();render();tgUI()};
+$("tgx").onclick=function(){TGCHAT="";TG=false;HAVECFG=true;save();render();tgUI()};
+$("tgt").onclick=async function(){var m=$("tgm");if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");if(!TGCHAT)return(m.textContent="Primero guardá tu chat ID.");
+ m.textContent="Enviando…";try{await push();var r=await SB.functions.invoke("telegram",{body:{}});
+  if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
+  m.textContent="Listo, revisá tu Telegram."}catch(e){m.textContent="No pude enviarlo: "+(e&&e.message||e)}};
