@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 <main>
@@ -14,16 +14,6 @@
 <div><h1>Mi panel</h1>
 <p class="sub" id="fecha"></p></div>
 </header>
-
-<div class="hero">
-<p id="frase"></p>
-<div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
-<div class="legend"><span id="gastado"></span><span>La barra se llena a medida que gastás</span></div>
-<div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><button id="wb">Sumar ingreso</button></div>
-<p class="sem" id="sem"></p>
-
-</div>
-
 <section id="login" style="margin-bottom:16px;display:none">
 <h2>Entrar a tu panel</h2>
 <div class="add"><input type="text" id="le" placeholder="Email o usuario" autocomplete="username" autocapitalize="none" aria-label="Email o usuario"><input type="password" id="lp" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña"></div>
@@ -32,7 +22,7 @@
 </section>
 <section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 6)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rb">Guardar contraseña</button></div><p class="sem" id="rm"></p></section>
 <p class="sem" id="usrp" style="display:none">Usuario: <input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <span id="um"></span></p>
-<p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
+<p class="sem" id="ses" style="display:none;margin:0 0 14px"><span id="sem2"></span> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 
 <div id="alerta" style="display:none"></div>
 <section style="margin-bottom:16px">
@@ -42,23 +32,16 @@
 <div id="nr" class="sem"></div>
 </section>
 
-<div class="cols">
-<section>
-<h2>Fechas importantes</h2>
-<div id="prox"></div>
-<div class="add">
-<input type="date" id="ed" aria-label="Fecha">
-<input type="time" id="eh" aria-label="Hora">
-<input id="et" placeholder="Qué tenés que hacer" aria-label="Evento">
-<button id="eb">Agregar evento</button>
-</div>
-<h2 id="agt" style="margin-top:22px">Próximos 7 días</h2>
-<div class="add" style="margin:0 0 8px"><button class="lk" id="np">‹ Anterior</button><button class="lk" id="nh">Hoy</button><button class="lk" id="nn">Siguiente ›</button></div>
-<div id="agenda"></div>
-<details style="margin-top:10px"><summary>Ver el mes</summary><div class="add" style="justify-content:space-between;align-items:center;margin:0"><button class="lk" id="mp">‹</button><b id="mt"></b><button class="lk" id="mn">›</button></div><div class="mg" id="mg"></div></details>
-</section>
+<h2 class="grp">Dinero</h2>
+<div class="hero">
+<p id="frase"></p>
+<div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
+<div class="legend"><span id="gastado"></span><span>La barra se llena a medida que gastás</span></div>
+<div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><button id="wb">Sumar ingreso</button></div>
+<p class="sem" id="sem"></p>
 
-<div class="rcol">
+</div>
+<div class="cols">
 <section>
 <h2>Gastos del mes</h2>
 <div id="cats"></div>
@@ -70,6 +53,7 @@
 <button id="gb">Agregar gasto</button>
 </div>
 </section>
+<div class="rcol">
 <section class="goal">
 <h2><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 2.5 A7.5 7.5 0 1 1 3.2 6.8"/></svg>Objetivo de ahorro</h2>
 <div id="metas"></div>
@@ -93,15 +77,24 @@
 </div>
 </div>
 
-
-
-<section class="goal">
-<details>
-<summary>Histórico</summary>
-<div id="hist"></div>
-</details>
+<h2 class="grp">Tiempo</h2>
+<div class="cols">
+<section>
+<h2>Fechas importantes</h2>
+<div id="prox"></div>
+<div class="add">
+<input type="date" id="ed" aria-label="Fecha">
+<input type="time" id="eh" aria-label="Hora">
+<input id="et" placeholder="Qué tenés que hacer" aria-label="Evento">
+<button id="eb">Agregar evento</button>
+</div>
+<h2 id="agt" style="margin-top:22px">Próximos 7 días</h2>
+<div class="add" style="margin:0 0 8px"><button class="lk" id="np">‹ Anterior</button><button class="lk" id="nh">Hoy</button><button class="lk" id="nn">Siguiente ›</button></div>
+<div id="agenda"></div>
+<details style="margin-top:10px"><summary>Ver el mes</summary><div class="add" style="justify-content:space-between;align-items:center;margin:0"><button class="lk" id="mp">‹</button><b id="mt"></b><button class="lk" id="mn">›</button></div><div class="mg" id="mg"></div></details>
 </section>
-<section class="goal"><details id="rd"><summary>Rutinas semanales</summary>
+<div class="rcol">
+<section><details id="rd"><summary>Rutinas semanales</summary>
 <p class="sem" style="margin-top:0">Lo que se repite todas las semanas (clases, gimnasio, etc.). Aparece solo en el calendario.</p>
 <div id="rl"></div>
 <div class="add"><select id="rdw" aria-label="Día"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select><input type="time" id="rt" aria-label="Desde"><input type="time" id="rt2" aria-label="Hasta"><input id="rx" placeholder="Nombre (ej: Clase de Marketing)" aria-label="Nombre"></div>
@@ -109,6 +102,16 @@
 <div class="add"><button id="rb">Agregar rutina</button><button id="rc" class="x" style="display:none">Cancelar edición</button></div>
 <p class="sem" id="rm"></p>
 </details></section>
+</div>
+</div>
+
+<h2 class="grp">Histórico y copia de seguridad</h2>
+<section>
+<details>
+<summary>Histórico</summary>
+<div id="hist"></div>
+</details>
+</section>
 <section class="goal"><details><summary>Copia de seguridad</summary>
 <p class="sem">Exportá tus datos para guardarlos o pasarlos a otra versión del panel. Para importar, pegá el texto y tocá Importar.</p>
 <textarea id="bk" rows="5" aria-label="Copia de seguridad"></textarea>
@@ -119,6 +122,6 @@
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
