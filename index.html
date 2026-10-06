@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=21">
+<link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body class="auth">
 <main>
@@ -48,6 +48,12 @@
 
 </div>
 <div class="cols">
+<section data-c="resumen" data-name="Resumen y consejos">
+<h2>Resumen del mes</h2>
+<div id="res" class="kpis"></div>
+<h3 class="tgh3">Consejos y avisos</h3>
+<div id="tips"></div>
+</section>
 <section data-c="gastos" data-name="Gastos del mes">
 <h2>Gastos del mes</h2>
 <div id="cats"></div>
@@ -159,6 +165,6 @@
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=23"></script>
 </body>
 </html>
