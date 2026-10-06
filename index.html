@@ -108,7 +108,7 @@ details[open] summary{margin-bottom:10px}
 <section style="margin-bottom:16px">
 <h2>Contale algo al panel</h2>
 <textarea id="nt" rows="3" placeholder="Ej: gasté 8 mil en farmacia y el viernes a las 10 tengo trámite. O: cancelá el parcial del 13/10" aria-label="Nota"></textarea>
-<div class="add"><button id="nb">Entender nota</button></div>
+<div class="add"><button id="nb">Entender nota</button><button id="un" disabled>↶ Deshacer</button></div>
 <div id="nr" class="sem"></div>
 </section>
 
@@ -191,8 +191,12 @@ var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={}}catch(e){}
 var DOC=null;
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
-function save(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L))}catch(e){}
+function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · v8")}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
+var UNDO=[],PREV=null;
+function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
+function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
+function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
 function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],bal:q.bal||{},fx:q.fx,week:q.week,t:q.t}}
 window.addEventListener("error",function(e){var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message}stat("Error en la página: "+e.message)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -455,7 +459,7 @@ var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
 function loginUI(on,email){$("login").style.display=on?"":"none";$("ses").style.display=on?"none":"";if(email)$("sem2").textContent="Sesión: "+email}
 function push(){var d=JSON.parse(JSON.stringify({L:L,cfg:cfgObj()}));return SB.from("panel_state").upsert({user_id:UID,data:d,updated_at:new Date().toISOString()}).then(function(r){if(r.error)throw r.error})}
-function adopt(q){if(q.cfg)applyCfg(q.cfg);L=norm(q.L);render()}
+function adopt(q){if(q.cfg)applyCfg(q.cfg);L=norm(q.L);PREV=snap();render()}
 async function pull(){
  var r=await SB.from("panel_state").select("data").eq("user_id",UID).maybeSingle();
  if(r.error){stat("No pude leer tu nube: "+r.error.message);return}
@@ -473,12 +477,14 @@ async function startSB(){
  var r=await SB.auth.getSession();
  if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · v9")}
  SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="SIGNED_OUT"){UID=null;DOC=null;loginUI(true)}})}
+document.getElementById("un").onclick=function(){if(!UNDO.length)return;var q=JSON.parse(UNDO.pop());applyCfg(q.cfg);L=norm(q.L);save0();PREV=snap();render();updUndo();var o=document.getElementById("nr");if(o)o.textContent="Deshice el último cambio."};
 function authMsg(t){$("lm").textContent=t}
 $("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+r.error.message:"")};
 $("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signUp({email:em,password:pw});authMsg(r.error?"No pude crear la cuenta: "+r.error.message:"Cuenta creada. Si Supabase te pide confirmar el email, revisá tu correo y después tocá Entrar.")};
 $("lo").onclick=async function(){if(SB)await SB.auth.signOut()};
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&UID)pull().catch(function(){})});
 startSB().catch(function(e){stat("Error al iniciar Supabase: "+(e&&e.message||e))});
+PREV=snap();updUndo();
 document.getElementById("aviso").style.display="none";
 </script>
 </body>
