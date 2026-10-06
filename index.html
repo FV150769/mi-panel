@@ -380,10 +380,10 @@ function renderExtra(){
   evBtns(rt,it,e.f,r);r.appendChild(rt);pr.appendChild(r)});
  var sp=0;L.expenses.forEach(function(e){sp+=e.m});
  var wk=mon(),ws=0;L.expenses.forEach(function(e){if(e.f>=wk)ws+=e.m});
- var wi=null;L.ing.forEach(function(e){if(e.k===wk)wi=(wi||0)+e.v});
+ var wi=null;L.ing.forEach(function(e){if(e.k===wk&&!e.adj)wi=(wi||0)+e.v});
  $("sem").textContent=wi==null?"Cargá lo que te entró esta semana para ver cuánto te sobra.":"Esta semana entró "+money(wi)+" y gastaste "+money(ws)+(wi-ws>0?": te sobran "+money(wi-ws)+(L.fx>0?" (≈ "+usd((wi-ws)/L.fx)+")":"")+" para los próximos gastos.":": esta semana no sobra.");
  var c=$("ctas");c.innerHTML="";var t=0;
- ACC.forEach(function(a,i){var d=i===0,v=d?accVal(0)+ingTot()-sp:accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?"DIARIO (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){setBal("a"+i,d?nv-ingTot()+sp:nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
+ ACC.forEach(function(a,i){var d=i===0,v=d?accVal(0)+ingTot()-sp:accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?"DIARIO (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){if(d)ajusteDiario(nv-v);else setBal("a"+i,nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
  var r=el("div","row");r.appendChild(el("b","","Total"));r.appendChild(el("b","",money(t)));c.appendChild(r);
  var u=el("div","none","Dólares");u.style.marginTop="12px";c.appendChild(u);var tu=0;
  USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+v.toLocaleString("es-AR")),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
@@ -407,7 +407,7 @@ function saveTot(){var t=0;L.saves.forEach(function(e){t+=e.m});return t}
 function renderMov(){
  var h=$("mov");h.innerHTML="";var all=[];
  L.expenses.forEach(function(e){all.push({t:"g",e:e,f:e.f,l:"Gasto · "+e.c+(e.x?" · "+e.x:""),v:e.m})});
- L.ing.forEach(function(e){all.push({t:"i",e:e,f:e.f||e.k,l:"Ingreso",v:e.v})});
+ L.ing.forEach(function(e){all.push({t:"i",e:e,f:e.f||e.k,l:e.adj?"Ajuste de saldo":"Ingreso",v:e.v})});
  L.saves.forEach(function(e){all.push({t:"a",e:e,f:e.f,l:"Aporte al ahorro",v:e.m})});
  if(!all.length){h.appendChild(el("div","none","Todavía no cargaste movimientos desde el panel."));return}
  all.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,30).forEach(function(m){
@@ -433,6 +433,7 @@ function editMov(r,m){
 function bal(k,d){return L.bal&&L.bal[k]!=null?L.bal[k]:d}
 function accVal(i){return bal("a"+i,ACC[i][1])}
 function usdVal(i){return bal("u"+i,USD[i][1])}
+function ajusteDiario(x){if(!x)return;if(x<0)L.expenses.push({f:today,m:-x,c:"Otros",x:"Ajuste de saldo"});else L.ing.push({f:today,k:mon(),v:x,adj:1});save();render()}
 function setBal(k,v){if(!L.bal)L.bal={};L.bal[k]=v;save();render()}
 function editBal(r,cur,fn){
  r.innerHTML="";r.style.flexWrap="wrap";
