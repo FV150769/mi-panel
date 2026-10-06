@@ -6,10 +6,8 @@
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
-:root{--bg:#EBEBEB;--panel:#FAFAFA;--ink:#111;--mute:#5E5E5E;--line:#CFCFCF;--acc:#111;--warn:#111;--mark:#111;
+:root{color-scheme:light;--bg:#FFF2E2;--panel:#FFFFFF;--ink:#1E2142;--mute:#666B8C;--line:#F2DEC6;--acc:#E23D28;--warn:#C62828;--mark:#1E2142;--teal:#12A594;--sun:#FFB400;--sky:#3B6EF5;--rose:#E8478B;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C0C0C;--panel:#151515;--ink:#EDEDED;--mute:#9A9A9A;--line:#2C2C2C;--acc:#EDEDED;--warn:#EDEDED;--mark:#EDEDED}}
-:root[data-theme="dark"]{--bg:#0C0C0C;--panel:#151515;--ink:#EDEDED;--mute:#9A9A9A;--line:#2C2C2C;--acc:#EDEDED;--warn:#EDEDED;--mark:#EDEDED}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Zen Kaku Gothic New","Instrument Sans",system-ui,sans-serif;letter-spacing:.01em}
@@ -75,6 +73,52 @@ button.lk{background:none;color:var(--ink);border:0;text-decoration:underline;mi
 .mg b{font-size:11px;color:var(--mute);text-align:center;font-weight:400}
 #alerta{border:1px solid var(--ink);padding:12px 16px;margin-bottom:16px;background:var(--panel)}
 #alerta b{font-family:"Shippori Mincho",Georgia,serif}
+body{background:linear-gradient(180deg,#FFE9CC 0,#FFF2E2 340px,#FFF8EF 100%) fixed}
+.top{border-bottom:3px solid var(--acc)}
+.top svg{color:var(--acc)}
+h1{color:var(--ink)}
+.kanji{color:var(--acc)}
+.hero,section{border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 14px rgba(226,61,40,.08)}
+.hero{border-top:6px solid var(--acc);background:linear-gradient(180deg,#FFFFFF 0,#FFF8EC 100%)}
+#frase{color:var(--ink);font-size:23px}
+h2{display:flex;align-items:center}
+h2::before{content:"";width:6px;height:18px;border-radius:3px;background:var(--acc);margin-right:9px;flex:none}
+h2 svg{display:none}
+.track{height:10px;border-radius:99px;background:#F6E6D2}
+.fill{border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--sun))}
+.fill.over{background:linear-gradient(90deg,var(--sun),var(--acc));outline:0}
+#cats .cat:nth-child(5n+1) .fill,#hist .cat:nth-of-type(5n+1) .fill{background:var(--acc)}
+#cats .cat:nth-child(5n+2) .fill,#hist .cat:nth-of-type(5n+2) .fill{background:var(--sky)}
+#cats .cat:nth-child(5n+3) .fill,#hist .cat:nth-of-type(5n+3) .fill{background:var(--teal)}
+#cats .cat:nth-child(5n+4) .fill,#hist .cat:nth-of-type(5n+4) .fill{background:var(--sun)}
+#cats .cat:nth-child(5n) .fill,#hist .cat:nth-of-type(5n) .fill{background:var(--rose)}
+#metas .fill{background:linear-gradient(90deg,var(--teal),var(--sky))}
+.legend,.sub{color:var(--mute)}
+.day{border-top:1px dashed var(--line)}
+.day.today b{background:#FFE08A;border:0;border-radius:8px;padding:2px 10px}
+.ev time{color:var(--sky);font-weight:700}
+.row{border-top:1px dashed var(--line)}
+input,select,textarea{border:1.5px solid #EAD2B5;border-radius:10px;background:#FFFFFF}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);outline:0;box-shadow:0 0 0 3px rgba(226,61,40,.18)}
+button{background:var(--acc);border-color:var(--acc);color:#FFFFFF;border-radius:10px;font-weight:700;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+button:active{transform:translateY(1px);box-shadow:none}
+button.x{background:none;border:0;box-shadow:none;color:var(--sky);font-weight:700}
+button.lk{background:none;box-shadow:none;color:var(--sky);border:0;padding:0 6px;min-height:36px;font-size:14px}
+#un{background:var(--ink);border-color:var(--ink)}
+#ar{background:var(--teal);border-color:var(--teal)}
+summary{color:var(--ink)}
+summary::before{color:var(--acc);font-weight:700}
+.mg button{background:#FFFFFF;color:var(--ink);border:1px solid var(--line);box-shadow:none;border-radius:8px;font-weight:500}
+.mg button.t{border:2px solid var(--acc)}
+.mg button.h{background:#FFE08A}
+.mg i{color:var(--acc)}
+#alerta{border:0;border-left:7px solid var(--acc);border-radius:12px;background:#FFF1B8;box-shadow:0 4px 14px rgba(255,180,0,.2)}
+#alerta .row{border-top:1px dashed #E8CF7A}
+.wave{color:var(--teal);opacity:.5}
+.bamboo{color:var(--teal)}
+.goal .info,.sem,.none{color:var(--mute)}
+#est{color:var(--mute)}
+:focus-visible{outline:3px solid var(--sky)}
 </style>
 </head>
 <body>
