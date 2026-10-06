@@ -263,3 +263,15 @@ summary{justify-content:space-between}
 .cuenta #us{min-height:32px;padding:4px 12px}
 /* Títulos de grupo más pegados a sus tarjetas */
 h2.grp{margin:16px 0 6px 2px}
+
+/* ===== Pantalla de entrada (antes de ver el panel) ===== */
+body.auth main{max-width:400px;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding-top:24px;padding-bottom:24px}
+body.auth main>:not(.top):not(#login):not(#rec):not(#aviso){display:none!important}
+body.auth .top{border:0;justify-content:center;text-align:center;margin-bottom:12px;padding-bottom:0}
+body.auth .top h1{font-size:28px}
+body.auth #login,body.auth #rec{margin:0!important;padding:20px}
+body.auth #login h2,body.auth #rec h2{justify-content:center;font-size:16px;margin-bottom:4px}
+body.auth #login .add input,body.auth #rec .add input{flex:1 1 100%;min-height:44px}
+body.auth #login .add button:not(.lk),body.auth #rec .add button{flex:1 1 auto;min-height:44px}
+body.auth #lf{flex:1 1 100%;justify-content:center}
+body.auth #lm,body.auth #rm{text-align:center}
