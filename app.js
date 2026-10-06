@@ -11,11 +11,22 @@ var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
 var TG=false,TGCHAT="",TGAV={d:[7,1],h:"09:00",hs:0};
 var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelBot"), para mostrar el link en Avisos
 var RUT=[],VSTART=null,MON=null,REDIT=null;
+var ONB=1; // 0 = cuenta nueva que todavía no terminó la pretemporada (la bienvenida de 3 pasos)
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v26";
-function stat(t){var e=document.getElementById("est");if(e)e.textContent=t}
+var DOC=null,VER="v27";
+var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
+var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
+var SB=null,UID=null;
+// Errores: se guardan solos en Supabase (tabla "errores") para poder arreglarlos sin pedir capturas.
+// Cada mensaje se manda una sola vez y como mucho 5 por visita, para no llenar la tabla.
+var REPS=0,REPV={};
+function reportar(msg,det){try{msg=String(msg||"").slice(0,500);if(!msg||REPV[msg]||REPS>=5)return;REPV[msg]=1;REPS++;
+ var row={mensaje:msg,detalle:det?String(det).slice(0,4000):null,version:VER,dispositivo:navigator.userAgent.slice(0,300),pagina:(location.pathname+location.hash).slice(0,300)};
+ if(SB){SB.from("errores").insert(row).then(function(){},function(){});return}
+ fetch(SUPABASE_URL+"/rest/v1/errores",{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(row)}).catch(function(){})}catch(e){}}
+function stat(t){var e=document.getElementById("est");if(e)e.textContent=t;if(/^(No pude|Error)/.test(t))reportar(t)}
 function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
 var UNDO=[],PREV=null,HAVECFG=false;
@@ -23,7 +34,8 @@ function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
 function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
 function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
 function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],bal:q.bal||{},rskip:q.rskip||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
-window.addEventListener("error",function(e){var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message}stat("Error en la página: "+e.message)});
+window.addEventListener("error",function(e){reportar("Error en la página: "+e.message,(e.error&&e.error.stack)||(e.filename+":"+e.lineno+":"+e.colno));var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message+" (quedó registrado para arreglarlo)"}stat("Error en la página: "+e.message)});
+window.addEventListener("unhandledrejection",function(e){var r=e.reason;reportar("Error sin manejar: "+(r&&(r.message||r.code)||r),r&&r.stack)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function $(i){return document.getElementById(i)}
 function usd(n){return "US$ "+Math.round(n).toLocaleString("es-AR")}
@@ -408,6 +420,7 @@ $("nb").onclick=async function(){
   var gErr="";if(SB&&UID)try{r=await gemini(prompt1(txt,C))}catch(err){gErr=err&&err.message||"error"}
   if(!r)try{var SM=window.claude?await claude.use("sample"):null;if(SM)r=await SM.json(prompt1(txt,C),{cache:false});else why="modo sin IA"}catch(err){why=err&&err.code==="not_granted"?"no diste permiso a la página para usar Claude":(err&&(err.code||err.message))||"error"}
   if(!r||typeof r!=="object"){r=localParse(txt,C);nota="Lo entendí sin IA. Revisá bien antes de guardar."+(gErr?" ("+gErr+")":"")}
+  else if(r._ia&&!r._ia.propia&&r._ia.quedan<=5)nota=(r._ia.quedan?"Te quedan "+cant(r._ia.quedan,"nota","notas"):"Ya no te quedan notas")+" hoy con la IA compartida. Cargá tu propia clave gratis en El vestuario → IA de Petaca.";
   var G=(r.gastos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,m:Number(g.monto),c:BUDGET[g.categoria]?g.categoria:"Otros",x:String(g.detalle||"")}});
   var E=(r.eventos||[]).filter(function(e){return e&&ok.test(e.fecha)&&e.titulo}).map(function(e){return{f:e.fecha,t:/^\d{2}:\d{2}$/.test(e.hora||"")?e.hora:"",x:String(e.titulo),imp:!!e.imp||/importante|avis/i.test(e.titulo)}});
   var IN=(r.ingresos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,v:Number(g.monto)}}),A=Number(r.ahorro_usd)||null;
@@ -460,20 +473,17 @@ $("nb").onclick=async function(){
    no.onclick=function(){out.innerHTML=""};
    out.appendChild(yes);out.appendChild(no)}
   draw();
- }catch(e){out.textContent="No pude procesar la nota: "+(e&&(e.message||e.code)||"error")}
+ }catch(e){out.textContent="No pude procesar la nota: "+(e&&(e.message||e.code)||"error");reportar("No pude procesar la nota: "+(e&&(e.message||e.code)||"error"),e&&e.stack)}
  finally{busy=false}
 };
 
-function cfgObj(){return{LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{ONB:ONB,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;ONB=c.ONB===0?0:1;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
 $("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;var tc=TGCHAT,ta=TGAV;applyCfg(o.cfg);TGCHAT=tc;TG=!!tc;TGAV=ta;HAVECFG=true;L=norm(o.L);save();UNDO.length=0;updUndo();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
 // ===== Supabase =====
-var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
-var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
-var SB=null,UID=null;
 function loginUI(on,email){document.body.classList.toggle("auth",!!on);$("login").style.display=on?"":"none";$("ses").style.display=on?"none":"";$("usrp").style.display=on?"none":"";if(email)$("sem2").textContent="Sesión: "+email}
 function push(){if(!HAVECFG)return Promise.resolve();var d=JSON.parse(JSON.stringify({L:L,cfg:cfgObj()}));return SB.from("panel_state").upsert({user_id:UID,data:d,updated_at:new Date().toISOString()}).then(function(r){if(r.error)throw r.error})}
 function adopt(q){setTimeout(blue,0);if(q.cfg){applyCfg(q.cfg);HAVECFG=true}L=norm(q.L);PREV=snap();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}render()}
@@ -483,8 +493,9 @@ async function pull(){
  var q=r.data&&r.data.data;
  if(q&&q.L){if(!HAVECFG&&q.cfg){applyCfg(q.cfg);HAVECFG=true;render()}
   // Nunca pisar datos con una copia vacía: si un lado está vacío y el otro no, gana el que tiene datos.
-  var ev=vacio(q.L),lv=vacio(L);if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();stat("Sincronizado con tu nube · "+VER)}
- else{HAVECFG=true;await push();stat("Nube inicializada · "+VER)}
+  var ev=vacio(q.L),lv=vacio(L);if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();stat("Sincronizado con tu nube · "+VER);
+  if(ONB===0)preStart()}
+ else{HAVECFG=true;ONB=0;await push();stat("Nube inicializada · "+VER);preStart()}
 }
 async function enter(session){
  UID=session.user.id;var ow=null;try{ow=localStorage.getItem("panel-owner")}catch(e){}if(ow&&ow!==UID)resetLocal();try{localStorage.setItem("panel-owner",UID)}catch(e){}DOC={set:function(){return push()}};loginUI(false,session.user.email);
@@ -496,11 +507,13 @@ async function startSB(){
  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  var r=await SB.auth.getSession();
  if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · "+VER)}
- SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;try{SB.removeAllChannels()}catch(e){}resetLocal();try{localStorage.removeItem("panel-owner")}catch(e){}loginUI(true)}})}
+ SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;if(PRE)preEnd();try{SB.removeAllChannels()}catch(e){}resetLocal();try{localStorage.removeItem("panel-owner")}catch(e){}loginUI(true)}})}
 document.getElementById("un").onclick=function(){if(!UNDO.length)return;var q=JSON.parse(UNDO.pop());applyCfg(q.cfg);L=norm(q.L);save0();PREV=snap();render();updUndo();var o=document.getElementById("nr");if(o)o.textContent="Deshice el último cambio."};
 function authMsg(t){$("lm").textContent=t}
 $("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em)return authMsg("Escribí tu email o tu usuario.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");em=await mailOf(em);if(!em)return authMsg("No encontré ese usuario.");var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+r.error.message:"")};
-$("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});authMsg(r.error?"No pude crear la cuenta: "+r.error.message:"¡Fichaje confirmado! Si te pedimos confirmar el email, revisá tu correo y después tocá Entrar.")};
+$("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
+ if(r.error)return authMsg(/rate limit/i.test(r.error.message)?"Hay muchos fichajes en este momento y no pude mandarte el mail. Probá de nuevo en un rato.":/already registered/i.test(r.error.message)?"Ese email ya tiene cuenta: tocá Entrar.":"No pude crear la cuenta: "+r.error.message);
+ authMsg(r.data&&r.data.session?"¡Fichaje confirmado! Entrando a la cancha…":"¡Fichaje confirmado! Te mandamos un mail para confirmar tu cuenta: abrilo y después tocá Entrar. Revisá también spam.")};
 $("lo").onclick=async function(){if(SB)await SB.auth.signOut()};
 async function mailOf(v){v=v.trim();if(v.indexOf("@")>0)return v;var r=await SB.rpc("login_email",{u:v.toLowerCase()});return r.data||null}
 $("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var v=$("le").value.trim();if(!v)return authMsg("Escribí arriba tu email o tu usuario y tocá de nuevo.");var em=await mailOf(v);if(em){await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname})}authMsg("Si la cuenta existe, te mandé un mail para crear una contraseña nueva. Revisá también spam.")};
@@ -662,3 +675,69 @@ $("tgas").onclick=function(){var m=$("tgam"),raw=$("tgdd").value.trim(),d=[],ok=
  if(!d.length&&!hs)return(m.textContent="Elegí al menos días antes u horas antes.");
  d.sort(function(a,b){return b-a});TGAV={d:d,h:h,hs:hs};HAVECFG=true;save();tgUI();
  m.textContent="Guardado. Te aviso "+[d.length?(d.map(function(n){return n===0?"el mismo día":n===1?"1 día antes":n+" días antes"}).join(", ")+" a las "+h):"",hs?hs+" h antes de que empiece":""].filter(Boolean).join(" y ")+"."};
+// IA de Petaca: clave de Gemini propia (tabla ia_claves). Si está, la función "gemini" la usa en lugar de la compartida.
+function iaUI(){var m=$("iam");$("iak").value="";if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");
+ m.textContent="Revisando…";SB.from("ia_claves").select("clave").eq("user_id",UID).maybeSingle().then(function(r){if(r.error)return(m.textContent="No pude leer tu clave: "+r.error.message);
+  var k=r.data&&r.data.clave;m.textContent=k?"Usás tu propia clave (termina en …"+k.slice(-4)+").":"Usás la IA compartida.";$("iax").style.display=k?"":"none"})}
+$("iad").addEventListener("toggle",function(){if($("iad").open)iaUI()});
+$("ias").onclick=async function(){var m=$("iam"),k=$("iak").value.trim();if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");
+ if(!/^[A-Za-z0-9_-]{20,200}$/.test(k))return(m.textContent="Esa clave no parece válida. Copiala completa desde AI Studio.");
+ m.textContent="Guardando…";var r=await SB.from("ia_claves").upsert({user_id:UID,clave:k,updated_at:new Date().toISOString()});if(r.error)return(m.textContent="No pude guardarla: "+r.error.message);
+ $("iak").value="";$("iax").style.display="";m.textContent="Probando…";var p=await SB.functions.invoke("gemini",{body:{probar:true}});
+ if(p.error){var t=p.error.message;try{var b=await p.error.context.json();if(b&&b.error)t=b.error}catch(e){}return(m.textContent="La guardé, pero no funcionó: "+t)}
+ m.textContent="¡Golazo! Tu clave funciona: desde ahora Petaca usa tu propio cupo."};
+$("iax").onclick=async function(){var m=$("iam");if(!SB||!UID)return;var r=await SB.from("ia_claves").delete().eq("user_id",UID);
+ m.textContent=r.error?"No pude quitarla: "+r.error.message:"Listo, volvés a usar la IA compartida.";if(!r.error)$("iax").style.display="none"};
+// Pretemporada: la primera vez que alguien entra, 3 pasos para armar sus categorías, sus saldos y su objetivo.
+var PRE=null;
+var PRECAT=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas","Facultad","Salud","Ropa","Suscripciones","Deporte","Regalos","Viajes"],PREON=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas"];
+function preNum(v){var n=parseFloat(String(v).replace(",","."));return n>0?n:0}
+function preStart(){if(PRE)return;PRE={paso:0,cat:PRECAT.map(function(n){return{n:n,on:PREON.indexOf(n)>=0,v:""}}),pesos:"",usd:"",ing:"",gx:"",gt:"",gu:"m",gn:""};
+ document.body.classList.add("pre-open");$("pre").style.display="";prePaint()}
+function preEnd(){$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open");PRE=null}
+function preCampo(P,k,txt,ph,num){var lb=el("label","",txt),i=el("input");if(num){i.type="number";i.inputMode="decimal";i.min="0"}i.placeholder=ph;i.value=P[k];i.oninput=function(){P[k]=i.value};lb.appendChild(i);return lb}
+function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.appendChild(c);
+ var h=el("div","prh"),im=el("img");im.src="petaca.svg?v=28";im.alt="";h.appendChild(im);var ht=el("div");ht.appendChild(el("small","prk","Pretemporada · paso "+(P.paso+1)+" de 3"));
+ var t=el("h2","",["Armá tu plantel de gastos","¿Con cuánto arrancás?","Tu objetivo de ahorro"][P.paso]);t.id="pret";ht.appendChild(t);h.appendChild(ht);c.appendChild(h);
+ var ps=el("div","pasos");for(var i=0;i<3;i++)ps.appendChild(el("i",i<=P.paso?"on":""));c.appendChild(ps);
+ var msg=el("p","sem prm");
+ if(P.paso===0){
+  c.appendChild(el("p","sem","¡Te damos la bienvenida al club! Elegí en qué gastás y, si querés, ponele un presupuesto por mes a cada categoría: Petaca te avisa cuando te estés por pasar. \"Otros\" va siempre."));
+  P.cat.forEach(function(k){var r=el("div","prc"),lb=el("label"),cb=el("input"),nv=el("input");cb.type="checkbox";cb.checked=k.on;
+   nv.type="number";nv.inputMode="decimal";nv.min="0";nv.placeholder="$ / mes";nv.value=k.v;nv.disabled=!k.on;nv.setAttribute("aria-label","Presupuesto por mes de "+k.n);nv.oninput=function(){k.v=nv.value};
+   cb.onchange=function(){k.on=cb.checked;nv.disabled=!cb.checked};lb.appendChild(cb);lb.appendChild(document.createTextNode(k.n));r.appendChild(lb);r.appendChild(nv);c.appendChild(r)});
+  var ad=el("div","add"),ai=el("input"),ab=el("button","lk","+ Agregar");ai.placeholder="Otra categoría (ej: Mascota)";ai.setAttribute("aria-label","Otra categoría");
+  ab.onclick=function(){var n=ai.value.trim();if(!n)return;if(n.toLowerCase()==="otros"||P.cat.some(function(k){return k.n.toLowerCase()===n.toLowerCase()}))return(msg.textContent="Esa categoría ya está.");P.cat.push({n:n,on:true,v:""});prePaint()};
+  ad.appendChild(ai);ad.appendChild(ab);c.appendChild(ad)}
+ else if(P.paso===1){
+  c.appendChild(el("p","sem","Así Petaca sabe cuánto te queda. Si no sabés el número exacto poné uno aproximado: después lo corregís en Cuentas."));
+  var f=el("div","prf");f.appendChild(preCampo(P,"pesos","Plata para el día a día (en pesos)","Ej: 150000",1));f.appendChild(preCampo(P,"usd","Dólares ahorrados (US$)","Ej: 300",1));f.appendChild(preCampo(P,"ing","¿Cobraste algo esta semana? (opcional, en pesos)","Ej: 400000",1));c.appendChild(f)}
+ else{
+  c.appendChild(el("p","sem","¿Para qué estás ahorrando? Un viaje, la compu nueva, la entrada para la final… Si todavía no tenés uno, salteá este paso."));
+  var f2=el("div","prf"),l3=el("label","","Para cuándo"),rw=el("div","add"),gn=el("input"),gu=el("select");
+  f2.appendChild(preCampo(P,"gx","Nombre del objetivo","Ej: Viaje al Mundial"));f2.appendChild(preCampo(P,"gt","Cuánto necesitás (US$)","Ej: 2000",1));
+  gn.type="number";gn.inputMode="numeric";gn.min="1";gn.placeholder="Cuántos";gn.value=P.gn;gn.setAttribute("aria-label","Cantidad");gn.oninput=function(){P.gn=gn.value};
+  [["","Sin plazo"],["s","semanas"],["m","meses"],["a","años"]].forEach(function(o){var op=el("option","",o[1]);op.value=o[0];gu.appendChild(op)});gu.value=P.gu;gu.setAttribute("aria-label","Plazo");
+  gu.onchange=function(){P.gu=gu.value;gn.style.display=gu.value?"":"none"};gn.style.display=P.gu?"":"none";rw.appendChild(gn);rw.appendChild(gu);l3.appendChild(rw);f2.appendChild(l3);c.appendChild(f2)}
+ c.appendChild(msg);
+ var b=el("div","prb"),izq=el("span"),der=el("span");
+ if(P.paso>0){var bk=el("button","x","‹ Atrás");bk.onclick=function(){P.paso--;prePaint()};izq.appendChild(bk)}else{var sk=el("button","x","Saltear todo");sk.onclick=function(){preFin(true)};izq.appendChild(sk)}
+ if(P.paso===2){var s2=el("button","x","Saltear");s2.onclick=function(){P.gx="";P.gt="";preFin(false)};der.appendChild(s2)}
+ var nx=el("button","",P.paso<2?"Siguiente ›":"¡A la cancha! ⚽");nx.onclick=function(){var e=preCheck();if(e)return(msg.textContent=e);if(P.paso<2){P.paso++;prePaint()}else preFin(false)};der.appendChild(nx);
+ b.appendChild(izq);b.appendChild(der);c.appendChild(b);w.scrollTop=0;
+ if(P.paso>0){var fi=c.querySelector(".prf input");if(fi)fi.focus()}}
+function preCheck(){var P=PRE;
+ if(P.paso===0&&!P.cat.some(function(k){return k.on}))return"Elegí al menos una categoría.";
+ if(P.paso===2&&(P.gx.trim()||P.gt)){if(!P.gx.trim())return"Ponele un nombre al objetivo.";if(!preNum(P.gt))return"Poné cuánto necesitás, en dólares.";
+  if(P.gu&&!(parseInt(P.gn,10)>0))return"Poné en cuántas "+{s:"semanas",m:"meses",a:"años"}[P.gu]+" querés llegar."}
+ return""}
+// Aplica la pretemporada. "Saltear todo" deja las categorías de ejemplo pero sin presupuesto, para que los consejos no inventen.
+function preFin(todo){var P=PRE,NB={};
+ if(todo)Object.keys(BUDGET).forEach(function(k){NB[k]=0});else P.cat.forEach(function(k){if(k.on)NB[k.n]=preNum(k.v)});
+ delete NB.Otros;NB.Otros=0;L.expenses.forEach(function(e){if(NB[e.c]==null)e.c="Otros"});BUDGET=NB;
+ cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
+ if(!todo){ACC=[["Día a día",preNum(P.pesos)]];USD=[["Ahorro en dólares",preNum(P.usd)]];Object.keys(L.bal).forEach(function(k){if(/^[au]\d+$/.test(k))delete L.bal[k]});
+  var iv=preNum(P.ing);if(iv)setWeek(iv);
+  if(P.gx.trim()&&preNum(P.gt)){var n=parseInt(P.gn,10);GOAL={x:P.gx.trim(),target:preNum(P.gt),saved:0,pl:P.gu?{u:P.gu,n:n}:null,hasta:P.gu?sumaPlazo(today,n,P.gu):null}}}
+ ONB=1;HAVECFG=true;preEnd();save();render();
+ stat(todo?"Listo. Cuando quieras, armá tus categorías en El vestuario → Ajustes.":"¡Listo, tu equipo está armado! Lo podés cambiar cuando quieras en El vestuario → Ajustes.")}

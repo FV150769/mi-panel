@@ -414,3 +414,26 @@ body.auth #login,body.auth #rec{border-radius:22px;box-shadow:0 14px 34px rgba(0
 body.auth #login h2,body.auth #rec h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:24px;letter-spacing:.03em}
 body.auth #aviso{color:#fff!important;text-align:center}
 @media (max-width:720px){h1{font-size:28px}.masc{width:42px}body.auth .top h1{font-size:56px}body.auth .masc{width:128px}}
+
+/* ===== Pretemporada: bienvenida de 3 pasos ===== */
+body.pre-open{overflow:hidden}
+#pre{position:fixed;inset:0;z-index:50;background:rgba(14,26,51,.55);display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;padding:24px 12px calc(24px + env(safe-area-inset-bottom,0px))}
+#pre .pc{background:var(--panel);border-radius:22px;width:100%;max-width:540px;padding:20px;box-shadow:0 18px 40px rgba(0,0,0,.3);margin:auto 0}
+.prh{display:flex;align-items:center;gap:12px}
+.prh img{width:76px;height:auto;flex:none}
+.prh h2{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:24px;letter-spacing:.02em;margin:2px 0 0;line-height:1.1}
+.prk{color:var(--acc2);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.pasos{display:flex;gap:6px;margin:14px 0 4px}
+.pasos i{flex:1;height:6px;border-radius:9px;background:#E3ECDF}
+.pasos i.on{background:var(--acc)}
+.prc{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line)}
+.prc label{flex:1;display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer}
+.prc input[type=checkbox]{width:20px;height:20px;min-height:0;flex:none;accent-color:var(--acc)}
+.prc input[type=number]{flex:0 0 130px;min-height:36px;padding:6px 10px}
+.prc input:disabled{opacity:.4}
+.prf label{display:flex;flex-direction:column;gap:5px;margin:12px 0 0;font-weight:600;font-size:14px}
+.prf .add{margin:0}
+.prm{color:var(--warn);font-weight:600;min-height:1em}
+.prb{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.prb>span{display:flex;gap:8px;align-items:center}
+@media (max-width:720px){#pre{padding:12px 8px}#pre .pc{padding:16px}.prh img{width:60px}.prc input[type=number]{flex-basis:110px;font-size:16px}}

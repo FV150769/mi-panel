@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=26">
+<link rel="stylesheet" href="styles.css?v=27">
 </head>
 <body class="auth">
 <main>
@@ -137,6 +137,17 @@
 <div class="add"><button id="ajs">Guardar ajustes</button><button class="x" id="ajc">Descartar cambios</button></div>
 <p class="sem" id="ajm"></p>
 </details></section>
+<section class="goal" data-c="ia" data-name="IA de Petaca"><details id="iad"><summary>IA de Petaca</summary>
+<p class="sem" style="margin-top:0">"Contale a Petaca" usa Gemini, la IA de Google. Sin clave propia compartís la IA con el resto, con un límite de 15 notas por día. Con tu propia clave, que es gratis, tenés tu propio cupo.</p>
+<ol class="sem tgp">
+<li>Entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li>
+<li>Tocá <b>Create API key</b> (crear clave) y copiala.</li>
+<li>Pegala acá abajo y tocá <b>Guardar y probar</b>.</li>
+</ol>
+<div class="add"><input type="password" id="iak" autocomplete="off" placeholder="Tu clave de Gemini (empieza con AIza…)" aria-label="Clave de Gemini"><button id="ias">Guardar y probar</button><button class="x" id="iax" style="display:none">Quitar</button></div>
+<p class="sem" id="iam"></p>
+<p class="sem">Tu clave queda guardada en tu cuenta y solo se usa para entender tus notas. Ojo: en el plan gratis de Gemini, Google puede usar lo que le mandás para mejorar sus productos.</p>
+</details></section>
 <section data-c="hist" data-name="Histórico">
 <details>
 <summary>Histórico</summary>
@@ -172,8 +183,9 @@
 </div>
 
 <p class="sem" id="est"></p>
+<div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=26"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>
