@@ -31,19 +31,33 @@ Deno.serve(async (req) => {
   if (!prompt) return json({ error: "Falta el texto" }, 400);
   if (prompt.length > 20000) return json({ error: "La nota es demasiado larga" }, 400);
 
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0 },
-      }),
-    },
-  );
-  const d = await res.json().catch(() => ({}));
-  if (!res.ok) return json({ error: d?.error?.message || `Gemini respondió ${res.status}` }, 502);
+  // Si Gemini está saturado (503/429/500), reintenta y después prueba con un modelo más liviano.
+  const intentos = [
+    "gemini-flash-latest",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-flash-lite-latest",
+  ];
+  let d: any = {};
+  let ok = false;
+  for (let i = 0; i < intentos.length; i++) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 800 * i));
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${intentos[i]}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json", temperature: 0 },
+        }),
+      },
+    );
+    d = await res.json().catch(() => ({}));
+    if (res.ok) { ok = true; break; }
+    if (![429, 500, 503].includes(res.status)) break;
+  }
+  if (!ok) return json({ error: d?.error?.message || "Gemini no respondió" }, 502);
 
   const text = (d?.candidates?.[0]?.content?.parts ?? [])
     .map((p: { text?: string }) => p.text ?? "")
