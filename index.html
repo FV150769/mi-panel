@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi panel</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="styles.css?v=17">
+<link rel="stylesheet" href="styles.css?v=18">
 </head>
 <body class="auth">
 <main>
@@ -138,11 +138,16 @@
 </ol>
 <div class="add"><input id="tgc" inputmode="numeric" autocomplete="off" placeholder="Tu chat ID (ej: 123456789)" aria-label="Chat ID de Telegram"><button id="tgs">Guardar</button><button id="tgt">Enviar prueba</button><button class="x" id="tgx">Quitar</button></div>
 <p class="sem" id="tgm"></p>
+<h3 class="tgh3">Cuándo avisarte</h3>
+<div class="add tgav"><label class="sem">Días antes<input id="tgdd" placeholder="7, 1" aria-label="Días antes" autocomplete="off"></label><label class="sem">A qué hora<input type="time" id="tgdh" aria-label="Hora de los avisos por día"></label><label class="sem">Horas antes del evento<input type="number" id="tghs" min="0" max="48" step="0.5" inputmode="decimal" placeholder="0 = no" aria-label="Horas antes del evento"></label></div>
+<p class="sem" style="margin-top:6px">Ej: días "7, 1" a las 09:00, y además 2 horas antes de que empiece (solo eventos con hora). Dejá días vacío si solo querés el aviso por horas.</p>
+<div class="add"><button id="tgas">Guardar horarios</button></div>
+<p class="sem" id="tgam"></p>
 </details></section>
 
 <p class="sem" id="est"></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>

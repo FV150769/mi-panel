@@ -8,7 +8,7 @@ var USD=[["Ahorro (sin invertir)",0],["Colchón",0]];
 var ACC=[["Día a día",0],["Ahorro",0],["Inversiones",0]];
 var GOAL={x:"Mi objetivo",target:1000,saved:0,months:0};
 // Avisos por Telegram: solo para la cuenta que los tiene configurados (las cuentas nuevas arrancan sin avisos).
-var TG=false,TGCHAT="";
+var TG=false,TGCHAT="",TGAV={d:[7,1],h:"09:00",hs:0};
 var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelBot"), para mostrar el link en Avisos
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var SEED={events:[],expenses:[]};
@@ -380,8 +380,8 @@ $("nb").onclick=async function(){
  finally{busy=false}
 };
 
-function cfgObj(){return{TG:TG,TGCHAT:TGCHAT,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -496,7 +496,7 @@ $("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
 $("ajs").onclick=ajSave;$("ajc").onclick=ajForm;
 function vacio(x){return!x||!((x.events||[]).length||(x.expenses||[]).length||(x.ing||[]).length||(x.saves||[]).length)}
 // Avisos por Telegram: cada cuenta guarda su chat ID; los mensajes salen del bot del panel (token como secreto en Supabase).
-function tgUI(){$("tgc").value=TGCHAT;$("tgm").textContent=TGCHAT?"Avisos activados para el chat "+TGCHAT+".":"Todavía no cargaste tu chat ID.";
+function tgUI(){$("tgc").value=TGCHAT;$("tgdd").value=(TGAV.d||[]).join(", ");$("tgdh").value=TGAV.h||"09:00";$("tghs").value=TGAV.hs||"";$("tgam").textContent="";$("tgm").textContent=TGCHAT?"Avisos activados para el chat "+TGCHAT+".":"Todavía no cargaste tu chat ID.";
  var b=$("tgbot");b.innerHTML="";if(TG_BOT){b.appendChild(document.createTextNode(" ("));var a=el("a","","@"+TG_BOT);a.href="https://t.me/"+TG_BOT;a.target="_blank";a.rel="noopener";b.appendChild(a);b.appendChild(document.createTextNode(")"))}}
 $("tgd").addEventListener("toggle",function(){if($("tgd").open)tgUI()});
 $("tgs").onclick=function(){var v=$("tgc").value.trim();if(!/^-?\d{5,15}$/.test(v))return($("tgm").textContent="El chat ID son solo números (ej: 123456789).");TGCHAT=v;TG=true;HAVECFG=true;save();render();tgUI()};
@@ -506,3 +506,11 @@ $("tgt").onclick=async function(){var m=$("tgm");if(!SB||!UID)return(m.textConte
   if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
   m.textContent="Listo, revisá tu Telegram."}catch(e){m.textContent="No pude enviarlo: "+(e&&e.message||e)}};
 $("tgo").onclick=function(){var d=$("tgd");d.open=true;tgUI();d.scrollIntoView({behavior:"smooth",block:"start"});$("tgc").focus({preventScroll:true})};
+$("tgas").onclick=function(){var m=$("tgam"),raw=$("tgdd").value.trim(),d=[],ok=true;
+ if(raw)raw.split(/[,\s;]+/).forEach(function(x){if(!x)return;var n=+x;if(!(n>=0&&n<=60&&n===Math.floor(n)))ok=false;else if(d.indexOf(n)<0)d.push(n)});
+ if(!ok)return(m.textContent="Días antes: números enteros de 0 a 60, separados por coma (0 = el mismo día).");
+ var h=$("tgdh").value||"09:00",hs=parseFloat(String($("tghs").value).replace(",","."))||0;
+ if(hs<0||hs>48)return(m.textContent="Horas antes: de 0 a 48.");
+ if(!d.length&&!hs)return(m.textContent="Elegí al menos días antes u horas antes.");
+ d.sort(function(a,b){return b-a});TGAV={d:d,h:h,hs:hs};HAVECFG=true;save();tgUI();
+ m.textContent="Guardado. Te aviso "+[d.length?(d.map(function(n){return n===0?"el mismo día":n===1?"1 día antes":n+" días antes"}).join(", ")+" a las "+h):"",hs?hs+" h antes de que empiece":""].filter(Boolean).join(" y ")+"."};

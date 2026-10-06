@@ -291,3 +291,5 @@ body.auth #lm,body.auth #rm{text-align:center}
 /* Pasos de Avisos por Telegram */
 .tgp{margin:6px 0 0;padding-left:20px}
 .tgp li{margin:2px 0}
+.tgh3{font-size:13px;font-weight:600;margin:16px 0 0}
+#tgd .tgav label{display:flex;flex-direction:column;gap:4px;flex:1 1 120px;margin:0}

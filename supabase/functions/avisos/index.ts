@@ -1,6 +1,6 @@
 // Edge Function de avisos (en el dashboard se llama "telegram"; su URL es /avisos).
-// - Llamada por el cron: manda por Telegram los eventos marcados con 🔔, 7 días y 1 día antes,
-//   cada uno al chat ID que esa cuenta guardó en el panel (Avisos por Telegram).
+// - Llamada por el cron: manda por Telegram los eventos marcados con 🔔 según las preferencias de cada cuenta
+//   (días antes + hora, y/o X horas antes del inicio), al chat ID que esa cuenta guardó en el panel.
 // - Llamada desde el panel con {prueba:true}: manda un mensaje de prueba al usuario con sesión iniciada.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -77,8 +77,11 @@ Deno.serve(async (req) => {
   }
   if (msgs.length) await tg("getUpdates", { offset: msgs[msgs.length - 1].update_id + 1, timeout: 0 });
 
-  // 2) Fecha de hoy en Argentina (UTC-3)
-  const today = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+  // 2) Hora actual en Argentina (UTC-3, sin horario de verano)
+  const ahora = Date.now();
+  const ar = new Date(ahora - 3 * 3600 * 1000);
+  const today = ar.toISOString().slice(0, 10);
+  const minHoy = ar.getUTCHours() * 60 + ar.getUTCMinutes();
 
   // 3) Revisar eventos y fechas importantes de cada cuenta que tenga chat ID
   const { data: rows } = await sb.from("panel_state").select("user_id,data");
@@ -87,6 +90,11 @@ Deno.serve(async (req) => {
     const d: any = row.data ?? {};
     const chat = d.cfg?.TGCHAT;
     if (!chat || d.cfg?.TG === false) continue;
+    // Preferencias de cada usuario (Avisos por Telegram → Cuándo avisarte)
+    const av = d.cfg?.TGAV ?? {};
+    const dias: number[] = Array.isArray(av.d) ? av.d : [7, 1];
+    const [hh, mm] = String(av.h || "09:00").split(":").map(Number);
+    const horas = Number(av.hs) > 0 ? Number(av.hs) : 0;
     const hidden: string[] = d.L?.hidden ?? [];
     // Igual que la campana del panel: fechas importantes avisan salvo 🔕; eventos cargados solo con 🔔.
     const items = [
@@ -94,16 +102,32 @@ Deno.serve(async (req) => {
       ...(d.L?.events ?? []).filter((e: any) => e?.imp === true),
     ].filter((e: any) => e?.f && e?.x && !hidden.includes(e.f + "|" + e.x));
     for (const e of items) {
+      const fecha = e.f.slice(8) + "/" + e.f.slice(5, 7) + (e.t ? " " + e.t : "");
+      // a) Avisos por días (ej: 7 y 1 día antes), a partir de la hora elegida
       const n = Math.round(
         (Date.parse(e.f + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 864e5,
       );
-      if (n !== 7 && n !== 1) continue;
-      const key = row.user_id + "|" + e.f + "|" + e.x + "|" + n;
-      if (!(await once(key))) continue;
-      const cuando = n === 1 ? "Mañana" : "En 7 días";
-      const fecha = e.f.slice(8) + "/" + e.f.slice(5, 7) + (e.t ? " " + e.t : "");
-      await tg("sendMessage", { chat_id: chat, text: cuando + ": " + e.x + " (" + fecha + ")" });
-      enviados++;
+      if (dias.includes(n) && minHoy >= (hh || 0) * 60 + (mm || 0)) {
+        const key = row.user_id + "|" + e.f + "|" + e.x + "|" + n;
+        if (await once(key)) {
+          const cuando = n === 0 ? "Hoy" : n === 1 ? "Mañana" : "En " + n + " días";
+          await tg("sendMessage", { chat_id: chat, text: cuando + ": " + e.x + " (" + fecha + ")" });
+          enviados++;
+        }
+      }
+      // b) Aviso X horas antes del inicio (solo eventos con hora)
+      if (horas && /^\d{2}:\d{2}$/.test(e.t || "")) {
+        const falta = Date.parse(e.f + "T" + e.t + ":00-03:00") - ahora;
+        if (falta > 0 && falta <= horas * 3600 * 1000) {
+          const key = row.user_id + "|" + e.f + "|" + e.x + "|" + e.t + "|h" + horas;
+          if (await once(key)) {
+            const min = Math.round(falta / 60000);
+            const en = min >= 60 ? "En " + Math.round(min / 6) / 10 + " h" : "En " + min + " min";
+            await tg("sendMessage", { chat_id: chat, text: en + ": " + e.x + " (" + fecha + ")" });
+            enviados++;
+          }
+        }
+      }
     }
   }
   return new Response("ok, avisos enviados: " + enviados);
