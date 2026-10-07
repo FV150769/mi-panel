@@ -13,10 +13,11 @@ var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelB
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var ONB=1; // 0 = cuenta nueva que todavía no terminó la pretemporada (la bienvenida de 3 pasos)
 var CAP=0,CAPLATER=false; // CAP=1: ya cargó su capital inicial. CAPLATER: tocó "Más tarde" en esta visita
+var AHO=10,WP=null; // AHO: % de cada ingreso que se propone separar para ahorro. WP: % elegido para el ingreso que se está cargando
 var SEED={events:[],expenses:[]};
-var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
-try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v28";
+var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{},fxAuto:true};
+try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
+var DOC=null,VER="v29";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -132,7 +133,7 @@ function render(){var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
  var ex=allExp(),tot=0,by={};
  ex.forEach(function(e){tot+=e.m;by[e.c]=(by[e.c]||0)+e.m});
  var bt=0;for(var k in BUDGET)bt+=BUDGET[k];
- var base=accVal(0)+ingTot(),spd=0;L.expenses.forEach(function(e){spd+=e.m});
+ var base=accVal(0)+ingTot()-sepTot(),spd=0;L.expenses.forEach(function(e){spd+=e.m});
  var left=base-spd,pct=base>0?spd/base*100:(spd>0?100:0);
  $("fill").style.width=Math.min(pct,100)+"%";$("fill").className="fill"+(pct>=80?" over":"");
  $("mark").style.display="none";
@@ -176,7 +177,7 @@ function renderGoal(){
  else t="Te faltan "+usd(left)+" y quedan "+plazoTxt(dias)+" (hasta el "+fLarga(fin)+"): tenés que ahorrar "+ritmo(left,dias)+".";
  b.appendChild(h);b.appendChild(el("div","none",usd(got)+" de "+usd(GOAL.target)+" ("+USD.map(function(a){return a[0].toLowerCase()}).join(" + ")+(extra?" + aportes":"")+")"));b.appendChild(tr);b.appendChild(el("p","info",t));
  var cp=el("button","lk",fin?"Cambiar plazo":"Ponerle un plazo");cp.style.padding="0";cp.onclick=function(){$("aj").open=true;setTimeout(function(){var u=$("ajg-u");if(u){u.scrollIntoView({block:"center",behavior:"smooth"});u.focus()}},80)};b.appendChild(cp);
- if(L.saves.length){var u=el("button","x","Deshacer último aporte o retiro");u.onclick=function(){L.saves.pop();save();render()};b.appendChild(u)}
+ if(L.saves.length){var u=el("button","x","Deshacer último aporte o retiro");u.onclick=function(){desligar(L.saves.pop());save();render()};b.appendChild(u)}
 }
 // Resumen financiero del mes y consejos según cómo se mueve la plata (reglas fijas, sin IA).
 function sumM(a){var t=0;a.forEach(function(e){t+=e.m});return t}
@@ -189,10 +190,11 @@ function renderResumen(){
  var pa=L.expenses.filter(function(e){return real(e)&&e.f.slice(0,7)===pym&&+e.f.slice(8)<=dia}),ph=sumM(pa);
  pa.forEach(function(e){pby[e.c]=(pby[e.c]||0)+e.m});
  var im=0;L.ing.forEach(function(e){if(!e.adj&&(e.f||e.k).slice(0,7)===ym)im+=e.v});
- var am=0;L.saves.forEach(function(e){if(e.f&&e.f.slice(0,7)===ym)am+=e.m});
+ var am=0,sepM=0;L.saves.forEach(function(e){if(e.f&&e.f.slice(0,7)===ym){am+=e.m;if(e.ars)sepM+=e.ars}});
  var proy=dia>=5&&gm?gm/dia*dim:null,Q=[];
  // Lo que había para el mes: lo que quedaba en el día a día al arrancar (capital inicial + movimientos anteriores) + lo que entró.
- var saldo=accVal(0)+ingTot()-sumM(L.expenses),ini=saldo-im+sumM(L.expenses.filter(function(e){return real(e)&&e.f.slice(0,7)===ym})),disp=ini+im,hay=disp>0||im>0;
+ // Lo separado para ahorro este mes sale del día a día: no cuenta como plata para gastar.
+ var saldo=diaVal(),ini=saldo-im+sepM+sumM(L.expenses.filter(function(e){return real(e)&&e.f.slice(0,7)===ym})),disp=ini+im-sepM,hay=disp>0||im>0;
  var mes1=!L.expenses.concat(L.ing).some(function(e){return(e.f||e.k).slice(0,7)<ym});
  function tip(n,t){Q.push([n,t])}
  function kpi(l,v,sub,c){var k=el("div","kpi"+(c?" "+c:""));k.appendChild(el("small","",l));k.appendChild(el("b","",v));if(sub)k.appendChild(el("span","",sub));R.appendChild(k)}
@@ -203,8 +205,9 @@ function renderResumen(){
  R.style.display="";
  if(ini>0)kpi("Arrancaste el mes con",money(ini),"en "+ACC[0][0]);
  kpi("Entró este mes",money(im),im?null:"sin ingresos cargados");
+ if(sepM)kpi("Separaste para ahorro",money(sepM),(im?pc(sepM/im)+" de lo que entró":"")+(L.fx>0?" · ≈ "+usd(sepM/L.fx):""),"bien");
  kpi("Gastaste",money(gm),ph?(gm>=ph?"+":"−")+pc(Math.abs(gm-ph)/ph)+" vs. mes pasado":null,ph&&gm>ph*1.15?"mal":ph&&gm<ph*.9?"bien":"");
- if(hay)kpi(disp>=gm?"Te queda":"Te faltan",money(Math.abs(disp-gm)),ini>0?(disp>=gm?"de los ":"gastaste más de los ")+money(disp)+" que tuviste este mes":"guardás el "+pc(Math.max(im-gm,0)/im)+" de lo que entró",disp>=gm?"bien":"mal");
+ if(hay)kpi(disp>=gm?"Te queda":"Te faltan",money(Math.abs(disp-gm)),ini>0||sepM?(disp>=gm?"de los ":"gastaste más de los ")+money(disp)+" que tuviste para gastar este mes":"guardás el "+pc(Math.max(im-gm,0)/im)+" de lo que entró",disp>=gm?"bien":"mal");
  kpi("Por día",money(gm/dia),"promedio en "+dia+" días");
  if(proy)kpi("Fin de mes",money(proy),"si seguís a este ritmo",hay&&proy>disp?"mal":"");
  // Presupuestos por categoría
@@ -213,7 +216,7 @@ function renderResumen(){
   else if(dia>=5&&u/dia*dim>B*1.05&&u>=B*.5)tip("ojo","A este ritmo "+k+" va a cerrar en ≈ "+money(u/dia*dim)+", arriba de los "+money(B)+" que te pusiste. Te quedan "+money(B-u)+": unos "+money((B-u)/resta)+" por día.");
   else if(u>=B*.8)tip("ojo","Ya usaste el "+pc(u/B)+" del presupuesto de "+k+".")});
  // Lo que tenías para el mes contra lo que vas gastando (si ya te pasaste, lo avisa el saldo en negativo de abajo)
- var tuv=ini>0?"lo que tenés para el mes ("+money(disp)+": "+money(ini)+" con los que arrancaste + "+money(im)+" que entró)":"lo que entró ("+money(im)+")";
+ var tuv=ini>0||sepM?"lo que tenés para gastar este mes ("+money(disp)+": "+(ini>0?money(ini)+" con los que arrancaste + ":"")+money(im)+" que entró"+(sepM?" − "+money(sepM)+" que separaste para ahorro":"")+")":"lo que entró ("+money(im)+")";
  if(saldo>=0&&hay&&proy&&proy>disp)tip("ojo","Si seguís a este ritmo vas a gastar ≈ "+money(proy)+", más de "+tuv+". Para no pasarte, tratá de gastar hasta "+money((disp-gm)/resta)+" por día lo que queda del mes.");
  else if(saldo>=0&&ini>0&&!mes1&&im&&gm>im)tip("tip","Este mes gastaste "+money(gm-im)+" más de lo que entró: lo estás cubriendo con la plata que ya tenías. Si se repite todos los meses, tu capital va a ir bajando.");
  // Cuánto dura lo que hay en la cuenta del día a día
@@ -240,12 +243,12 @@ function renderResumen(){
  if(L.expenses.some(function(e){return e.f<w0})){var wa=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=w0&&e.f<wk}))/4;
   if(wa>0&&ws>wa*1.4)tip("ojo","Esta semana ya gastaste "+money(ws)+", "+pc(ws/wa-1)+" más que tu promedio semanal ("+money(wa)+").")}
  // Ahorro y objetivo
- var sob=im-gm,got=saveTot();USD.forEach(function(a,i){got+=usdVal(i)});var falta=GOAL.target-got;
+ var sob=im-gm,lib=sob-sepM,got=saveTot();USD.forEach(function(a,i){got+=usdVal(i)});var falta=GOAL.target-got;
  if(im&&dia>=10&&sob/im>=.2)tip("bien","Estás guardando el "+pc(sob/im)+" de lo que entró este mes. ¡Buen ritmo!");
  var md=metaDias();
  if(falta>0&&md!=null&&md<=0)tip("ojo","Venció el plazo de tu objetivo \""+GOAL.x+"\" y te faltaron "+usd(falta)+". Ponele un plazo nuevo en Ajustes.");
  else if(falta>0&&md>0){var need=falta/Math.max(md/30.44,1);
-  if(am<need)tip("tip","Para llegar a \""+GOAL.x+"\" antes del "+fLarga(metaFin())+" necesitás sumar "+usd(need)+" por mes; este mes llevás "+usd(Math.max(am,0))+"."+(sob>0&&L.fx>0?" Te sobran "+money(sob)+" (≈ "+usd(sob/L.fx)+") que podrías pasar al ahorro.":""));
+  if(am<need)tip("tip","Para llegar a \""+GOAL.x+"\" antes del "+fLarga(metaFin())+" necesitás sumar "+usd(need)+" por mes; este mes llevás "+usd(Math.max(am,0))+"."+(lib>0&&L.fx>0?" Te sobran "+money(lib)+" (≈ "+usd(lib/L.fx)+") que podrías pasar al ahorro.":""));
   else tip("bien","Este mes ya sumaste lo que necesitás para tu objetivo \""+GOAL.x+"\".")}
  else if(falta>0&&am<=0&&sob>0&&dia>=20)tip("tip","Este mes te sobran "+money(sob)+" y todavía no sumaste nada al ahorro.");
  // Datos que faltan cargar
@@ -268,7 +271,7 @@ function renderHist(){
  Object.keys(by).forEach(function(k){if(!H.some(function(e){return e[0]===k}))H.push([k,by[k]])});
  H.sort(function(a,b){return b[1]-a[1]});
  var tot=(app?APPTOT:0)+sp,mov=0;H.forEach(function(e){if(e[2])mov+=e[1]});
- cuentas+=ingTot()-sp;var rows=[["Tus cuentas en pesos",money(cuentas)],["Tus dólares","US$ "+du.toLocaleString("es-AR")],[app?"Registrado en "+Y+" (app + panel)":"Registrado en el panel","≈ "+money(tot)],["Movido a ahorro e inversión",money(mov)],["Gastos reales (sin ahorro ni inversión)","≈ "+money(tot-mov)]];
+ cuentas+=ingTot()-sp-sepTot();var rows=[["Tus cuentas en pesos",money(cuentas)],["Tus dólares","US$ "+du.toLocaleString("es-AR")],[app?"Registrado en "+Y+" (app + panel)":"Registrado en el panel","≈ "+money(tot)],["Movido a ahorro e inversión",money(mov)],["Gastos reales (sin ahorro ni inversión)","≈ "+money(tot-mov)]];
  rows.forEach(function(r){var d=el("div","row");d.appendChild(el("span","",r[0]));d.appendChild(el("b","",r[1]));h.appendChild(d)});
  if(!H.length){h.appendChild(el("p","sem","Todavía no cargaste gastos."));return}
  var t=el("h3","",app?"En qué se fue la plata en "+Y:"En qué se fue la plata");t.style.margin="18px 0 10px";t.style.fontSize="16px";h.appendChild(t);
@@ -292,10 +295,10 @@ function renderExtra(){
   evBtns(rt,it,e.f,r);r.appendChild(rt);pr.appendChild(r)});
  var sp=0;L.expenses.forEach(function(e){sp+=e.m});
  var wk=mon(),ws=0;L.expenses.forEach(function(e){if(e.f>=wk)ws+=e.m});
- var wi=null;L.ing.forEach(function(e){if(e.k===wk&&!e.adj)wi=(wi||0)+e.v});
- $("sem").textContent=wi==null?"Cargá lo que te entró esta semana para ver cuánto te sobra.":"Esta semana entró "+money(wi)+" y gastaste "+money(ws)+(wi-ws>0?": te sobran "+money(wi-ws)+(L.fx>0?" (≈ "+usd((wi-ws)/L.fx)+")":"")+" para los próximos gastos.":": esta semana no sobra.");
+ var wi=null,wsep=0;L.ing.forEach(function(e){if(e.k===wk&&!e.adj)wi=(wi||0)+e.v});L.saves.forEach(function(e){if(e.ars&&e.f>=wk)wsep+=e.ars});var wl=(wi||0)-wsep-ws;
+ $("sem").textContent=wi==null?"Cargá lo que te entró esta semana para ver cuánto te sobra.":"Esta semana entró "+money(wi)+(wsep?", separaste "+money(wsep)+" para ahorro":"")+" y gastaste "+money(ws)+(wl>0?": te sobran "+money(wl)+(L.fx>0?" (≈ "+usd(wl/L.fx)+")":"")+" para los próximos gastos.":": esta semana no sobra.");
  var c=$("ctas");c.innerHTML="";var t=0;
- ACC.forEach(function(a,i){var d=i===0,v=d?accVal(0)+ingTot()-sp:accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?a[0]+" (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){if(d)ajusteDiario(nv-v);else setBal("a"+i,nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
+ ACC.forEach(function(a,i){var d=i===0,v=d?diaVal():accVal(i);t+=v;var r=el("div","row");r.appendChild(el("span","",d&&(sp||ingTot())?a[0]+" (con lo que cargaste)":a[0]));var rt=el("span","",money(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(r,v,function(nv){if(d)ajusteDiario(nv-v);else setBal("a"+i,nv)})};rt.appendChild(b);r.appendChild(rt);c.appendChild(r)});
  if(ACC.length>1){var r=el("div","row");r.appendChild(el("b","","Total en pesos"));r.appendChild(el("b","",money(t)));c.appendChild(r)}
  var u=el("div","none","Dólares");u.style.marginTop="12px";c.appendChild(u);var tu=0;
  USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+v.toLocaleString("es-AR")),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
@@ -305,7 +308,10 @@ function renderExtra(){
 }
 $("fb").onclick=function(){var v=parseFloat($("fx").value);if(!(v>0))return;L.fx=v;L.fxAuto=false;$("fx").value="";save();render()};
 $("fa").onclick=function(){L.fxAuto=true;save0();blue(true)};
-$("wb").onclick=function(){var v=parseFloat($("wi").value);if(!(v>0))return;setWeek(v);$("wi").value="";save();render()};
+$("wb").onclick=function(){var v=parseFloat($("wi").value);if(!(v>0))return;var p=WP==null?AHO:WP,o=sumarIng(today,v,p);$("wi").value="";WP=null;save();render();wpPaint();
+ if(pctOk(p)&&!o.p)$("sem").textContent="Sumé el ingreso, pero no pude separar el ahorro: falta la cotización del dólar (cargala en Cuentas)."};
+$("wi").addEventListener("input",function(){wpPaint()});
+$("wi").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("wb").click()}});
 $("eb").onclick=function(){var t=$("et").value.trim();if(!t||!$("ed").value)return;
  L.events.push({f:$("ed").value,t:$("eh").value,x:t});$("et").value="";save();render()};
 $("gb").onclick=function(){var m=parseFloat($("gm").value);if(!(m>0))return;
@@ -320,28 +326,31 @@ function saveTot(){var t=0;L.saves.forEach(function(e){t+=e.m});return t}
 function renderMov(){
  var h=$("mov");h.innerHTML="";var all=[];
  L.expenses.forEach(function(e){all.push({t:"g",e:e,f:e.f,l:"Gasto · "+e.c+(e.x?" · "+e.x:""),v:e.m})});
- L.ing.forEach(function(e){all.push({t:"i",e:e,f:e.f||e.k,l:e.adj?"Ajuste de saldo":"Ingreso",v:e.v})});
- L.saves.forEach(function(e){all.push({t:"a",e:e,f:e.f,l:e.m<0?"Retiro del ahorro":"Aporte al ahorro",v:e.m})});
+ L.ing.forEach(function(e){all.push({t:"i",e:e,f:e.f||e.k,l:e.adj?"Ajuste de saldo":"Ingreso"+(e.p?" · "+pctTxt(e.p)+" al ahorro":""),v:e.v})});
+ L.saves.forEach(function(e){all.push({t:"a",e:e,f:e.f,l:e.m<0?"Retiro del ahorro":"Aporte al ahorro"+(e.ing?" · de un ingreso ("+money(e.ars)+")":""),v:e.m})});
  if(!all.length){h.appendChild(el("div","none","Todavía no cargaste movimientos desde el panel."));return}
  all.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,30).forEach(function(m){
   var r=el("div","row"),l=el("span");l.appendChild(document.createTextNode(m.l+" "));l.appendChild(el("small","",m.f.slice(8)+"/"+m.f.slice(5,7)));
   var rt=el("span","",m.t==="a"?usd(m.v):money(m.v)),ed=el("button","x","✎"),dl=el("button","x","×");
   ed.setAttribute("aria-label","Editar monto");dl.setAttribute("aria-label","Borrar");
   ed.onclick=function(){editMov(r,m)};
-  dl.onclick=function(){if(m.t==="g")drop(L.expenses,m.e);else if(m.t==="i"){drop(L.ing,m.e);if(L.week&&L.week.k===m.e.k)L.week=null}else drop(L.saves,m.e);save();render()};
+  dl.onclick=function(){if(m.t==="g")drop(L.expenses,m.e);else if(m.t==="i"){drop(L.ing,m.e);drop(L.saves,aporteDe(m.e));if(L.week&&L.week.k===m.e.k)L.week=null}else{drop(L.saves,m.e);desligar(m.e)}save();render()};
   rt.appendChild(ed);rt.appendChild(dl);r.appendChild(l);r.appendChild(rt);h.appendChild(r)});
 }
 function editMov(r,m){
  r.innerHTML="";r.style.flexWrap="wrap";
  var n=document.createElement("input");n.type="number";n.value=m.v;n.setAttribute("aria-label","Monto");
- var sel=null;
+ var sel=null,pi=null;
+ if(m.t==="i"&&!m.e.adj){pi=document.createElement("input");pi.type="number";pi.min="0";pi.max="100";pi.value=m.e.p||0;pi.style.flex="0 0 90px";pi.setAttribute("aria-label","% para ahorro");pi.title="% para ahorro"}
  if(m.t==="g"){sel=document.createElement("select");Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;if(k===m.e.c)o.selected=true;sel.appendChild(o)})}
  var ok=el("button","","Guardar"),no=el("button","x","Cancelar");
- ok.onclick=function(){var v=parseFloat(n.value);if(m.t==="a"?!v:!(v>0))return;
-  if(m.t==="g"){m.e.m=v;m.e.c=sel.value}else if(m.t==="i"){m.e.v=v;if(L.week&&L.week.k===m.e.k)L.week.v=v}else m.e.m=v;
+ ok.onclick=function(){var v=parseFloat(n.value);if(m.t==="a"?!v||(m.e.ing&&v<0):!(v>0))return;
+  if(pi&&!(parseFloat(pi.value)>=0&&parseFloat(pi.value)<=100))return;
+  if(m.t==="g"){m.e.m=v;m.e.c=sel.value}else if(m.t==="i"){m.e.v=v;if(L.week&&L.week.k===m.e.k)L.week.v=v;if(pi)ligar(m.e,pi.value)}
+  else{var fx=m.e.ars?m.e.fx||m.e.ars/m.e.m:0;m.e.m=v;if(fx){m.e.ars=Math.round(v*fx);L.ing.forEach(function(o){if(o.id===m.e.ing)o.p=Math.round(m.e.ars/o.v*1000)/10})}}
   save();render()};
  no.onclick=function(){render()};
- r.appendChild(n);if(sel)r.appendChild(sel);r.appendChild(ok);r.appendChild(no);
+ r.appendChild(n);if(sel)r.appendChild(sel);if(pi){r.appendChild(pi);r.appendChild(el("span","","% al ahorro"))}r.appendChild(ok);r.appendChild(no);
 }
 function bal(k,d){return L.bal&&L.bal[k]!=null?L.bal[k]:d}
 function accVal(i){return bal("a"+i,ACC[i][1])}
@@ -430,7 +439,7 @@ $("nb").onclick=async function(){
   else if(r._ia&&!r._ia.propia&&r._ia.quedan<=5)nota=(r._ia.quedan?"Te quedan "+cant(r._ia.quedan,"nota","notas"):"Ya no te quedan notas")+" hoy con la IA compartida. Cargá tu propia clave gratis en El vestuario → IA de Petaca.";
   var G=(r.gastos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,m:Number(g.monto),c:BUDGET[g.categoria]?g.categoria:"Otros",x:String(g.detalle||"")}});
   var E=(r.eventos||[]).filter(function(e){return e&&ok.test(e.fecha)&&e.titulo}).map(function(e){return{f:e.fecha,t:/^\d{2}:\d{2}$/.test(e.hora||"")?e.hora:"",x:String(e.titulo),imp:!!e.imp||/importante|avis/i.test(e.titulo)}});
-  var IN=(r.ingresos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,v:Number(g.monto)}}),A=Number(r.ahorro_usd)||null;
+  var IN=(r.ingresos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,v:Number(g.monto),p:AHO}}),A=Number(r.ahorro_usd)||null;
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
   var NS=(r.sin_clases||[]).filter(function(d){return ok.test(d)});
@@ -444,7 +453,7 @@ $("nb").onclick=async function(){
   var K=[
    {a:G,t:function(g){return"Gasto: "+money(g.m)+" en "+g.c+(g.x?" ("+g.x+")":"")+" · "+fd(g.f)},f:[["m","Monto","number"],["c","Categoría",CAT],["x","Detalle","text"],["f","Fecha","date"]]},
    {a:E,t:function(e){return"Evento: "+e.x+" · "+fd(e.f)+(e.t?" "+e.t:"")+(e.imp&&TG?" · 🔔 te aviso por Telegram":"")},f:[["x","Qué","text"],["f","Fecha","date"],["t","Hora","time"]].concat(TG?[["imp","Avisarme por Telegram","check"]]:[])},
-   {a:IN,t:function(i){return"Ingreso: "+money(i.v)+" · "+fd(i.f)},f:[["v","Monto","number"],["f","Fecha","date"]]},
+   {a:IN,t:function(i){return"Ingreso: "+money(i.v)+" · "+fd(i.f)+(i.p?" · separás "+pctTxt(i.p)+" para ahorro ("+money(i.v*i.p/100)+")":" · sin separar ahorro")},f:[["v","Monto","number"],["p","% para ahorro","number"],["f","Fecha","date"]]},
    {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
    {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
    {a:Cn,t:function(c){return"Cancelar: "+(c.t==="X"?"gasto de "+money(c.e.m)+" en "+c.e.c:c.e.x)+" · "+fd(c.e.f)}},
@@ -461,7 +470,7 @@ $("nb").onclick=async function(){
    var b=el("button","","Listo"),c=el("button","x","Cancelar");
    b.onclick=function(){k.f.forEach(function(s){var i=inp[s[0]],v;
      if(s[2]==="check")v=i.checked;
-     else if(s[2]==="number"){v=parseFloat(String(i.value).replace(",","."));if(!isFinite(v)||v===0||(v<0&&k.a!==AA))return}
+     else if(s[2]==="number"){v=parseFloat(String(i.value).replace(",","."));if(!isFinite(v)||(v===0&&s[0]!=="p")||(v<0&&k.a!==AA)||(s[0]==="p"&&v>100))return}
      else if(s[2]==="date"){v=i.value;if(!ok.test(v))return}
      else if(Array.isArray(s[2])){v=s[0]==="d"?+i.value:i.value}
      else{v=String(i.value).trim();if(!v&&s[2]!=="time"&&k.a!==G)return}
@@ -476,7 +485,7 @@ $("nb").onclick=async function(){
    if(!n){out.appendChild(el("p","sem","No queda nada para guardar."));var cl=el("button","x","Cerrar");cl.onclick=function(){out.innerHTML=""};out.appendChild(cl);return}
    var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
    yes.style.marginTop="10px";
-   yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){L.ing.push({f:i.f,k:monOf(i.f),v:i.v})});if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render()};
+   yes.onclick=function(){Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else drop(L.expenses,c.e)});NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){sumarIng(i.f,i.v,i.p)});if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render()};
    no.onclick=function(){out.innerHTML=""};
    out.appendChild(yes);out.appendChild(no)}
   draw();
@@ -484,8 +493,8 @@ $("nb").onclick=async function(){
  finally{busy=false}
 };
 
-function cfgObj(){return{ONB:ONB,CAP:CAP,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{ONB:ONB,CAP:CAP,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -625,6 +634,8 @@ function ajForm(){
  var g=el("div","aj");g.appendChild(el("h3","","Objetivo de ahorro"));var gr=el("div","add ajr ajg");
  [["x","Nombre del objetivo","text",GOAL.x],["target","Meta (US$)","number",GOAL.target]].forEach(function(s){var i=el("input");i.type=s[2];i.id="ajg-"+s[0];i.value=s[3];i.placeholder=s[1];i.title=s[1];i.setAttribute("aria-label",s[1]);if(s[2]==="number")i.inputMode="decimal";gr.appendChild(i)});
  g.appendChild(gr);
+ var ar=el("div","add ajr"),ai=el("input");ai.id="ajaho";ai.type="number";ai.inputMode="decimal";ai.min="0";ai.max="100";ai.value=AHO;ai.setAttribute("aria-label","Porcentaje de cada ingreso para ahorro");ai.style.flex="0 0 90px";
+ ar.appendChild(el("span","","De cada ingreso, separar"));ar.appendChild(ai);ar.appendChild(el("span","","% para ahorro"));g.appendChild(ar);
  // Plazo: sin plazo, en N semanas/meses/años, o hasta una fecha exacta.
  var pr=el("div","add ajr ajp"),pu=el("select"),pn=el("input"),pf=el("input"),ph=el("p","sem");pu.id="ajg-u";pn.id="ajg-n";pf.id="ajg-f";ph.id="ajg-h";
  [["","Sin plazo"],["s","En semanas"],["m","En meses"],["a","En años"],["f","Hasta una fecha"]].forEach(function(o){var op=el("option","",o[1]);op.value=o[0];pu.appendChild(op)});
@@ -652,6 +663,7 @@ function ajSave(){
  if(A.some(function(a){return!a.n})||U.some(function(a){return!a.n}))return(m.textContent="Hay una cuenta sin nombre.");
  var gx=$("ajg-x").value.trim(),gt=parseFloat($("ajg-target").value),gp=plazoForm();
  var cv=$("ajcap").value.trim(),cap=cv===""?null:parseFloat(cv.replace(",","."));if(cap!=null&&!(cap>=0))return(m.textContent="El capital inicial tiene que ser un número (0 o más).");
+ var ah=parseFloat(String($("ajaho").value).replace(",","."));if(!(ah>=0&&ah<=100))return(m.textContent="El % para ahorro tiene que ser de 0 a 100.");
  if(!gx)return(m.textContent="Poné un nombre para el objetivo.");if(!(gt>0))return(m.textContent="La meta del objetivo tiene que ser mayor a 0.");if(gp.err)return(m.textContent=gp.err);
  // Categorías: renombrar o quitar actualiza los gastos ya cargados (los de una categoría quitada pasan a "Otros").
  var NB={},ren={};C.forEach(function(c){NB[c.n]=c.v>=0?c.v:0;if(c.o!=null)ren[c.o]=c.n});
@@ -661,7 +673,7 @@ function ajSave(){
  function remap(R,old,p){var nb={};Object.keys(L.bal).forEach(function(k){if(k.charAt(0)!==p)nb[k]=L.bal[k]});
   var na=R.map(function(r,j){if(r.o!=null&&L.bal[p+r.o]!=null)nb[p+j]=L.bal[p+r.o];return[r.n,r.o!=null?old[r.o][1]:0]});L.bal=nb;return na}
  ACC=remap(A,ACC,"a");USD=remap(U,USD,"u");if(cap!=null){L.bal.a0=cap;CAP=1}
- GOAL={x:gx,target:gt,saved:GOAL.saved||0,pl:gp.pl,hasta:gp.hasta};
+ GOAL={x:gx,target:gt,saved:GOAL.saved||0,pl:gp.pl,hasta:gp.hasta};AHO=ah;
  HAVECFG=true;cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
  save();render();ajForm();$("ajm").textContent="Ajustes guardados."}
 $("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
@@ -703,7 +715,7 @@ $("iax").onclick=async function(){var m=$("iam");if(!SB||!UID)return;var r=await
 var PRE=null;
 var PRECAT=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas","Facultad","Salud","Ropa","Suscripciones","Deporte","Regalos","Viajes"],PREON=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas"];
 function preNum(v){var n=parseFloat(String(v).replace(",","."));return n>0?n:0}
-function preStart(){if(PRE)return;PRE={paso:0,cat:PRECAT.map(function(n){return{n:n,on:PREON.indexOf(n)>=0,v:""}}),pesos:"",usd:"",ing:"",gx:"",gt:"",gu:"m",gn:""};
+function preStart(){if(PRE)return;PRE={paso:0,cat:PRECAT.map(function(n){return{n:n,on:PREON.indexOf(n)>=0,v:""}}),pesos:"",usd:"",ing:"",aho:String(AHO),gx:"",gt:"",gu:"m",gn:""};
  document.body.classList.add("pre-open");$("pre").style.display="";prePaint()}
 function preEnd(){$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open");PRE=null}
 function preCampo(P,k,txt,ph,num){var lb=el("label","",txt),i=el("input");if(num){i.type="number";i.inputMode="decimal";i.min="0"}i.placeholder=ph;i.value=P[k];i.oninput=function(){P[k]=i.value};lb.appendChild(i);return lb}
@@ -726,7 +738,7 @@ function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.a
  else{
   c.appendChild(el("p","sem","¿Para qué estás ahorrando? Un viaje, la compu nueva, la entrada para la final… Si todavía no tenés uno, salteá este paso."));
   var f2=el("div","prf"),l3=el("label","","Para cuándo"),rw=el("div","add"),gn=el("input"),gu=el("select");
-  f2.appendChild(preCampo(P,"gx","Nombre del objetivo","Ej: Viaje al Mundial"));f2.appendChild(preCampo(P,"gt","Cuánto necesitás (US$)","Ej: 2000",1));
+  f2.appendChild(preCampo(P,"aho","¿Qué % de cada ingreso querés separar para ahorrar? (lo podés cambiar en cada uno)","Ej: 10",1));f2.appendChild(preCampo(P,"gx","Nombre del objetivo","Ej: Viaje al Mundial"));f2.appendChild(preCampo(P,"gt","Cuánto necesitás (US$)","Ej: 2000",1));
   gn.type="number";gn.inputMode="numeric";gn.min="1";gn.placeholder="Cuántos";gn.value=P.gn;gn.setAttribute("aria-label","Cantidad");gn.oninput=function(){P.gn=gn.value};
   [["","Sin plazo"],["s","semanas"],["m","meses"],["a","años"]].forEach(function(o){var op=el("option","",o[1]);op.value=o[0];gu.appendChild(op)});gu.value=P.gu;gu.setAttribute("aria-label","Plazo");
   gu.onchange=function(){P.gu=gu.value;gn.style.display=gu.value?"":"none"};gn.style.display=P.gu?"":"none";rw.appendChild(gn);rw.appendChild(gu);l3.appendChild(rw);f2.appendChild(l3);c.appendChild(f2)}
@@ -740,6 +752,7 @@ function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.a
 function preCheck(){var P=PRE;
  if(P.paso===0&&!P.cat.some(function(k){return k.on}))return"Elegí al menos una categoría.";
  if(P.paso===1&&String(P.pesos).trim()==="")return"Poné tu capital inicial (si no tenés nada, poné 0).";
+ if(P.paso===2&&String(P.aho).trim()!==""&&!(parseFloat(String(P.aho).replace(",","."))>=0&&parseFloat(String(P.aho).replace(",","."))<=100))return"El % para ahorro tiene que ser de 0 a 100.";
  if(P.paso===2&&(P.gx.trim()||P.gt)){if(!P.gx.trim())return"Ponele un nombre al objetivo.";if(!preNum(P.gt))return"Poné cuánto necesitás, en dólares.";
   if(P.gu&&!(parseInt(P.gn,10)>0))return"Poné en cuántas "+{s:"semanas",m:"meses",a:"años"}[P.gu]+" querés llegar."}
  return""}
@@ -749,7 +762,7 @@ function preFin(todo){var P=PRE,NB={};
  delete NB.Otros;NB.Otros=0;L.expenses.forEach(function(e){if(NB[e.c]==null)e.c="Otros"});BUDGET=NB;
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
  if(!todo){ACC=[["Día a día",preNum(P.pesos)]];CAP=1;USD=[["Ahorro en dólares",preNum(P.usd)]];Object.keys(L.bal).forEach(function(k){if(/^[au]\d+$/.test(k))delete L.bal[k]});
-  var iv=preNum(P.ing);if(iv)setWeek(iv);
+  AHO=Math.min(preNum(P.aho),100);var iv=preNum(P.ing);if(iv)sumarIng(today,iv,AHO);
   if(P.gx.trim()&&preNum(P.gt)){var n=parseInt(P.gn,10);GOAL={x:P.gx.trim(),target:preNum(P.gt),saved:0,pl:P.gu?{u:P.gu,n:n}:null,hasta:P.gu?sumaPlazo(today,n,P.gu):null}}}
  ONB=1;HAVECFG=true;preEnd();save();render();
  stat(todo?"Listo. Cuando quieras, armá tus categorías en El vestuario → Ajustes.":"¡Listo, tu equipo está armado! Lo podés cambiar cuando quieras en El vestuario → Ajustes.")}
@@ -771,3 +784,30 @@ function capStart(){if(PRE||CAPLATER||ONB===0||!UID||!capFalta()||$("pre").style
  izq.appendChild(no);der.appendChild(ok);b.appendChild(izq);b.appendChild(der);c.appendChild(b);
  w.innerHTML="";w.appendChild(c);w.style.display="";document.body.classList.add("pre-open");i.focus()}
 function capEnd(){if(PRE)return;$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open")}
+// Ahorro por ingreso: al cargar un ingreso se separa un % (el de Ajustes o el que elijas para ese ingreso) y pasa en dólares al ahorro.
+// El aporte queda ligado al ingreso (aporte.ing = ingreso.id, en pesos en aporte.ars): si editás o borrás el ingreso, el aporte y el saldo se acomodan solos.
+function sepTot(){var t=0;L.saves.forEach(function(e){if(e.ars)t+=e.ars});return t}
+function diaVal(){return accVal(0)+ingTot()-sumM(L.expenses)-sepTot()}
+function pctOk(p){p=parseFloat(String(p).replace(",","."));return p>0?Math.min(p,100):0}
+function pctTxt(p){return String(Math.round(p*10)/10).replace(".",",")+"%"}
+function aporteDe(o){return o&&o.id?L.saves.filter(function(s){return s.ing===o.id})[0]||null:null}
+function ligar(o,p){p=pctOk(p);var s=aporteDe(o);
+ if(!p){if(s)drop(L.saves,s);delete o.p;return true}
+ var fx=s?s.fx||(s.m>0&&s.ars?s.ars/s.m:0):L.fx;if(!(fx>0))return false;
+ if(!o.id)o.id="i"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+ if(!s){s={f:o.f||today,ing:o.id};L.saves.push(s)}
+ o.p=p;s.fx=fx;s.ars=Math.round(o.v*p/100);s.m=Math.round(s.ars/fx*100)/100;return true}
+function sumarIng(f,v,p){var o={f:f,k:monOf(f),v:v};L.ing.push(o);ligar(o,p);return o}
+function desligar(s){if(s&&s.ing)L.ing.forEach(function(o){if(o.id===s.ing)delete o.p})}
+// Vista previa del ingreso que se está cargando: cuánto se separa y cuánto queda para gastar, con el % editable.
+function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($("wi").value);if(!(v>0)){WP=null;return}
+ var p=WP==null?AHO:WP,top=el("div","wpr"),i=el("input"),ch=el("div","wpc"),out=el("p","sem"),fij=el("button","lk");
+ top.appendChild(el("span","","Separar para ahorro"));i.type="number";i.inputMode="decimal";i.min="0";i.max="100";i.value=p;i.setAttribute("aria-label","Porcentaje para ahorro");top.appendChild(i);top.appendChild(el("span","","%"));
+ [0,5,10,15,20,30].forEach(function(n){var c=el("button","",n+"%");c.type="button";c.onclick=function(){WP=n;i.value=n;nums()};ch.appendChild(c)});
+ function nums(){var q=pctOk(i.value),a=Math.round(v*q/100);
+  out.textContent=q?"De "+money(v)+" separás "+money(a)+(L.fx>0?" (≈ "+usd(a/L.fx)+")":"")+" para ahorro y te quedan "+money(v-a)+" para gastar."+(L.fx>0?"":" Falta la cotización del dólar para pasarlo a US$."):"No separás nada: los "+money(v)+" quedan para gastar.";
+  [].forEach.call(ch.children,function(c){c.classList.toggle("on",c.textContent===q+"%")});
+  fij.textContent="Usar "+pctTxt(q)+" siempre";fij.style.display=q!==AHO?"":"none"}
+ i.oninput=function(){WP=pctOk(i.value);nums()};
+ fij.onclick=function(){AHO=pctOk(i.value);HAVECFG=true;save();nums()};
+ b.appendChild(top);b.appendChild(ch);b.appendChild(out);b.appendChild(fij);nums()}

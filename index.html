@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=27">
+<link rel="stylesheet" href="styles.css?v=29">
 </head>
 <body class="auth">
 <main>
@@ -53,6 +53,7 @@
 <div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
 <div class="legend"><span id="gastado"></span><span>La barra se llena a medida que gastás</span></div>
 <div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><button id="wb">Sumar ingreso</button></div>
+<div id="wp" class="wp"></div>
 <p class="sem" id="sem"></p>
 
 </div>
@@ -186,6 +187,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=28"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>
