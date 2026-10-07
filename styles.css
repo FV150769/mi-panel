@@ -446,3 +446,11 @@ body.pre-open{overflow:hidden}
 .wpc button{min-height:32px;padding:4px 12px;border-radius:99px;background:none;color:inherit;border:1px solid var(--line);box-shadow:none;font-weight:600}
 .wpc button.on{background:var(--sun);border-color:var(--sun);color:var(--ink)}
 .wp .sem{margin:8px 0 0}
+
+/* Transferencia / efectivo y aviso con "Deshacer" (v30) */
+.hero .medios{margin:4px 0 10px;font-weight:600}
+#ctas .row.sub{padding-left:14px;font-size:14px;color:var(--mute)}
+#toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;max-width:min(560px,calc(100vw - 32px));padding:10px 12px 10px 16px;border-radius:14px;background:var(--ink);color:var(--panel);box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:14px}
+#toast span{flex:1}
+#toast button{min-height:34px;padding:0 12px;flex:none}
+#toast button.x{background:none;color:inherit;border:0;box-shadow:none;font-size:18px;padding:0 6px}

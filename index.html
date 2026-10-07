@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=29">
+<link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body class="auth">
 <main>
@@ -40,7 +40,7 @@
 <div class="grupo" data-g="nota" data-name="Contale a Petaca">
 <section style="margin-bottom:16px">
 <h2>Contale a Petaca</h2>
-<textarea id="nt" rows="3" placeholder="Ej: gasté 8 mil en farmacia y el viernes a las 10 tengo trámite. O: cancelá el parcial del 13/10" aria-label="Nota"></textarea>
+<textarea id="nt" rows="3" placeholder="Ej: gasté 8 mil en efectivo en farmacia y el viernes a las 10 tengo trámite. O: me equivoqué, el gasto de farmacia eran 6 mil y fue con transferencia" aria-label="Nota"></textarea>
 <div class="add"><button id="nb">Entender nota</button><button id="un" disabled>↶ Deshacer</button></div>
 <div id="nr" class="sem"></div>
 </section>
@@ -50,9 +50,10 @@
 <h2 class="grp">💸 La guita</h2>
 <div class="hero">
 <p id="frase"></p>
+<p class="sem medios" id="medios"></p>
 <div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
 <div class="legend"><span id="gastado"></span><span>La barra se llena a medida que gastás</span></div>
-<div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><button id="wb">Sumar ingreso</button></div>
+<div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><select id="wme" aria-label="Cómo te entró"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="wb">Sumar ingreso</button></div>
 <div id="wp" class="wp"></div>
 <p class="sem" id="sem"></p>
 
@@ -72,6 +73,7 @@
 <input type="number" id="gm" placeholder="Monto" inputmode="decimal" aria-label="Monto">
 <select id="gc" aria-label="Categoría"></select>
 <input id="gt" placeholder="Detalle" aria-label="Detalle">
+<select id="gme" aria-label="Cómo lo pagaste"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select>
 <button id="gb">Agregar gasto</button>
 </div>
 </section>
@@ -86,6 +88,8 @@
 <section class="goal" data-c="cuentas" data-name="Cuentas">
 <details><summary>Cuentas</summary>
 <div id="ctas"></div>
+<p class="sem" style="margin:10px 0 0">¿Sacaste del cajero o depositaste efectivo? Cargalo acá: no es gasto ni ingreso, solo cambia dónde está la plata.</p>
+<div class="add"><input type="number" id="mvm" placeholder="Monto ($)" inputmode="decimal" aria-label="Monto a pasar"><select id="mva" aria-label="Hacia dónde"><option value="e">Saqué efectivo (de transferencia a efectivo)</option><option value="t">Deposité efectivo (de efectivo a transferencia)</option></select><button id="mvb">Pasar</button></div>
 <div class="add"><input type="number" id="fx" placeholder="Cotización del dólar (pesos por US$)" inputmode="decimal" aria-label="Cotización del dólar"><button id="fb">Guardar cotización</button><button class="lk" id="fa">Usar dólar blue automático</button></div>
 <p class="sem" style="margin:6px 0 0">La cotización se toma sola del dólar blue (venta). Si guardás una a mano, se usa esa hasta que toques "Usar dólar blue automático".</p>
 </details>
@@ -184,9 +188,10 @@
 </div>
 
 <p class="sem" id="est"></p>
+<div id="toast" role="status" aria-live="polite" style="display:none"></div>
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=29"></script>
+<script src="app.js?v=30"></script>
 </body>
 </html>
