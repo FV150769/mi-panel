@@ -27,8 +27,12 @@ function hoyAR() {
 }
 
 // Llama a Gemini; si está saturado (503/429/500) o tarda, reintenta y después prueba con un modelo más liviano.
-// Sin "pensamiento" (thinkingBudget 0) responde mucho más rápido; si el modelo no lo acepta, se reintenta sin eso.
+// Pensando lo mínimo responde mucho más rápido. Cada modelo acepta una forma distinta de pedirlo, así que se prueban
+// en orden y, si el modelo rechaza la opción (error 400), se pasa a la siguiente; la última es sin opción.
+// La que funcionó se recuerda por modelo mientras la función siga activa.
 // Cada intento tiene 14 s y en total no se esperan más de 30 s, para que la página no quede colgada.
+const PENSAR: (Record<string, unknown> | null)[] = [{ thinkingLevel: "minimal" }, { thinkingBudget: 0 }, null];
+const pensarOk: Record<string, number> = {};
 async function llamar(key: string, prompt: string) {
   const intentos = [
     "gemini-flash-latest",
@@ -37,19 +41,20 @@ async function llamar(key: string, prompt: string) {
     "gemini-flash-lite-latest",
   ];
   const fin = Date.now() + 30000;
-  let pensar = false;
   let d: any = {};
   let status = 0;
   for (let i = 0; i < intentos.length; i++) {
-    if (i > 0) await new Promise((r) => setTimeout(r, 500));
+    const modelo = intentos[i];
+    const pv = pensarOk[modelo] ?? 0;
+    if (i > 0 && status !== 400) await new Promise((r) => setTimeout(r, 500));
     const queda = fin - Date.now();
     if (queda < 3000) break;
     const gen: any = { responseMimeType: "application/json", temperature: 0 };
-    if (!pensar) gen.thinkingConfig = { thinkingBudget: 0 };
+    if (PENSAR[pv]) gen.thinkingConfig = PENSAR[pv];
     let res: Response;
     try {
       res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${intentos[i]}:generateContent`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -64,9 +69,14 @@ async function llamar(key: string, prompt: string) {
     }
     status = res.status;
     d = await res.json().catch(() => ({}));
-    if (res.ok) return { ok: true, d, status };
-    if (res.status === 400 && !pensar && /think/i.test(d?.error?.message || "")) {
-      pensar = true;
+    if (res.ok) {
+      pensarOk[modelo] = pv;
+      return { ok: true, d, status };
+    }
+    // Opción de pensamiento no aceptada: mismo modelo con la siguiente forma (no cuenta como intento).
+    // Un 400 por la clave inválida no se reintenta.
+    if (res.status === 400 && pv < PENSAR.length - 1 && !/api key/i.test(d?.error?.message || "")) {
+      pensarOk[modelo] = pv + 1;
       i--;
       continue;
     }
