@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v33";
+var DOC=null,VER="v34";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -403,12 +403,14 @@ function pMonto(c){return pMontos(c)[0]||null}
 function medDe(c){return/efectivo|\bcash\b|billete|en mano/.test(c)?"efectivo":/transf|mercado ?pago|\bmp\b|tarjeta|debito|banco|billetera|virtual|\bqr\b|\bcvu\b|\bcbu\b|alias/.test(c)?"transferencia":""}
 function pMed(v){v=n2(String(v||""));return/efect|cash/.test(v)?"e":/transf|banco|tarj|debit|mercado|virtual|billetera|qr/.test(v)?"t":""}
 // Busca en la lista de lo cargado (cands) lo que más se parece al texto: palabras en común, la fecha y el monto.
-var TIPO={X:"gasto",I:"ingreso cobre sueldo",M:"cajero saque deposite movimiento",E:"evento",F:"evento"};
+var TIPO={X:"gasto",I:"ingreso cobre sueldo",M:"cajero saque deposite movimiento",E:"evento",F:"evento",R:"rutina semana semanal"};
+// Próximo día (desde f inclusive) que cae en el día de la semana d (0 = domingo).
+function proxDia(f,d){var w=new Date(f+"T00:00").getDay();return plus(f,(d-w+7)%7)}
 function elegir(c,mo,f,hd,C){
- var ws=c.replace(/\b(cancel|anul|borr|elimin|sac|quit|suspend|correg|cambi|equivoc)[a-z]*/g," ").split(/[^a-z0-9]+/).filter(function(w){return w.length>=4&&!/^(para|sobre|desde|hasta|tengo|esto|esta|este|como|pero|eran|fueron|efectivo|transferencia|realidad|cargue|puse)$/.test(w)}),best=null,bs=0;
+ var ws=c.replace(/\b(cancel|anul|borr|elimin|sac|quit|suspend|correg|cambi|equivoc)[a-z]*/g," ").split(/[^a-z0-9]+/).filter(function(w){return w.length>=3&&!/^(voy|mas|del|con|que|hay|los|las|una|uno|por|ese|esa|eso|era|fue|dia|hoy|ayer|ver|van|vas|sus|mis|tus|son|sin|asi|muy|ahi|aca|para|sobre|desde|hasta|tengo|esto|esta|este|como|pero|eran|fueron|efectivo|transferencia|realidad|cargue|puse)$/.test(w)}),best=null,bs=0;
  if(C&&C.o)Object.keys(C.o).forEach(function(k){var it=C.o[k],e=it.e,tx=n2(TIPO[it.t]+" "+String(e.x||"")+" "+String(e.c||"")),sc=0,mm=it.t==="I"?e.v:e.m;
   ws.forEach(function(w){if(!/^\d+$/.test(w)&&tx.indexOf(w)>=0)sc+=2});
-  if(hd&&(e.f||e.k)===f)sc+=2;
+  if(hd&&(it.t==="R"?e.d===new Date(f+"T00:00").getDay():(e.f||e.k)===f))sc+=2;
   if(mo&&mm===mo)sc+=3;
   if(sc&&sc>=bs){bs=sc;best=k}});
  return bs>=2?best:null}
@@ -430,7 +432,7 @@ var CATS=[["Supermercado",/super|coto|carrefour|verdura|almacen|mercado|supermer
 function pCat(c){for(var i=0;i<CATS.length;i++)if(CATS[i][1].test(c))return CATS[i][0];return"Otros"}
 function limpio(t){return t.replace(/\b\d[\d.,]*\s*k\b/ig,"").replace(/\b(agreg|anot|agend|sum|gast|pagu|compr|me entr)[a-záéíóúñ]*/ig,"").replace(/\b(tengo|que)\b/ig,"").replace(/a las?\s*\d{1,2}([:.]\d{2})?\s*(hs|h|am|pm)?/ig,"").replace(/\d{1,2}:\d{2}/g,"").replace(/\d{1,2}\s*(am|pm)\b/ig,"").replace(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g,"").replace(/\b(manana|mañana|hoy|ayer|pasado|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|el|la|los|las|en|de|por|un|una|mil|lucas?)\b/ig,"").replace(/\$?\d[\d.,]*/g,"").replace(/\s+/g," ").trim()}
 function localParse(txt,C){
- var o={gastos:[],eventos:[],ingresos:[],movimientos:[],ahorro_usd:null,cotizacion:null,cancelar:[],sin_clases:[],rutinas:[],corregir:[]},last="g";
+ var o={gastos:[],eventos:[],ingresos:[],movimientos:[],ahorro_usd:null,cotizacion:null,cancelar:[],cancelar_fecha:[],sin_clases:[],rutinas:[],corregir:[]},last="g";
  // Corrección de algo ya cargado ("el gasto de 80 mil eran 8 mil", "el ingreso de ayer fue en efectivo"): se lee la nota entera.
  var cc=n2(txt);
  if(CORR.test(cc)&&C){var ms=pMontos(cc),cf=pFecha(cc),chd=/\d{1,2}\/\d{1,2}|manana|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\bel \d{1,2}\b/.test(cc),id=elegir(cc,ms[0],cf,chd,C);
@@ -442,10 +444,15 @@ function localParse(txt,C){
   raw=raw.trim();if(!raw)return;var c=n2(raw),mo=pMonto(c),f=pFecha(c);
   var mr=c.match(/\btodos los (lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/),hh=pHora(c);
   if(mr&&hh){var tt=limpio(raw.replace(/todos los \S+/i,""))||"Rutina";o.rutinas.push({dia:["domingo","lunes","martes","miercoles","jueves","viernes","sabado"].indexOf(mr[1]),hora:hh,titulo:tt.charAt(0).toUpperCase()+tt.slice(1)});return}
-  if(/\b(cancel|anul|borr|elimin|sac[aá]|quit[aá]|suspend|no voy|no tengo|no hay|se suspendio)/.test(c)){
+  if(/\b(cancel|anul|borr|elimin|sac[aá]|quit[aá]|suspend|no voy|no tengo|no hay|se suspendio|dejo de|deje de|ya no)/.test(c)){
    var hd=/\d{1,2}\/\d{1,2}|manana|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\bel \d{1,2}\b/.test(c);
-   if(/clase/.test(c)&&!/parcial|examen|turno/.test(c)){o.sin_clases.push(f);return}
    var best=elegir(c,mo,f,hd,C);
+   // Rutina: "ya no voy más", "toda la rutina", "todos los…" la termina; si no, se cancela solo ese día (o el próximo).
+   if(best&&C.o[best].t==="R"){var rr=C.o[best].e;
+    if(/\b(todos los|toda la|todas las|la rutina|nunca mas|ya no|mas\b|deje|dejo|para siempre|definitiv)/.test(c))o.cancelar.push(best);
+    else o.cancelar_fecha.push({id:best,fecha:proxDia(hd?f:today,rr.d)});
+    return}
+   if(/clase/.test(c)&&!/parcial|examen|turno/.test(c)){o.sin_clases.push(f);return}
    if(best)o.cancelar.push(best);
    return}
   if(/dolar/.test(c)&&/(esta a|cotiza|vale|esta en)/.test(c)&&mo){o.cotizacion=mo;return}
@@ -464,6 +471,7 @@ function descr(it){var e=it.e;
  if(it.t==="X")return"gasto "+e.f+" "+money(e.m)+" "+e.c+(e.x?" "+e.x:"")+" ("+(med(e)==="e"?"efectivo":"transferencia")+")";
  if(it.t==="I")return(e.adj?"ajuste de saldo ":"ingreso ")+(e.f||e.k)+" "+money(e.v)+" ("+(med(e)==="e"?"efectivo":"transferencia")+(e.p?", "+pctTxt(e.p)+" al ahorro":"")+")";
  if(it.t==="M")return"movimiento "+e.f+" "+money(e.m)+(e.a==="e"?" de transferencia a efectivo":" de efectivo a transferencia");
+ if(it.t==="R")return"rutina todos los "+DN[e.d].toLowerCase()+" "+e.t+(e.t2?"–"+e.t2:"")+" "+e.x+(e.from>today?" (desde "+e.from+")":"")+(e.to?" (hasta "+e.to+")":"");
  return"evento "+e.f+(e.t?" "+e.t:"")+" "+e.x}
 function cands(){var o={},t=[];
  function add(p,e){var k=p+t.length;o[k]={t:p,e:e};t.push(k+": "+descr(o[k]))}
@@ -472,10 +480,11 @@ function cands(){var o={},t=[];
  L.expenses.slice(-15).forEach(function(e){add("X",e)});
  L.ing.slice(-8).forEach(function(e){add("I",e)});
  L.mv.slice(-5).forEach(function(e){add("M",e)});
+ RUT.forEach(function(e){if(!e.to||e.to>=today)add("R",e)});
  return{o:o,list:t.join(" | ")}}
 function drop(a,x){var i=a.indexOf(x);if(i>=0)a.splice(i,1)}
 function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d}
-function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo] y, si dice que no va a clase algún día, \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas, devolvé también \"rutinas\":[{\"dia\":0 a 6 (0=domingo),\"hora\":\"HH:MM\",\"titulo\":string}]. Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
+function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas, devolvé también \"rutinas\":[{\"dia\":0 a 6 (0=domingo),\"hora\":\"HH:MM\",\"titulo\":string}]. Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
 // Gemini vía la Edge Function "gemini" de Supabase: la clave vive como secreto en Supabase y nunca llega al navegador.
 // Si tarda más de 35 segundos se deja de esperar y la nota se entiende sin IA, así la página nunca queda trabada.
 async function gemini(p){
@@ -499,7 +508,7 @@ $("nb").onclick=async function(){
   var IN=(r.ingresos||[]).filter(function(g){return g&&g.monto>0}).map(function(g){return{f:ok.test(g.fecha)?g.fecha:today,v:Number(g.monto),p:AHO,me:pMed(g.medio)||$("wme").value}}),A=Number(r.ahorro_usd)||null;
   var MV=(r.movimientos||[]).filter(function(m){return m&&m.monto>0}).map(function(m){return{f:ok.test(m.fecha)?m.fecha:today,m:Number(m.monto),a:pMed(m.a)==="t"?"t":"e"}});
   // Correcciones de lo ya cargado: se arma una copia con los valores nuevos, se muestra antes/después y se aplica recién al guardar.
-  var CR=(r.corregir||[]).filter(function(c){return c&&C.o[c.id]}).map(function(c){var it=C.o[c.id],e=it.e,o={it:it},fn=ok.test(c.fecha)?c.fecha:null,mn=c.monto>0?Number(c.monto):null;
+  var CR=(r.corregir||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t!=="R"}).map(function(c){var it=C.o[c.id],e=it.e,o={it:it},fn=ok.test(c.fecha)?c.fecha:null,mn=c.monto>0?Number(c.monto):null;
    if(it.t==="X"){o.m=mn||e.m;o.c=BUDGET[c.categoria]?c.categoria:e.c;o.x=c.detalle!=null?String(c.detalle):(e.x||"");o.f=fn||e.f;o.me=pMed(c.medio)||med(e)}
    else if(it.t==="I"){var pp=parseFloat(c.porcentaje_ahorro);o.v=mn||e.v;o.f=fn||e.f||e.k;o.me=pMed(c.medio)||med(e);o.p=e.adj?0:pp>=0&&pp<=100?pp:(e.p||0)}
    else if(it.t==="M"){o.m=mn||e.m;o.a=pMed(c.medio)||e.a;o.f=fn||e.f}
@@ -515,10 +524,12 @@ $("nb").onclick=async function(){
   var CRX=CR.filter(function(o){return o.it.t==="X"}),CRI=CR.filter(function(o){return o.it.t==="I"}),CRM=CR.filter(function(o){return o.it.t==="M"}),CRE=CR.filter(function(o){return o.it.t==="E"||o.it.t==="F"});
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
+  // Un solo día de una rutina: la fecha se lleva al día de la semana de la rutina (si la IA se corre, va al próximo que corresponde).
+  var CF=(r.cancelar_fecha||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t==="R"&&Cn.indexOf(C.o[c.id])<0}).map(function(c){var e=C.o[c.id].e;return{r:e,f:proxDia(ok.test(c.fecha)?c.fecha:today,e.d)}});
   var NS=(r.sin_clases||[]).filter(function(d){return ok.test(d)});
   var RU=(r.rutinas||[]).filter(function(u){return u&&u.dia>=0&&u.dia<=6&&/^\d{2}:\d{2}$/.test(u.hora||"")&&u.titulo}).map(function(u){return{id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),d:+u.dia,t:u.hora,t2:"",x:String(u.titulo),from:today,to:""}});
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
-  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!NS.length&&!RU.length&&FX==null){out.textContent="No encontré gastos, eventos, ingresos ni nada para corregir en esa nota. Probá con más detalle.";return}
+  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null){out.textContent="No encontré gastos, eventos, ingresos ni nada para corregir en esa nota. Probá con más detalle.";return}
   // Vista previa editable: cada ítem se puede corregir (✎) o quitar (×) antes de guardar.
   var AA=A!=null?[{m:A}]:[],FF=FX!=null?[{v:FX}]:[],NSo=NS.map(function(d){return{f:d}});
   var CAT=Object.keys(BUDGET).map(function(c){return[c,c]}),DIA=DN.map(function(n,i){return[i,n]}),DIR=[["e","De transferencia a efectivo"],["t","De efectivo a transferencia"]];
@@ -534,7 +545,8 @@ $("nb").onclick=async function(){
    {a:IN,t:function(i){return"Ingreso: "+money(i.v)+" · "+fd(i.f)+" · "+medTxt(i.me)+(i.p?" · separás "+pctTxt(i.p)+" para ahorro ("+money(i.v*i.p/100)+")":" · sin separar ahorro")+ojo("i",i.v,i.f)},f:[["v","Monto","number"],["me","Medio",MED],["p","% para ahorro","number"],["f","Fecha","date"]]},
    {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
    {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
-   {a:Cn,t:function(c){return"Borrar: "+descr(c)}},
+   {a:Cn,t:function(c){return c.t==="R"?"Terminar la "+descr(c)+" · deja de aparecer desde hoy (lo anterior queda)":"Borrar: "+descr(c)}},
+   {a:CF,t:function(c){return"Cancelar solo el "+DN[c.r.d].toLowerCase()+" "+fd(proxDia(c.f,c.r.d))+": "+c.r.x+" "+c.r.t+" · las demás semanas sigue"},f:[["f","Qué día","date"]]},
    {a:NSo,t:function(d){return"Sin clases el "+fd(d.f)},f:[["f","Fecha","date"]]},
    {a:RU,t:function(u){return"Rutina: todos los "+DN[u.d].toLowerCase()+" "+u.t+" · "+u.x},f:[["d","Día",DIA],["t","Hora","time"],["x","Qué","text"]]}];
   var head=out.firstChild&&out.firstChild.tagName==="P"?out.firstChild:null;
@@ -568,7 +580,9 @@ $("nb").onclick=async function(){
     CRI.forEach(function(o){var e=o.it.e,wk=monOf(o.f),ap=aporteDe(e);e.v=o.v;e.me=o.me;e.f=o.f;if(L.week&&L.week.k===e.k){L.week.v=o.v;L.week.k=wk}e.k=wk;if(ap)ap.f=o.f;if(!e.adj)ligar(e,o.p)});
     CRM.forEach(function(o){var e=o.it.e;e.m=o.m;e.a=o.a;e.f=o.f});
     CRE.forEach(function(o){var e=o.it.e;e.x=o.x;e.f=o.f;e.t=o.t});
-    Cn.forEach(function(c){if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else if(c.t==="I"){drop(L.saves,aporteDe(c.e));drop(L.ing,c.e)}else if(c.t==="M")drop(L.mv,c.e);else drop(L.expenses,c.e)});
+    // Terminar una rutina: si ya venía de antes, queda hasta ayer (así no se pierde lo pasado); si todavía no empezó, se borra.
+    Cn.forEach(function(c){if(c.t==="R"){var re=c.e;if(re.from&&re.from>=today)drop(RUT,re);else re.to=plus(today,-1)}else if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else if(c.t==="I"){drop(L.saves,aporteDe(c.e));drop(L.ing,c.e)}else if(c.t==="M")drop(L.mv,c.e);else drop(L.expenses,c.e)});
+    CF.forEach(function(c){var k=c.r.id+"|"+proxDia(c.f,c.r.d);if(L.rskip.indexOf(k)<0)L.rskip.push(k)});
     NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){sumarIng(i.f,i.v,i.p,i.me)});MV.forEach(function(m){L.mv.push(m)});
     if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render();
     var nc=CRX.length+CRI.length+CRM.length+CRE.length;
