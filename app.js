@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v34";
+var DOC=null,VER="v35";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -619,9 +619,19 @@ async function enter(session){
  loadUser();
  try{await pull()}catch(e){stat("No pude sincronizar: "+(e&&e.message||e))}
  SB.channel("ps-"+UID).on("postgres_changes",{event:"*",schema:"public",table:"panel_state",filter:"user_id=eq."+UID},function(p){var q=p.new&&p.new.data;if(q&&q.L&&(q.L.t||0)>(L.t||0))adopt(q)}).subscribe()}
+// La sesión dura una hora y se renueva sola, pero al volver de segundo plano (celular dormido) puede salir un pedido con la vieja
+// y Supabase contesta "JWT expired". En ese caso se renueva la sesión y se repite el pedido una vez, sin mostrar el error.
+async function sbFetch(url,o){
+ var r=await fetch(url,o);
+ if(r.status!==401||String(url).indexOf("/auth/v1/")>=0||!SB)return r;
+ var t="";try{t=await r.clone().text()}catch(e){}
+ if(!/jwt/i.test(t))return r;
+ var s=await SB.auth.refreshSession();var tk=s&&s.data&&s.data.session&&s.data.session.access_token;if(!tk)return r;
+ var h=new Headers(o&&o.headers);if(h.has("Authorization"))h.set("Authorization","Bearer "+tk);
+ return fetch(url,Object.assign({},o,{headers:h}))}
 async function startSB(){
  if(!window.supabase||SUPABASE_URL.indexOf("http")!==0){document.body.classList.remove("auth");stat("Falta configurar Supabase: completá la URL y la clave al principio del script. Mientras tanto se guarda solo en este dispositivo · "+VER);return}
- SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+ SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{global:{fetch:sbFetch}});
  var r=await SB.auth.getSession();
  if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · "+VER)}
  SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;if(PRE)preEnd();else capEnd();try{SB.removeAllChannels()}catch(e){}resetLocal();try{localStorage.removeItem("panel-owner")}catch(e){}loginUI(true)}})}
@@ -637,7 +647,7 @@ $("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabas
 $("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("rpm").textContent="Mínimo 6 caracteres.");var r=await SB.auth.updateUser({password:pw});if(r.error)return($("rpm").textContent="No pude cambiarla: "+r.error.message);$("rp").value="";$("rpm").textContent="";$("rec").style.display="none";try{history.replaceState(null,"",location.pathname)}catch(e){}stat("Contraseña actualizada")};
 async function loadUser(){try{var r=await SB.from("profiles").select("username").eq("user_id",UID).maybeSingle();$("uname").value=(r.data&&r.data.username)||""}catch(e){}}
 $("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});$("um").textContent=r.error?(r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo."):"Guardado. Ya podés entrar con "+u+".";if(!r.error)$("uname").value=u};
-document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}if(UID)pull().catch(function(){})});
+document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}if(UID)SB.auth.getSession().then(pull).catch(function(){})});
 // Orden personalizado: el usuario arrastra grupos y tarjetas (o usa ↑ ↓); se guarda en su cuenta.
 var LAYOUT=null;
 function grupos(){return[].slice.call(document.querySelectorAll("main>.grupo"))}
