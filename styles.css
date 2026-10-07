@@ -508,3 +508,9 @@ html.huye,html.huye body{overflow-x:hidden}
 .globo.charla{border-color:#12A150}
 .globo.charla::after{border-color:#12A150}
 @media (prefers-reduced-motion:reduce){.tablero b.gira,.tablero span.gira{animation:none}}
+
+/* Días de una rutina: L M M J V S D para marcar los que se repite */
+.dias{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 100%}
+.dias button.dia{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-weight:700;letter-spacing:0}
+.dias button.dia.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.dias button.lk{min-height:32px;font-size:13px}

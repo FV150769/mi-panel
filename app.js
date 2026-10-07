@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v35";
+var DOC=null,VER="v37";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -49,14 +49,14 @@ $("fecha").textContent=now.toLocaleDateString("es-AR",{weekday:"long",day:"numer
 $("ed").value=today;
 var cs=$("gc");Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
 
-function migrate(){ACC.forEach(function(a){if(a[0]==="DIARIO")a[0]="Día a día"});USD.forEach(function(a){if(a[0]==="En caja")a[0]="Colchón"});if(RUT.length)return;Object.keys(CLASES||{}).forEach(function(k){(CLASES[k]||[]).forEach(function(c){RUT.push({id:"r"+k+"-"+c[0].replace(":",""),d:+k,t:c[0],t2:c[1],x:c[2],from:"",to:FIN})})});CLASES={}}
+function migrate(){ACC.forEach(function(a){if(a[0]==="DIARIO")a[0]="Día a día"});USD.forEach(function(a){if(a[0]==="En caja")a[0]="Colchón"});if(RUT.length){juntarRut();return}Object.keys(CLASES||{}).forEach(function(k){(CLASES[k]||[]).forEach(function(c){RUT.push({id:"r"+k+"-"+c[0].replace(":",""),d:+k,t:c[0],t2:c[1],x:c[2],from:"",to:FIN})})});CLASES={}}
 var DN=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 function plus(f,n){var d=new Date(f+"T00:00");d.setDate(d.getDate()+n);return iso(d)}
 function fd(f){return f.slice(8)+"/"+f.slice(5,7)}
 function occs(f){
  var dw=new Date(f+"T00:00").getDay(),a=[];
- RUT.forEach(function(r){if(r.d!==dw)return;if(r.from&&f<r.from)return;if(r.to&&f>r.to)return;
-  if(SKIP.indexOf(f)>=0||L.skip.indexOf(f)>=0||L.rskip.indexOf(r.id+"|"+f)>=0)return;
+ RUT.forEach(function(r){if(rds(r).indexOf(dw)<0)return;if(r.from&&f<r.from)return;if(r.to&&f>r.to)return;
+  if(SKIP.indexOf(f)>=0||L.skip.indexOf(f)>=0||[r.id].concat(r.al||[]).some(function(id){return L.rskip.indexOf(id+"|"+f)>=0}))return;
   if(FECHAS.some(function(e){return e.f===f&&e.t===r.t&&vis(e)}))return;
   a.push({f:f,t:r.t,x:r.x+(r.t2?" (hasta "+r.t2+")":""),r:r})});
  FECHAS.forEach(function(e){if(e.f===f&&vis(e))a.push({f:f,t:e.t,x:e.x,o:e,k:"F"})});
@@ -96,23 +96,49 @@ function renderMes(){
  for(var i=0;i<lead;i++)g.appendChild(el("span"));
  for(var k=1;k<=dm;k++){(function(k){var f=iso(new Date(b.getFullYear(),b.getMonth(),k)),n=occs(f).length,c=el("button",(f===today?"t":"")+(f>=st&&f<=plus(st,6)?" h":""));
   c.appendChild(document.createTextNode(k));c.appendChild(el("i","",n?"●".repeat(Math.min(n,3)):"\u00a0"));c.onclick=function(){VSTART=f;render()};g.appendChild(c)})(k)}}
+// Las rutinas viejas eran de un solo día: las que son iguales (mismo nombre, horario y fechas) se juntan en una con varios días.
+// Los ids de las que se juntan quedan en r.al, así siguen valiendo los días que ya se habían cancelado.
+function juntarRut(){var out=[],ix={};
+ RUT.forEach(function(r){if(!Array.isArray(r.ds)||!r.ds.length)r.ds=[r.d];var k=[r.x,r.t,r.t2||"",r.from||"",r.to||""].join("|"),g=ix[k];
+  if(!g){ix[k]=r;out.push(r);return}
+  r.ds.forEach(function(d){if(g.ds.indexOf(d)<0)g.ds.push(d)});g.al=(g.al||[]).concat([r.id],r.al||[])});
+ out.forEach(function(r){r.ds=ordDias(r.ds);r.d=r.ds[0]});RUT=out}
+// Una rutina se repite los días que elijas (r.ds, 0 = domingo). r.d queda con el primero, por compatibilidad con versiones viejas.
+function rds(r){return Array.isArray(r.ds)&&r.ds.length?r.ds:[r.d]}
+function ordDias(a){return a.slice().sort(function(x,y){return((x+6)%7)-((y+6)%7)})}
+function diasTxt(a){a=ordDias(a);var k=a.join(",");
+ if(a.length===7)return"todos los días";if(k==="1,2,3,4,5")return"de lunes a viernes";if(k==="6,0")return"los fines de semana";
+ var n=a.map(DNP);return"los "+(n.length>1?n.slice(0,-1).join(", ")+" y "+n[n.length-1]:n[0])}
+// Próximo día (desde f inclusive) en que cae alguno de los días de la rutina.
+function proxDias(f,ds){var b=null;ds.forEach(function(d){var x=proxDia(f,d);if(!b||x<b)b=x});return b||f}
+// Botones L M M J V S D para elegir los días, con atajos. val() devuelve los días marcados.
+function diasUI(sel){var w=el("div","dias"),on=ordDias(sel||[]),bs=[];w.setAttribute("role","group");w.setAttribute("aria-label","Días que se repite");
+ function pinta(){bs.forEach(function(b){var x=on.indexOf(b._d)>=0;b.classList.toggle("on",x);b.setAttribute("aria-pressed",String(x))})}
+ [1,2,3,4,5,6,0].forEach(function(d){var b=el("button","dia",DN[d].charAt(0));b.type="button";b._d=d;b.title=DN[d];b.setAttribute("aria-label",DN[d]);
+  b.onclick=function(){var i=on.indexOf(d);if(i>=0)on.splice(i,1);else on.push(d);pinta()};bs.push(b);w.appendChild(b)});
+ [["Lun a vie",[1,2,3,4,5]],["Todos",[1,2,3,4,5,6,0]]].forEach(function(p){var b=el("button","lk",p[0]);b.type="button";b.onclick=function(){on=p[1].slice();pinta()};w.appendChild(b)});
+ w.val=function(){return ordDias(on)};w.set=function(a){on=ordDias(a||[]);pinta()};pinta();return w}
 function renderRut(){
  var l=$("rl");l.innerHTML="";
- RUT.slice().sort(function(a,b){return((a.d+6)%7)-((b.d+6)%7)||a.t.localeCompare(b.t)}).forEach(function(r){
-  var row=el("div","row"),s=el("span","",DN[r.d]+" "+r.t+(r.t2?"–"+r.t2:"")+" · "+r.x);
+ RUT.slice().sort(function(a,b){return((rds(a)[0]+6)%7)-((rds(b)[0]+6)%7)||a.t.localeCompare(b.t)}).forEach(function(r){
+  var dt=diasTxt(rds(r)),row=el("div","row"),s=el("span","",r.x+" · "+dt.charAt(0).toUpperCase()+dt.slice(1)+" "+r.t+(r.t2?"–"+r.t2:""));
   if(r.from||r.to)s.appendChild(el("small","","  "+(r.from?"desde "+fd(r.from):"")+(r.to?" hasta "+fd(r.to):"")));
   var rt=el("span",""),b=el("button","x","✎"),c=el("button","x","×");
-  b.onclick=function(){openRut(r)};c.onclick=function(){drop(RUT,r);save();render()};
+  b.onclick=function(){openRut(r)};c.onclick=function(){drop(RUT,r);save();render();toast("Borré la rutina "+r.x+".")};
   rt.appendChild(b);rt.appendChild(c);row.appendChild(s);row.appendChild(rt);l.appendChild(row)});
  if(!RUT.length)l.appendChild(el("div","none","Todavía no cargaste rutinas."))}
-function openRut(r){REDIT=r;$("rdw").value=r.d;$("rt").value=r.t;$("rt2").value=r.t2||"";$("rx").value=r.x;$("rf").value=r.from||"";$("rto").value=r.to||"";$("rb").textContent="Guardar cambios";$("rc").style.display="";$("rd").open=true;if($("rd").scrollIntoView)$("rd").scrollIntoView()}
-function closeRut(){REDIT=null;$("rx").value="";$("rt").value="";$("rt2").value="";$("rto").value="";$("rf").value=today;$("rb").textContent="Agregar rutina";$("rc").style.display="none"}
+var RDIAS=null;
+function rdiasUI(){if(!RDIAS){RDIAS=diasUI([]);$("rdw").replaceWith(RDIAS);RDIAS.id="rdw"}return RDIAS}
+function openRut(r){REDIT=r;rdiasUI().set(rds(r));$("rt").value=r.t;$("rt2").value=r.t2||"";$("rx").value=r.x;$("rf").value=r.from||"";$("rto").value=r.to||"";$("rb").textContent="Guardar cambios";$("rc").style.display="";$("rd").open=true;if($("rd").scrollIntoView)$("rd").scrollIntoView()}
+function closeRut(){REDIT=null;rdiasUI().set([]);$("rx").value="";$("rt").value="";$("rt2").value="";$("rto").value="";$("rf").value=today;$("rb").textContent="Agregar rutina";$("rc").style.display="none"}
 $("rc").onclick=closeRut;
-$("rb").onclick=function(){var x=$("rx").value.trim(),t=$("rt").value;if(!x||!t){$("rm").textContent="Falta el nombre o la hora de inicio.";return}
- var o={d:+$("rdw").value,t:t,t2:$("rt2").value,x:x,from:$("rf").value,to:$("rto").value};
+$("rb").onclick=function(){var x=$("rx").value.trim(),t=$("rt").value,ds=rdiasUI().val();if(!x||!t){$("rm").textContent="Falta el nombre o la hora de inicio.";return}
+ if(!ds.length){$("rm").textContent="Elegí al menos un día.";return}
+ var o={ds:ds,d:ds[0],t:t,t2:$("rt2").value,x:x,from:$("rf").value,to:$("rto").value};
  if(o.from&&o.to&&o.to<o.from){$("rm").textContent="La fecha final es anterior a la inicial.";return}
- if(REDIT){var i=RUT.indexOf(REDIT);o.id=REDIT.id;if(i>=0)RUT[i]=o;else RUT.push(o)}else{o.id="r"+Date.now().toString(36);RUT.push(o)}
- $("rm").textContent="Rutina guardada.";closeRut();save();render()};
+ if(REDIT){var i=RUT.indexOf(REDIT);o.id=REDIT.id;if(REDIT.al)o.al=REDIT.al;if(i>=0)RUT[i]=o;else RUT.push(o)}else{o.id="r"+Date.now().toString(36);RUT.push(o)}
+ $("rm").textContent="Rutina guardada: "+x+", "+diasTxt(ds)+".";closeRut();save();render()};
+rdiasUI();
 $("np").onclick=function(){VSTART=plus(VSTART||today,-7);render()};
 $("nn").onclick=function(){VSTART=plus(VSTART||today,7);render()};
 $("nh").onclick=function(){VSTART=null;MON=null;render()};
@@ -404,13 +430,29 @@ function medDe(c){return/efectivo|\bcash\b|billete|en mano/.test(c)?"efectivo":/
 function pMed(v){v=n2(String(v||""));return/efect|cash/.test(v)?"e":/transf|banco|tarj|debit|mercado|virtual|billetera|qr/.test(v)?"t":""}
 // Busca en la lista de lo cargado (cands) lo que más se parece al texto: palabras en común, la fecha y el monto.
 var TIPO={X:"gasto",I:"ingreso cobre sueldo",M:"cajero saque deposite movimiento",E:"evento",F:"evento",R:"rutina semana semanal"};
+// Días de una rutina (0 = domingo) a partir de lo que diga la nota o la IA: un número, una lista, "lunes", "todos los días",
+// "de lunes a viernes", "días de semana", "fines de semana", "lunes y miércoles"…
+function DNP(d){return DN[d].toLowerCase()+(d===0||d===6?"s":"")}
+var DNN=["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+function diasDe(v){
+ if(Array.isArray(v)){var a=[];v.forEach(function(x){diasDe(x).forEach(function(d){if(a.indexOf(d)<0)a.push(d)})});return a}
+ if(typeof v==="number")return v>=0&&v<=6&&v===Math.floor(v)?[v]:v===7?[0]:[];
+ var s=n2(String(v==null?"":v)).trim();if(/^\d$/.test(s))return diasDe(+s);
+ if(/fin(es)? de semana/.test(s))return[6,0];
+ if(/todos los dias|todas las (mananas|tardes|noches)|cada dia|diari|^tod[oa]s?$|^todos los dias$/.test(s))return[1,2,3,4,5,6,0];
+ if(/dias? (de semana|habiles)|^semana$|entre semana/.test(s))return[1,2,3,4,5];
+ var m=s.match(/(domingo|lunes|martes|miercoles|jueves|viernes|sabado)s? (?:a|al|hasta) (?:el )?(domingo|lunes|martes|miercoles|jueves|viernes|sabado)/);
+ if(m){var i=DNN.indexOf(m[1]),j=DNN.indexOf(m[2]),r=[];for(var k=i;;k=(k+1)%7){r.push(k);if(k===j||r.length>7)break}return r}
+ var o=[];DNN.forEach(function(n,i){if(new RegExp("\\b"+n+"s?\\b").test(s))o.push(i)});return o}
+// Hora "HH:MM" a partir de "15:00", "15", "15hs", "3 pm"…
+function hhmm(v){var s=n2(String(v||"")).trim(),m=s.match(/^(\d{1,2})(?:[:.](\d{2}))?\s*(hs?|horas?|am|pm)?$/);if(!m)return"";var h=+m[1];if(m[3]==="pm"&&h<12)h+=12;return h<=23&&(+m[2]||0)<=59?pad(h)+":"+(m[2]||"00"):""}
 // Próximo día (desde f inclusive) que cae en el día de la semana d (0 = domingo).
 function proxDia(f,d){var w=new Date(f+"T00:00").getDay();return plus(f,(d-w+7)%7)}
 function elegir(c,mo,f,hd,C){
  var ws=c.replace(/\b(cancel|anul|borr|elimin|sac|quit|suspend|correg|cambi|equivoc)[a-z]*/g," ").split(/[^a-z0-9]+/).filter(function(w){return w.length>=3&&!/^(voy|mas|del|con|que|hay|los|las|una|uno|por|ese|esa|eso|era|fue|dia|hoy|ayer|ver|van|vas|sus|mis|tus|son|sin|asi|muy|ahi|aca|para|sobre|desde|hasta|tengo|esto|esta|este|como|pero|eran|fueron|efectivo|transferencia|realidad|cargue|puse)$/.test(w)}),best=null,bs=0;
  if(C&&C.o)Object.keys(C.o).forEach(function(k){var it=C.o[k],e=it.e,tx=n2(TIPO[it.t]+" "+String(e.x||"")+" "+String(e.c||"")),sc=0,mm=it.t==="I"?e.v:e.m;
   ws.forEach(function(w){if(!/^\d+$/.test(w)&&tx.indexOf(w)>=0)sc+=2});
-  if(hd&&(it.t==="R"?e.d===new Date(f+"T00:00").getDay():(e.f||e.k)===f))sc+=2;
+  if(hd&&(it.t==="R"?rds(e).indexOf(new Date(f+"T00:00").getDay())>=0:(e.f||e.k)===f))sc+=2;
   if(mo&&mm===mo)sc+=3;
   if(sc&&sc>=bs){bs=sc;best=k}});
  return bs>=2?best:null}
@@ -442,15 +484,16 @@ function localParse(txt,C){
    if(Object.keys(ch).length>1){o.corregir.push(ch);return o}}}
  txt.split(/[,;\n]|\.(?!\d)|\s+y\s+/).forEach(function(raw){
   raw=raw.trim();if(!raw)return;var c=n2(raw),mo=pMonto(c),f=pFecha(c);
-  var mr=c.match(/\btodos los (lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/),hh=pHora(c);
-  if(mr&&hh){var tt=limpio(raw.replace(/todos los \S+/i,""))||"Rutina";o.rutinas.push({dia:["domingo","lunes","martes","miercoles","jueves","viernes","sabado"].indexOf(mr[1]),hora:hh,titulo:tt.charAt(0).toUpperCase()+tt.slice(1)});return}
+  var RX=/\b(todos los dias|todas las (?:mananas|tardes|noches)|cada dia|todos los (?:lunes|martes|miercoles|jueves|viernes|sabados?|domingos?)|los (?:lunes|martes|miercoles|jueves|viernes|sabados|domingos)|(?:de |los )?(?:lunes|martes|miercoles|jueves|viernes|sabado|domingo)s? (?:a|al|hasta) (?:el )?(?:lunes|martes|miercoles|jueves|viernes|sabado|domingo)|(?:los )?dias (?:de semana|habiles)|entre semana|(?:los )?fines? de semana)\b/;
+  var mr=c.match(RX),hh=pHora(c.replace(/(\d{1,2})\s*h(?:s|oras?)?\b/g,"a las $1"));
+  if(mr&&hh&&diasDe(mr[1]).length){var tt=limpio(raw.split(/\s+/).filter(function(w){var q=n2(w).replace(/[^a-z0-9:]/g,"");return!/^(todos|todas|cada|dias?|semanas?|fines?|habiles|entre|hasta|al?|de|el|los|las?|mananas|tardes|noches|lunes|martes|miercoles|jueves|viernes|sabados?|domingos?|hs|horas?|\d.*)$/.test(q)}).join(" "))||"Rutina";o.rutinas.push({dias:diasDe(mr[1]),hora:hh,titulo:tt.charAt(0).toUpperCase()+tt.slice(1)});return}
   if(/\b(cancel|anul|borr|elimin|sac[aá]|quit[aá]|suspend|no voy|no tengo|no hay|se suspendio|dejo de|deje de|ya no)/.test(c)){
    var hd=/\d{1,2}\/\d{1,2}|manana|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\bel \d{1,2}\b/.test(c);
    var best=elegir(c,mo,f,hd,C);
    // Rutina: "ya no voy más", "toda la rutina", "todos los…" la termina; si no, se cancela solo ese día (o el próximo).
    if(best&&C.o[best].t==="R"){var rr=C.o[best].e;
     if(/\b(todos los|toda la|todas las|la rutina|nunca mas|ya no|mas\b|deje|dejo|para siempre|definitiv)/.test(c))o.cancelar.push(best);
-    else o.cancelar_fecha.push({id:best,fecha:proxDia(hd?f:today,rr.d)});
+    else o.cancelar_fecha.push({id:best,fecha:proxDias(hd?f:today,rds(rr))});
     return}
    if(/clase/.test(c)&&!/parcial|examen|turno/.test(c)){o.sin_clases.push(f);return}
    if(best)o.cancelar.push(best);
@@ -471,7 +514,7 @@ function descr(it){var e=it.e;
  if(it.t==="X")return"gasto "+e.f+" "+money(e.m)+" "+e.c+(e.x?" "+e.x:"")+" ("+(med(e)==="e"?"efectivo":"transferencia")+")";
  if(it.t==="I")return(e.adj?"ajuste de saldo ":"ingreso ")+(e.f||e.k)+" "+money(e.v)+" ("+(med(e)==="e"?"efectivo":"transferencia")+(e.p?", "+pctTxt(e.p)+" al ahorro":"")+")";
  if(it.t==="M")return"movimiento "+e.f+" "+money(e.m)+(e.a==="e"?" de transferencia a efectivo":" de efectivo a transferencia");
- if(it.t==="R")return"rutina todos los "+DN[e.d].toLowerCase()+" "+e.t+(e.t2?"–"+e.t2:"")+" "+e.x+(e.from>today?" (desde "+e.from+")":"")+(e.to?" (hasta "+e.to+")":"");
+ if(it.t==="R")return"rutina "+diasTxt(rds(e))+" "+e.t+(e.t2?"–"+e.t2:"")+" "+e.x+(e.from>today?" (desde "+e.from+")":"")+(e.to?" (hasta "+e.to+")":"");
  return"evento "+e.f+(e.t?" "+e.t:"")+" "+e.x}
 function cands(){var o={},t=[];
  function add(p,e){var k=p+t.length;o[k]={t:p,e:e};t.push(k+": "+descr(o[k]))}
@@ -484,7 +527,7 @@ function cands(){var o={},t=[];
  return{o:o,list:t.join(" | ")}}
 function drop(a,x){var i=a.indexOf(x);if(i>=0)a.splice(i,1)}
 function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d}
-function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas, devolvé también \"rutinas\":[{\"dia\":0 a 6 (0=domingo),\"hora\":\"HH:MM\",\"titulo\":string}]. Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
+function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé también \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" si dice hasta qué hora o \"\",\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
 // Gemini vía la Edge Function "gemini" de Supabase: la clave vive como secreto en Supabase y nunca llega al navegador.
 // Si tarda más de 35 segundos se deja de esperar y la nota se entiende sin IA, así la página nunca queda trabada.
 async function gemini(p){
@@ -525,9 +568,11 @@ $("nb").onclick=async function(){
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
   // Un solo día de una rutina: la fecha se lleva al día de la semana de la rutina (si la IA se corre, va al próximo que corresponde).
-  var CF=(r.cancelar_fecha||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t==="R"&&Cn.indexOf(C.o[c.id])<0}).map(function(c){var e=C.o[c.id].e;return{r:e,f:proxDia(ok.test(c.fecha)?c.fecha:today,e.d)}});
+  var CF=(r.cancelar_fecha||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t==="R"&&Cn.indexOf(C.o[c.id])<0}).map(function(c){var e=C.o[c.id].e;return{r:e,f:proxDias(ok.test(c.fecha)?c.fecha:today,rds(e))}});
   var NS=(r.sin_clases||[]).filter(function(d){return ok.test(d)});
-  var RU=(r.rutinas||[]).filter(function(u){return u&&u.dia>=0&&u.dia<=6&&/^\d{2}:\d{2}$/.test(u.hora||"")&&u.titulo}).map(function(u){return{id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),d:+u.dia,t:u.hora,t2:"",x:String(u.titulo),from:today,to:""}});
+  // Rutinas: una sola con todos los días que diga (la IA a veces manda una lista de días, "todos" o la hora como "15hs").
+  var RU=[];(r.rutinas||[]).forEach(function(u){if(!u||!u.titulo)return;var h=hhmm(u.hora),ds=ordDias(diasDe(u.dias!=null?u.dias:u.dia));if(!h||!ds.length)return;
+   RU.push({id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),ds:ds,d:ds[0],t:h,t2:hhmm(u.hasta),x:String(u.titulo),from:today,to:""})});
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
   if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null){out.textContent="No encontré gastos, eventos, ingresos ni nada para corregir en esa nota. Probá con más detalle.";return}
   // Vista previa editable: cada ítem se puede corregir (✎) o quitar (×) antes de guardar.
@@ -546,20 +591,22 @@ $("nb").onclick=async function(){
    {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
    {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
    {a:Cn,t:function(c){return c.t==="R"?"Terminar la "+descr(c)+" · deja de aparecer desde hoy (lo anterior queda)":"Borrar: "+descr(c)}},
-   {a:CF,t:function(c){return"Cancelar solo el "+DN[c.r.d].toLowerCase()+" "+fd(proxDia(c.f,c.r.d))+": "+c.r.x+" "+c.r.t+" · las demás semanas sigue"},f:[["f","Qué día","date"]]},
+   {a:CF,t:function(c){var f=proxDias(c.f,rds(c.r));return"Cancelar solo el "+DN[new Date(f+"T00:00").getDay()].toLowerCase()+" "+fd(f)+": "+c.r.x+" "+c.r.t+" · las demás semanas sigue"},f:[["f","Qué día","date"]]},
    {a:NSo,t:function(d){return"Sin clases el "+fd(d.f)},f:[["f","Fecha","date"]]},
-   {a:RU,t:function(u){return"Rutina: todos los "+DN[u.d].toLowerCase()+" "+u.t+" · "+u.x},f:[["d","Día",DIA],["t","Hora","time"],["x","Qué","text"]]}];
+   {a:RU,t:function(u){return"Rutina: "+u.x+" · "+diasTxt(u.ds)+" "+u.t+(u.t2?"–"+u.t2:"")},f:[["ds","Días","dias"],["t","Hora","time"],["x","Qué","text"]]}];
   var head=out.firstChild&&out.firstChild.tagName==="P"?out.firstChild:null;
   function editor(k,o,row){
    var box=el("div","add"),inp={};box.style.margin="6px 0";
    k.f.forEach(function(s){var i;
     if(Array.isArray(s[2])){i=el("select");s[2].forEach(function(p){var op=el("option","",p[1]);op.value=p[0];if(String(o[s[0]])===String(p[0]))op.selected=true;i.appendChild(op)})}
+    else if(s[2]==="dias"){i=diasUI(o[s[0]]);box.appendChild(i);inp[s[0]]=i;return}
     else if(s[2]==="check"){var lb=el("label","sem");lb.style.margin="0";i=el("input");i.type="checkbox";i.checked=!!o[s[0]];i.style.flex="none";i.style.minHeight="0";lb.appendChild(i);lb.appendChild(document.createTextNode(" "+s[1]));box.appendChild(lb);inp[s[0]]=i;return}
     else{i=el("input");i.type=s[2];i.value=o[s[0]]==null?"":o[s[0]];i.placeholder=s[1];if(s[2]==="number")i.inputMode="decimal"}
     i.setAttribute("aria-label",s[1]);box.appendChild(i);inp[s[0]]=i});
    var b=el("button","","Listo"),c=el("button","x","Cancelar");
    b.onclick=function(){k.f.forEach(function(s){var i=inp[s[0]],v;
-     if(s[2]==="check")v=i.checked;
+     if(s[2]==="dias"){v=i.val();if(!v.length)return;o.d=v[0]}
+     else if(s[2]==="check")v=i.checked;
      else if(s[2]==="number"){v=parseFloat(String(i.value).replace(",","."));if(!isFinite(v)||(v===0&&s[0]!=="p")||(v<0&&k.a!==AA)||(s[0]==="p"&&v>100))return}
      else if(s[2]==="date"){v=i.value;if(!ok.test(v))return}
      else if(Array.isArray(s[2])){v=s[0]==="d"?+i.value:i.value}
@@ -582,7 +629,7 @@ $("nb").onclick=async function(){
     CRE.forEach(function(o){var e=o.it.e;e.x=o.x;e.f=o.f;e.t=o.t});
     // Terminar una rutina: si ya venía de antes, queda hasta ayer (así no se pierde lo pasado); si todavía no empezó, se borra.
     Cn.forEach(function(c){if(c.t==="R"){var re=c.e;if(re.from&&re.from>=today)drop(RUT,re);else re.to=plus(today,-1)}else if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else if(c.t==="I"){drop(L.saves,aporteDe(c.e));drop(L.ing,c.e)}else if(c.t==="M")drop(L.mv,c.e);else drop(L.expenses,c.e)});
-    CF.forEach(function(c){var k=c.r.id+"|"+proxDia(c.f,c.r.d);if(L.rskip.indexOf(k)<0)L.rskip.push(k)});
+    CF.forEach(function(c){var k=c.r.id+"|"+proxDias(c.f,rds(c.r));if(L.rskip.indexOf(k)<0)L.rskip.push(k)});
     NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){sumarIng(i.f,i.v,i.p,i.me)});MV.forEach(function(m){L.mv.push(m)});
     if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render();
     var nc=CRX.length+CRI.length+CRM.length+CRE.length;
