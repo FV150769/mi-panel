@@ -12,10 +12,11 @@ var TG=false,TGCHAT="",TGAV={d:[7,1],h:"09:00",hs:0};
 var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelBot"), para mostrar el link en Avisos
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var ONB=1; // 0 = cuenta nueva que todavía no terminó la pretemporada (la bienvenida de 3 pasos)
+var CAP=0,CAPLATER=false; // CAP=1: ya cargó su capital inicial. CAPLATER: tocó "Más tarde" en esta visita
 var SEED={events:[],expenses:[]};
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],bal:{}};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[]}catch(e){}
-var DOC=null,VER="v27";
+var DOC=null,VER="v28";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -190,28 +191,34 @@ function renderResumen(){
  var im=0;L.ing.forEach(function(e){if(!e.adj&&(e.f||e.k).slice(0,7)===ym)im+=e.v});
  var am=0;L.saves.forEach(function(e){if(e.f&&e.f.slice(0,7)===ym)am+=e.m});
  var proy=dia>=5&&gm?gm/dia*dim:null,Q=[];
+ // Lo que había para el mes: lo que quedaba en el día a día al arrancar (capital inicial + movimientos anteriores) + lo que entró.
+ var saldo=accVal(0)+ingTot()-sumM(L.expenses),ini=saldo-im+sumM(L.expenses.filter(function(e){return real(e)&&e.f.slice(0,7)===ym})),disp=ini+im,hay=disp>0||im>0;
+ var mes1=!L.expenses.concat(L.ing).some(function(e){return(e.f||e.k).slice(0,7)<ym});
  function tip(n,t){Q.push([n,t])}
  function kpi(l,v,sub,c){var k=el("div","kpi"+(c?" "+c:""));k.appendChild(el("small","",l));k.appendChild(el("b","",v));if(sub)k.appendChild(el("span","",sub));R.appendChild(k)}
  function pinta(){var O={mal:0,ojo:1,tip:2,bien:3},N={mal:"Tarjeta roja",ojo:"Amarilla",tip:"Del DT",bien:"¡Golazo!"};
   Q.sort(function(a,b){return O[a[0]]-O[b[0]]}).slice(0,8).forEach(function(q){var r=el("div","tip "+q[0]);r.appendChild(el("i"));var t=el("span");t.appendChild(el("b","",N[q[0]]+": "));t.appendChild(document.createTextNode(q[1]));r.appendChild(t);T.appendChild(r)})}
+ if(capFalta())tip("ojo","Te falta cargar tu capital inicial ("+capTxt()+"). Sin eso, Petaca solo cuenta los ingresos que cargaste. Cargalo en El vestuario → Ajustes.");
  if(!ex.length&&!im){R.style.display="none";tip("tip","Cargá tus gastos e ingresos del mes y acá vas a ver un resumen de cómo se mueve tu plata, con consejos y avisos.");pinta();return}
  R.style.display="";
+ if(ini>0)kpi("Arrancaste el mes con",money(ini),"en "+ACC[0][0]);
  kpi("Entró este mes",money(im),im?null:"sin ingresos cargados");
  kpi("Gastaste",money(gm),ph?(gm>=ph?"+":"−")+pc(Math.abs(gm-ph)/ph)+" vs. mes pasado":null,ph&&gm>ph*1.15?"mal":ph&&gm<ph*.9?"bien":"");
- if(im)kpi(im>=gm?"Te sobra":"Te faltan",money(Math.abs(im-gm)),"guardás el "+pc(Math.max(im-gm,0)/im)+" de lo que entró",im>=gm?"bien":"mal");
+ if(hay)kpi(disp>=gm?"Te queda":"Te faltan",money(Math.abs(disp-gm)),ini>0?(disp>=gm?"de los ":"gastaste más de los ")+money(disp)+" que tuviste este mes":"guardás el "+pc(Math.max(im-gm,0)/im)+" de lo que entró",disp>=gm?"bien":"mal");
  kpi("Por día",money(gm/dia),"promedio en "+dia+" días");
- if(proy)kpi("Fin de mes",money(proy),"si seguís a este ritmo",im&&proy>im?"mal":"");
+ if(proy)kpi("Fin de mes",money(proy),"si seguís a este ritmo",hay&&proy>disp?"mal":"");
  // Presupuestos por categoría
  Object.keys(BUDGET).forEach(function(k){var B=BUDGET[k],u=by[k]||0;if(!(B>0)||!u)return;
   if(u>B)tip("mal","Te pasaste del presupuesto de "+k+": llevás "+money(u)+" de "+money(B)+" ("+money(u-B)+" de más).");
   else if(dia>=5&&u/dia*dim>B*1.05&&u>=B*.5)tip("ojo","A este ritmo "+k+" va a cerrar en ≈ "+money(u/dia*dim)+", arriba de los "+money(B)+" que te pusiste. Te quedan "+money(B-u)+": unos "+money((B-u)/resta)+" por día.");
   else if(u>=B*.8)tip("ojo","Ya usaste el "+pc(u/B)+" del presupuesto de "+k+".")});
- // Ingresos contra gastos
- if(im&&gm>im)tip("mal","Este mes gastaste más de lo que entró: "+money(gm)+" contra "+money(im)+".");
- else if(im&&proy&&proy>im)tip("ojo","Si seguís a este ritmo vas a gastar ≈ "+money(proy)+", más de lo que entró ("+money(im)+"). Para no pasarte, tratá de gastar hasta "+money((im-gm)/resta)+" por día lo que queda del mes.");
+ // Lo que tenías para el mes contra lo que vas gastando (si ya te pasaste, lo avisa el saldo en negativo de abajo)
+ var tuv=ini>0?"lo que tenés para el mes ("+money(disp)+": "+money(ini)+" con los que arrancaste + "+money(im)+" que entró)":"lo que entró ("+money(im)+")";
+ if(saldo>=0&&hay&&proy&&proy>disp)tip("ojo","Si seguís a este ritmo vas a gastar ≈ "+money(proy)+", más de "+tuv+". Para no pasarte, tratá de gastar hasta "+money((disp-gm)/resta)+" por día lo que queda del mes.");
+ else if(saldo>=0&&ini>0&&!mes1&&im&&gm>im)tip("tip","Este mes gastaste "+money(gm-im)+" más de lo que entró: lo estás cubriendo con la plata que ya tenías. Si se repite todos los meses, tu capital va a ir bajando.");
  // Cuánto dura lo que hay en la cuenta del día a día
- var left=accVal(0)+ingTot()-sumM(L.expenses),r14=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=plus(today,-13)&&e.f<=today}))/14;
- if(left<0)tip("mal","Tu cuenta "+ACC[0][0]+" está en negativo (−"+money(-left)+"). Revisá si falta cargar algún ingreso o corregí el saldo en Cuentas.");
+ var left=saldo,r14=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=plus(today,-13)&&e.f<=today}))/14;
+ if(left<0)tip("mal","Tu cuenta "+ACC[0][0]+" está en negativo (−"+money(-left)+"): gastaste más de lo que tenías. Revisá si falta cargar algún ingreso"+(capFalta()?" o tu capital inicial (en El vestuario → Ajustes)":" o corregí el saldo en Cuentas")+".");
  else if(r14>0&&left/r14<resta-1)tip("ojo","Con lo que tenés en "+ACC[0][0]+" ("+money(left)+") y gastando como en las últimas dos semanas ("+money(r14)+" por día), te alcanza para unos "+Math.floor(left/r14)+" días: antes de fin de mes.");
  // Comparación con el mes pasado a la misma altura
  if(ph&&dia>=3){var d=(gm-ph)/ph;
@@ -477,8 +484,8 @@ $("nb").onclick=async function(){
  finally{busy=false}
 };
 
-function cfgObj(){return{ONB:ONB,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;ONB=c.ONB===0?0:1;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{ONB:ONB,CAP:CAP,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -494,7 +501,7 @@ async function pull(){
  if(q&&q.L){if(!HAVECFG&&q.cfg){applyCfg(q.cfg);HAVECFG=true;render()}
   // Nunca pisar datos con una copia vacía: si un lado está vacío y el otro no, gana el que tiene datos.
   var ev=vacio(q.L),lv=vacio(L);if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();stat("Sincronizado con tu nube · "+VER);
-  if(ONB===0)preStart()}
+  if(ONB===0)preStart();else capStart()}
  else{HAVECFG=true;ONB=0;await push();stat("Nube inicializada · "+VER);preStart()}
 }
 async function enter(session){
@@ -507,7 +514,7 @@ async function startSB(){
  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
  var r=await SB.auth.getSession();
  if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · "+VER)}
- SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;if(PRE)preEnd();try{SB.removeAllChannels()}catch(e){}resetLocal();try{localStorage.removeItem("panel-owner")}catch(e){}loginUI(true)}})}
+ SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;if(PRE)preEnd();else capEnd();try{SB.removeAllChannels()}catch(e){}resetLocal();try{localStorage.removeItem("panel-owner")}catch(e){}loginUI(true)}})}
 document.getElementById("un").onclick=function(){if(!UNDO.length)return;var q=JSON.parse(UNDO.pop());applyCfg(q.cfg);L=norm(q.L);save0();PREV=snap();render();updUndo();var o=document.getElementById("nr");if(o)o.textContent="Deshice el último cambio."};
 function authMsg(t){$("lm").textContent=t}
 $("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em)return authMsg("Escribí tu email o tu usuario.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");em=await mailOf(em);if(!em)return authMsg("No encontré ese usuario.");var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+r.error.message:"")};
@@ -628,6 +635,9 @@ function ajForm(){
  [pu,pn,pf].forEach(function(x){pr.appendChild(x)});g.appendChild(pr);g.appendChild(ph);
  f.appendChild(g);plazoUI();
  AJ.acc=ajList(f,"Cuentas en pesos (la primera es la del día a día)",ACC.map(function(a,i){return[a[0],null,i]}),"Nombre de la cuenta",null,function(o){return o===0});
+ var cp=el("div","aj"),cr=el("div","add ajr"),ci=el("input");cp.appendChild(el("h3","","Capital inicial de "+ACC[0][0]));
+ ci.id="ajcap";ci.type="number";ci.inputMode="decimal";ci.min="0";ci.placeholder="Sin cargar (en pesos)";ci.setAttribute("aria-label","Capital inicial");ci.value=CAP||accVal(0)>0?accVal(0):"";
+ cr.appendChild(ci);cp.appendChild(cr);cp.appendChild(el("p","sem","Es "+capTxt()+". Petaca le suma tus ingresos y le resta tus gastos para saber cuánto te queda."));f.appendChild(cp);
  AJ.usd=ajList(f,"Cuentas en dólares (la primera suma tus aportes al ahorro)",USD.map(function(a,i){return[a[0],null,i]}),"Nombre de la cuenta",null,function(o){return o===0})}
 // Lee el plazo del formulario. Si no cambió, conserva la fecha límite guardada (así no se corre día a día).
 function plazoForm(){var u=$("ajg-u").value,n=parseInt($("ajg-n").value,10),f=$("ajg-f").value,P=GOAL.pl;
@@ -641,6 +651,7 @@ function ajSave(){
  for(var i=0;i<C.length;i++){var n=C[i].n;if(!n)return(m.textContent="Hay una categoría sin nombre.");if(seen[n.toLowerCase()])return(m.textContent="La categoría \""+n+"\" está repetida.");seen[n.toLowerCase()]=1}
  if(A.some(function(a){return!a.n})||U.some(function(a){return!a.n}))return(m.textContent="Hay una cuenta sin nombre.");
  var gx=$("ajg-x").value.trim(),gt=parseFloat($("ajg-target").value),gp=plazoForm();
+ var cv=$("ajcap").value.trim(),cap=cv===""?null:parseFloat(cv.replace(",","."));if(cap!=null&&!(cap>=0))return(m.textContent="El capital inicial tiene que ser un número (0 o más).");
  if(!gx)return(m.textContent="Poné un nombre para el objetivo.");if(!(gt>0))return(m.textContent="La meta del objetivo tiene que ser mayor a 0.");if(gp.err)return(m.textContent=gp.err);
  // Categorías: renombrar o quitar actualiza los gastos ya cargados (los de una categoría quitada pasan a "Otros").
  var NB={},ren={};C.forEach(function(c){NB[c.n]=c.v>=0?c.v:0;if(c.o!=null)ren[c.o]=c.n});
@@ -649,7 +660,7 @@ function ajSave(){
  // Cuentas: los saldos se guardan por posición, así que se reacomodan si se quitan o mueven cuentas.
  function remap(R,old,p){var nb={};Object.keys(L.bal).forEach(function(k){if(k.charAt(0)!==p)nb[k]=L.bal[k]});
   var na=R.map(function(r,j){if(r.o!=null&&L.bal[p+r.o]!=null)nb[p+j]=L.bal[p+r.o];return[r.n,r.o!=null?old[r.o][1]:0]});L.bal=nb;return na}
- ACC=remap(A,ACC,"a");USD=remap(U,USD,"u");
+ ACC=remap(A,ACC,"a");USD=remap(U,USD,"u");if(cap!=null){L.bal.a0=cap;CAP=1}
  GOAL={x:gx,target:gt,saved:GOAL.saved||0,pl:gp.pl,hasta:gp.hasta};
  HAVECFG=true;cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
  save();render();ajForm();$("ajm").textContent="Ajustes guardados."}
@@ -711,7 +722,7 @@ function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.a
   ad.appendChild(ai);ad.appendChild(ab);c.appendChild(ad)}
  else if(P.paso===1){
   c.appendChild(el("p","sem","Así Petaca sabe cuánto te queda. Si no sabés el número exacto poné uno aproximado: después lo corregís en Cuentas."));
-  var f=el("div","prf");f.appendChild(preCampo(P,"pesos","Plata para el día a día (en pesos)","Ej: 150000",1));f.appendChild(preCampo(P,"usd","Dólares ahorrados (US$)","Ej: 300",1));f.appendChild(preCampo(P,"ing","¿Cobraste algo esta semana? (opcional, en pesos)","Ej: 400000",1));c.appendChild(f)}
+  var f=el("div","prf");f.appendChild(preCampo(P,"pesos","Tu capital inicial: la plata que tenés hoy para el día a día (en pesos)","Ej: 150000",1));f.appendChild(preCampo(P,"usd","Dólares ahorrados (US$)","Ej: 300",1));f.appendChild(preCampo(P,"ing","¿Cobraste algo esta semana? (opcional, en pesos)","Ej: 400000",1));c.appendChild(f)}
  else{
   c.appendChild(el("p","sem","¿Para qué estás ahorrando? Un viaje, la compu nueva, la entrada para la final… Si todavía no tenés uno, salteá este paso."));
   var f2=el("div","prf"),l3=el("label","","Para cuándo"),rw=el("div","add"),gn=el("input"),gu=el("select");
@@ -728,6 +739,7 @@ function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.a
  if(P.paso>0){var fi=c.querySelector(".prf input");if(fi)fi.focus()}}
 function preCheck(){var P=PRE;
  if(P.paso===0&&!P.cat.some(function(k){return k.on}))return"Elegí al menos una categoría.";
+ if(P.paso===1&&String(P.pesos).trim()==="")return"Poné tu capital inicial (si no tenés nada, poné 0).";
  if(P.paso===2&&(P.gx.trim()||P.gt)){if(!P.gx.trim())return"Ponele un nombre al objetivo.";if(!preNum(P.gt))return"Poné cuánto necesitás, en dólares.";
   if(P.gu&&!(parseInt(P.gn,10)>0))return"Poné en cuántas "+{s:"semanas",m:"meses",a:"años"}[P.gu]+" querés llegar."}
  return""}
@@ -736,8 +748,26 @@ function preFin(todo){var P=PRE,NB={};
  if(todo)Object.keys(BUDGET).forEach(function(k){NB[k]=0});else P.cat.forEach(function(k){if(k.on)NB[k.n]=preNum(k.v)});
  delete NB.Otros;NB.Otros=0;L.expenses.forEach(function(e){if(NB[e.c]==null)e.c="Otros"});BUDGET=NB;
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
- if(!todo){ACC=[["Día a día",preNum(P.pesos)]];USD=[["Ahorro en dólares",preNum(P.usd)]];Object.keys(L.bal).forEach(function(k){if(/^[au]\d+$/.test(k))delete L.bal[k]});
+ if(!todo){ACC=[["Día a día",preNum(P.pesos)]];CAP=1;USD=[["Ahorro en dólares",preNum(P.usd)]];Object.keys(L.bal).forEach(function(k){if(/^[au]\d+$/.test(k))delete L.bal[k]});
   var iv=preNum(P.ing);if(iv)setWeek(iv);
   if(P.gx.trim()&&preNum(P.gt)){var n=parseInt(P.gn,10);GOAL={x:P.gx.trim(),target:preNum(P.gt),saved:0,pl:P.gu?{u:P.gu,n:n}:null,hasta:P.gu?sumaPlazo(today,n,P.gu):null}}}
  ONB=1;HAVECFG=true;preEnd();save();render();
  stat(todo?"Listo. Cuando quieras, armá tus categorías en El vestuario → Ajustes.":"¡Listo, tu equipo está armado! Lo podés cambiar cuando quieras en El vestuario → Ajustes.")}
+// Capital inicial: la plata que había en el día a día antes del primer movimiento cargado. Es la base de "te queda" y de los consejos.
+// A quien no lo cargó (cuentas viejas o que saltearon la pretemporada) se lo pedimos al entrar. Si ya corrigió el saldo con ajustes, no hace falta.
+function hayAjustes(){return L.ing.some(function(e){return e.adj})||L.expenses.some(function(e){return e.x==="Ajuste de saldo"})}
+function capFalta(){return!CAP&&!(accVal(0)>0)&&!hayAjustes()}
+function primerMov(){var f="";L.expenses.concat(L.ing).forEach(function(e){var d=e.f||e.k;if(d&&(!f||d<f))f=d});return f}
+function capTxt(){var f=primerMov();return f&&f<today?"la plata que tenías en "+ACC[0][0]+" el "+fd(f)+", antes del primer movimiento que cargaste":"la plata que tenés hoy en "+ACC[0][0]}
+function capStart(){if(PRE||CAPLATER||ONB===0||!UID||!capFalta()||$("pre").style.display!=="none")return;
+ var w=$("pre"),c=el("div","pc"),h=el("div","prh"),im=el("img"),ht=el("div"),t=el("h2","","¿Con cuánto arrancaste?"),f=el("div","prf"),lb=el("label","","Capital inicial (en pesos)"),i=el("input"),msg=el("p","sem prm"),b=el("div","prb"),izq=el("span"),der=el("span"),no=el("button","x","Más tarde"),ok=el("button","","Guardar");
+ im.src="petaca.svg?v=28";im.alt="";t.id="pret";ht.appendChild(el("small","prk","Falta un dato"));ht.appendChild(t);h.appendChild(im);h.appendChild(ht);c.appendChild(h);
+ c.appendChild(el("p","sem","Contale a Petaca "+capTxt()+". Así lo que te queda y los consejos cuentan toda tu plata, no solo los ingresos que cargaste. Si no tenías nada, poné 0."));
+ i.type="number";i.inputMode="decimal";i.min="0";i.placeholder="Ej: 100000";lb.appendChild(i);f.appendChild(lb);c.appendChild(f);c.appendChild(msg);
+ no.onclick=function(){CAPLATER=true;capEnd()};
+ ok.onclick=function(){var v=i.value.trim()===""?NaN:parseFloat(i.value.replace(",","."));if(!(v>=0))return(msg.textContent="Poné un número (0 si no tenías nada).");
+  if(!L.bal)L.bal={};L.bal.a0=v;CAP=1;HAVECFG=true;capEnd();save();render()};
+ i.onkeydown=function(e){if(e.key==="Enter")ok.click()};
+ izq.appendChild(no);der.appendChild(ok);b.appendChild(izq);b.appendChild(der);c.appendChild(b);
+ w.innerHTML="";w.appendChild(c);w.style.display="";document.body.classList.add("pre-open");i.focus()}
+function capEnd(){if(PRE)return;$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open")}
