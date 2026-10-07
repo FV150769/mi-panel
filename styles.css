@@ -501,3 +501,10 @@ html.huye,html.huye body{overflow-x:hidden}
 .humo{position:fixed;z-index:59;font-size:28px;pointer-events:none;animation:humo .7s ease-out forwards}
 @keyframes humo{from{opacity:1;transform:scale(.6)}to{opacity:0;transform:scale(1.8) translateY(-10px)}}
 @media (prefers-reduced-motion:reduce){.masc.enojado{animation:none!important}}
+.tablero b.gira{animation:gira .5s ease}
+.tablero span.gira{animation:aparece .5s ease}
+@keyframes gira{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+@keyframes aparece{from{opacity:0}to{opacity:1}}
+.globo.charla{border-color:#12A150}
+.globo.charla::after{border-color:#12A150}
+@media (prefers-reduced-motion:reduce){.tablero b.gira,.tablero span.gira{animation:none}}
