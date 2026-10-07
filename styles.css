@@ -454,3 +454,50 @@ body.pre-open{overflow:hidden}
 #toast span{flex:1}
 #toast button{min-height:34px;padding:0 12px;flex:none}
 #toast button.x{background:none;color:inherit;border:0;box-shadow:none;font-size:18px;padding:0 6px}
+
+/* Inicio: la cancha completa (áreas, arcos, córners, banderines y una pelota que rueda) */
+.cancha{display:none}
+body.auth .cancha{display:block;position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;--l:rgba(255,255,255,.3)}
+.cancha i,.cancha span{position:absolute;display:block}
+.cancha .area{left:50%;width:min(64vw,330px);height:min(17vh,120px);border:3px solid var(--l);transform:translateX(-50%)}
+.cancha .chica{left:50%;width:min(30vw,150px);height:min(7vh,48px);border:3px solid var(--l);transform:translateX(-50%)}
+.cancha .arco{left:50%;width:min(18vw,96px);height:12px;transform:translateX(-50%);border:3px solid rgba(255,255,255,.75);background:repeating-linear-gradient(90deg,rgba(255,255,255,.35) 0 2px,transparent 2px 7px),repeating-linear-gradient(0deg,rgba(255,255,255,.35) 0 2px,transparent 2px 6px)}
+.cancha .ar{top:-3px;border-top:0}
+.cancha .ab{bottom:-3px;border-bottom:0}
+.cancha .arco.ar{top:-3px;border-radius:0 0 4px 4px}
+.cancha .arco.ab{bottom:-3px;border-radius:4px 4px 0 0}
+.cancha .area.ar::after,.cancha .area.ab::after{content:"";position:absolute;left:50%;width:min(24vw,110px);height:min(5vh,34px);border:3px solid var(--l);transform:translateX(-50%)}
+.cancha .area.ar::after{top:100%;border-top:0;border-radius:0 0 100px 100px/0 0 60px 60px;margin-top:-1px}
+.cancha .area.ab::after{bottom:100%;border-bottom:0;border-radius:100px 100px 0 0/60px 60px 0 0;margin-bottom:-1px}
+.cancha .esq{width:34px;height:34px;border:3px solid var(--l)}
+.cancha .e1{top:-20px;left:-20px;border-radius:50%}
+.cancha .e2{top:-20px;right:-20px;border-radius:50%}
+.cancha .e3{bottom:-20px;left:-20px;border-radius:50%}
+.cancha .e4{bottom:-20px;right:-20px;border-radius:50%}
+.cancha .bandera{width:2px;height:30px;background:#fff;top:4px}
+.cancha .bandera::after{content:"";position:absolute;left:2px;top:0;width:16px;height:11px;background:#FFC93C;clip-path:polygon(0 0,100% 50%,0 100%);transform-origin:left center;animation:flamea 1.2s ease-in-out infinite}
+.cancha .b1{left:6px}
+.cancha .b2{right:22px}
+@keyframes flamea{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.6) skewY(8deg)}}
+.cancha .pelota{left:0;bottom:calc(min(17vh,120px) + 18px);font-size:26px;line-height:1;animation:rueda 11s linear infinite;filter:drop-shadow(0 4px 3px rgba(0,0,0,.3))}
+@keyframes rueda{0%{transform:translateX(-50px) rotate(0)}100%{transform:translateX(calc(100vw + 50px)) rotate(1080deg)}}
+@media (prefers-reduced-motion:reduce){.cancha .pelota{display:none}.cancha .bandera::after{animation:none}}
+
+/* Tablero del login */
+.tablero{display:flex;align-items:center;justify-content:center;gap:8px;margin:-4px auto 12px;padding:6px 12px;width:max-content;max-width:100%;background:#10241A;color:#fff;border-radius:10px;font-family:Anton,Impact,sans-serif;letter-spacing:.04em;box-shadow:inset 0 0 0 2px #2E4A3B;font-size:13px}
+.tablero b{font-weight:400;font-size:22px;color:#FFC93C;background:#000;border-radius:4px;padding:0 7px;min-width:26px;text-align:center;font-variant-numeric:tabular-nums}
+.tablero em{font-style:normal;color:#8FB5A1}
+.tablero small{font-family:Inter,sans-serif;font-weight:700;font-size:10px;color:#12A150;background:#fff;border-radius:4px;padding:1px 5px;animation:titila 1.4s steps(2) infinite}
+@keyframes titila{50%{opacity:.35}}
+
+/* Easter egg: a Petaca no le gusta que lo toquen */
+html.huye,html.huye body{overflow-x:hidden}
+.masc{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.masc.enojado{animation:berrinche .14s linear infinite!important;filter:drop-shadow(0 0 10px rgba(229,57,53,.9)) saturate(1.6) hue-rotate(-12deg)!important}
+@keyframes berrinche{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,1px) rotate(-4deg)}50%{transform:translate(2px,-1px) rotate(3deg)}75%{transform:translate(-1px,2px) rotate(-2deg)}100%{transform:translate(0,0) rotate(0)}}
+.globo{position:fixed;z-index:60;max-width:220px;padding:8px 12px;background:#fff;color:#1d1d1d;border:3px solid #1d1d1d;border-radius:16px;font:800 14px/1.25 Inter,sans-serif;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.25);transform:translate(-50%,-100%);pointer-events:none;animation:globo .25s cubic-bezier(.3,1.6,.6,1) both}
+.globo::after{content:"";position:absolute;left:50%;bottom:-11px;width:14px;height:14px;background:#fff;border:3px solid #1d1d1d;border-top:0;border-left:0;transform:translateX(-50%) rotate(45deg)}
+@keyframes globo{from{opacity:0;transform:translate(-50%,-80%) scale(.6)}to{opacity:1;transform:translate(-50%,-100%) scale(1)}}
+.humo{position:fixed;z-index:59;font-size:28px;pointer-events:none;animation:humo .7s ease-out forwards}
+@keyframes humo{from{opacity:1;transform:scale(.6)}to{opacity:0;transform:scale(1.8) translateY(-10px)}}
+@media (prefers-reduced-motion:reduce){.masc.enojado{animation:none!important}}

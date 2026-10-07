@@ -14,9 +14,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=30">
+<link rel="stylesheet" href="styles.css?v=31">
 </head>
 <body class="auth">
+<div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
 <main>
 <p id="aviso" class="sem" style="color:var(--warn);font-weight:700">Cargando… Si este mensaje no desaparece, la página no pudo iniciar. Cerrala y abrila de nuevo, o copiame lo que dice acá.</p>
 <header class="top">
@@ -24,6 +25,7 @@
 <p class="sub" id="fecha"></p><p class="lema">Tu guita y tu agenda, ordenadas como un 5 de los de antes.</p></div></div>
 </header>
 <section id="login" style="margin-bottom:16px;display:none">
+<div class="tablero" aria-hidden="true"><span>PETACA</span><b>3</b><em>–</em><b>0</b><span>DEUDAS</span><small>90' + 5</small></div>
 <h2>¡Salí a la cancha!</h2>
 <div class="add"><input type="text" id="le" placeholder="Email o usuario" autocomplete="username" autocapitalize="none" aria-label="Email o usuario"><input type="password" id="lp" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña"></div>
 <div class="add"><button id="lg">Entrar</button><button id="lr" title="Crear una cuenta nueva">Ficharme</button><button class="lk" id="lf">Me olvidé la contraseña</button></div>
@@ -192,6 +194,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
