@@ -26,32 +26,50 @@ function hoyAR() {
   return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-// Llama a Gemini; si está saturado (503/429/500) reintenta y después prueba con un modelo más liviano.
+// Llama a Gemini; si está saturado (503/429/500) o tarda, reintenta y después prueba con un modelo más liviano.
+// Sin "pensamiento" (thinkingBudget 0) responde mucho más rápido; si el modelo no lo acepta, se reintenta sin eso.
+// Cada intento tiene 14 s y en total no se esperan más de 30 s, para que la página no quede colgada.
 async function llamar(key: string, prompt: string) {
   const intentos = [
     "gemini-flash-latest",
+    "gemini-flash-lite-latest",
     "gemini-flash-latest",
     "gemini-flash-lite-latest",
-    "gemini-flash-lite-latest",
   ];
+  const fin = Date.now() + 30000;
+  let pensar = false;
   let d: any = {};
   let status = 0;
   for (let i = 0; i < intentos.length; i++) {
-    if (i > 0) await new Promise((r) => setTimeout(r, 800 * i));
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${intentos[i]}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json", temperature: 0 },
-        }),
-      },
-    );
+    if (i > 0) await new Promise((r) => setTimeout(r, 500));
+    const queda = fin - Date.now();
+    if (queda < 3000) break;
+    const gen: any = { responseMimeType: "application/json", temperature: 0 };
+    if (!pensar) gen.thinkingConfig = { thinkingBudget: 0 };
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${intentos[i]}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: gen }),
+          signal: AbortSignal.timeout(Math.min(14000, queda)),
+        },
+      );
+    } catch {
+      status = 504;
+      d = { error: { message: "Gemini tardó demasiado en responder" } };
+      continue;
+    }
     status = res.status;
     d = await res.json().catch(() => ({}));
     if (res.ok) return { ok: true, d, status };
+    if (res.status === 400 && !pensar && /think/i.test(d?.error?.message || "")) {
+      pensar = true;
+      i--;
+      continue;
+    }
     if (![429, 500, 503].includes(res.status)) break;
   }
   return { ok: false, d, status };
