@@ -52,7 +52,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v66";
+var DOC=null,VER="v67";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -421,7 +421,7 @@ function renderMov(){
  L.expenses.forEach(function(e){all.push({t:"g",e:e,f:e.f,l:"Gasto · "+e.c+(e.x?" · "+e.x:"")+" · "+medTxt(med(e)),v:e.m})});
  L.ing.forEach(function(e){all.push({t:"i",e:e,f:e.f||e.k,l:(e.adj?"Ajuste de saldo":"Ingreso"+(e.p?" · "+pctTxt(e.p)+" al ahorro":""))+" · "+medTxt(med(e)),v:e.v})});
  L.mv.forEach(function(e){all.push({t:"m",e:e,f:e.f,l:mvTxt(e),v:e.m})});
- L.saves.forEach(function(e){all.push({t:"a",e:e,f:e.f,l:e.m<0?"Retiro del ahorro":"Aporte al ahorro"+(e.ing?" · de un ingreso ("+money(e.ars)+")":""),v:e.m})});
+ L.saves.forEach(function(e){all.push({t:"a",e:e,f:e.f,l:e.m<0?"Retiro del ahorro":"Aporte al ahorro"+(e.ing?" · de un ingreso ("+money(e.ars)+")":e.ars?" · de tu plata ("+money(e.ars)+")":""),v:e.m})});
  if(!all.length){h.appendChild(el("div","none","Todavía no cargaste movimientos desde el panel."));return}
  all.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,30).forEach(function(m){
   var r=el("div","row"),l=el("span");l.appendChild(document.createTextNode(m.l+" "));l.appendChild(el("small","",m.f.slice(8)+"/"+m.f.slice(5,7)));
@@ -580,8 +580,17 @@ function lAjuste(raw,c,mo,o){var A=o.ajustes,m,cat;
   if(ob.meta_usd||ob.nombre||ob.fecha_limite){A.objetivo=ob;return true}}
  return false}
 var PARTES=/[;\n]|,(?!\d)|\.(?!\d)|\s+y\s+/;
+// Separar AHORA para el ahorro una parte de la plata que tenés ("ahorrá el 10% de lo que tengo", "separá 50 mil para el
+// ahorro"). No es el % de cada ingreso (eso es un ajuste). Se mira la nota entera, porque el pedido suele venir partido
+// ("el 10% de lo que tengo, decime cuánto es y ahorralo"). Devuelve {porcentaje} o {monto} y de dónde sale, si lo dice.
+var SEPV=/\b(ahorr\w*|separ\w*|guard\w*|apart\w*|reserv\w*)\b/,SEPBASE=/lo que (tengo|hay|me queda)|(tengo|hay) (ahora|hoy|actualmente)|mi (plata|saldo)|\bsaldo\b|disponible|del total|de todo/;
+function pSeparar(c){
+ if(!SEPV.test(c)||/usd|dolar|u\$s|verdes/.test(c)||/(me entr|entraron|entro|cobre|me pagaron|me depositaron|me transfirieron)/.test(c)||/\b(gaste|pague|compre|me cobraron)\b/.test(c)||/siempre|cada ingreso|de cada|por defecto|todos los ingresos|desde ahora|a partir de|porcentaje/.test(c))return null;
+ var de=/efectivo|\bcash\b|billete|en mano/.test(c)?"efectivo":/transf|banco|cuenta|mercado ?pago|billetera|virtual/.test(c)?"transferencia":"",pm=c.match(/(\d+(?:[.,]\d+)?)\s*(%|por ?ciento)/);
+ if(pm){var pp=parseFloat(pm[1].replace(",","."));return SEPBASE.test(c)&&pp>0&&pp<=100?{porcentaje:pp,de:de}:null}
+ if(!/ahorr/.test(c))return null;var mo=pMonto(c);return mo>0?{monto:mo,de:de}:null}
 function localParse(txt,C){
- var o={gastos:[],eventos:[],ingresos:[],movimientos:[],ahorro_usd:null,cotizacion:null,cancelar:[],cancelar_fecha:[],sin_clases:[],rutinas:[],corregir:[],ajustes:{categorias:[],porcentaje_ahorro:null,objetivo:null}},last="g";
+ var o={gastos:[],eventos:[],ingresos:[],movimientos:[],ahorro_usd:null,cotizacion:null,cancelar:[],cancelar_fecha:[],sin_clases:[],rutinas:[],corregir:[],ajustes:{categorias:[],porcentaje_ahorro:null,objetivo:null},separar:null},last="g";
  // Corrección de algo ya cargado ("el gasto de 80 mil eran 8 mil", "el ingreso de ayer fue en efectivo"): se lee la nota entera.
  var cc=n2(txt);
  if(CORR.test(cc)&&!AJRX.test(cc)&&C){var ms=pMontos(cc),cf=pFecha(cc),chd=/\d{1,2}\/\d{1,2}|manana|ayer|lunes|martes|miercoles|jueves|viernes|sabado|domingo|\bel \d{1,2}\b/.test(cc),id=elegir(cc,ms[0],cf,chd,C);
@@ -589,6 +598,7 @@ function localParse(txt,C){
    if(md)ch.medio=md;
    if(it.t==="X")Object.keys(BUDGET).forEach(function(k){var nk=n2(k);if(k!==it.e.c&&cc.indexOf(nk)>=0&&n2(String(it.e.x||"")).indexOf(nk)<0)ch.categoria=k});
    if(Object.keys(ch).length>1){o.corregir.push(ch);return o}}}
+ var sp=pSeparar(cc);if(sp){o.separar=sp;return o}
  // Partes de la nota: la coma o el punto pegados a cifras ("58,000", "1,5") son del número, no separan.
  txt.split(PARTES).forEach(function(raw){
   raw=raw.trim();if(!raw)return;var c=n2(raw),mo=pMonto(c),f=pFecha(c);
@@ -666,7 +676,8 @@ function rapida1(p,C,prev){var c=n2(p).replace(/[.!?\s]+$/,""),r=localParse(p,C)
   if(i)return i.monto>0&&VING.test(c)?{t:"i",r:r}:null;
   return r.movimientos[0].monto>0?{t:"m",r:r}:null}
  var e=rapidaEv(p,c);return e?{t:"e",r:{eventos:[e]}}:null}
-function rapida(txt,C){var c0=n2(txt);
+function rapida(txt,C){var c0=n2(txt),sp=pSeparar(c0);
+ if(sp&&txt.length<=160&&!LISTA.test(c0))return{gastos:[],eventos:[],ingresos:[],movimientos:[],separar:sp};
  if(txt.length>160||/%|por ?ciento|dolar|usd|u\$s|\?/.test(c0)||LISTA.test(c0)||AJRX.test(c0))return null;
  var ps=txt.split(PARTES).map(function(x){return x.trim()}).filter(function(x){return/[a-z0-9]/.test(n2(x))});if(!ps.length||ps.length>4)return null;
  var R={gastos:[],eventos:[],ingresos:[],movimientos:[]},prev=null,fp=null;
@@ -698,7 +709,7 @@ function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d
 // Lo que va a la IA: primero las instrucciones fijas (iguales en todas las notas, así Gemini las reutiliza y responde antes);
 // al final los datos del usuario y la nota. La lista de lo ya cargado solo va cuando la nota corrige, cancela o borra algo.
 // Se le pide que devuelva solo lo que encontró: menos texto de respuesta es menos espera.
-var PROMPT_FIJO="Extraé de una nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, ingresos en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON compacto y SOLO con las claves que tengan algo: no pongas listas vacías, null ni campos vacíos. Claves posibles: \"gastos\":[{\"monto\":number,\"categoria\":una de las categorías del usuario,\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\" o \"transferencia\" (solo si lo dice)}], \"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM\" (solo si la dice),\"titulo\":string,\"imp\":true (solo si pide que le avisen o dice que es importante)}], \"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\" o \"transferencia\" (solo si lo dice),\"porcentaje_ahorro\":number (solo si la nota dice cuánto separar de ese ingreso)}], \"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}], \"ahorro_usd\":number, \"cotizacion\":number. Para los gastos usá SIEMPRE una de las categorías del usuario (la más parecida por el detalle); si ninguna encaja, Otros. Si la nota pide CAMBIAR un ajuste (el presupuesto de una categoría, crear, renombrar o quitar una categoría, el % que separa de cada ingreso o el objetivo de ahorro), devolvé \"ajustes\":{\"categorias\":[{\"nombre\":categoría actual o nueva,\"presupuesto\":number nuevo por mes (solo si cambia),\"nuevo_nombre\":string (solo si la renombra),\"quitar\":true (solo si la quiere borrar)}],\"porcentaje_ahorro\":number,\"objetivo\":{\"nombre\":string,\"meta_usd\":number,\"fecha_limite\":\"YYYY-MM-DD\"}} con solo lo que cambia. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si algo no tiene fecha, usá la de hoy. 'mil' vale 1000; '5,000' y '5.000' son cinco mil (la coma o el punto separan los miles), '1,5 palos' es 1500000. Si la nota cancela o borra algo, devolvé \"cancelar\":[ids de la lista de lo cargado]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" (solo si dice hasta qué hora),\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de lo cargado, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}].";
+var PROMPT_FIJO="Extraé de una nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, ingresos en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON compacto y SOLO con las claves que tengan algo: no pongas listas vacías, null ni campos vacíos. Claves posibles: \"gastos\":[{\"monto\":number,\"categoria\":una de las categorías del usuario,\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\" o \"transferencia\" (solo si lo dice)}], \"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM\" (solo si la dice),\"titulo\":string,\"imp\":true (solo si pide que le avisen o dice que es importante)}], \"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\" o \"transferencia\" (solo si lo dice),\"porcentaje_ahorro\":number (solo si la nota dice cuánto separar de ese ingreso)}], \"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}], \"ahorro_usd\":number, \"cotizacion\":number. Si pide pasar AHORA al ahorro una parte de la plata que ya tiene (ej: 'ahorrá el 10% de lo que tengo', 'separá 50 mil para el ahorro'), devolvé \"separar\":{\"porcentaje\":number o \"monto\":number en pesos,\"de\":\"efectivo\" o \"transferencia\" (solo si lo dice)}; no lo confundas con el % que separa de cada ingreso (eso es un ajuste). Para los gastos usá SIEMPRE una de las categorías del usuario (la más parecida por el detalle); si ninguna encaja, Otros. Si la nota pide CAMBIAR un ajuste (el presupuesto de una categoría, crear, renombrar o quitar una categoría, el % que separa de cada ingreso o el objetivo de ahorro), devolvé \"ajustes\":{\"categorias\":[{\"nombre\":categoría actual o nueva,\"presupuesto\":number nuevo por mes (solo si cambia),\"nuevo_nombre\":string (solo si la renombra),\"quitar\":true (solo si la quiere borrar)}],\"porcentaje_ahorro\":number,\"objetivo\":{\"nombre\":string,\"meta_usd\":number,\"fecha_limite\":\"YYYY-MM-DD\"}} con solo lo que cambia. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si algo no tiene fecha, usá la de hoy. 'mil' vale 1000; '5,000' y '5.000' son cinco mil (la coma o el punto separan los miles), '1,5 palos' es 1500000. Si la nota cancela o borra algo, devolvé \"cancelar\":[ids de la lista de lo cargado]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" (solo si dice hasta qué hora),\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de lo cargado, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}].";
 // Notas que necesitan la lista de lo ya cargado: corrigen, cancelan, borran o mueven algo.
 var LISTA=/(equivoc|correg|en realidad|\b(era|eran|fue|fueron)\b|cambi|pasal|cancel|anul|borr|elimin|\bsaca(me|lo|la|los|las)?\b|quit|suspend|no voy|no tengo|no hay|ya no|deje de|dejo de|reprogram|pospon|\bmove|\bmovi|\bcorre(lo|la)\b|\b(el|la|los|las) (gasto|ingreso|evento|turno|rutina|movimiento)\b)/;
 function prompt1(txt,C,conLista){return PROMPT_FIJO+" DATOS DEL USUARIO. Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Categorías y presupuesto por mes: "+Object.keys(BUDGET).map(function(k){return k+" "+(BUDGET[k]>0?"$"+BUDGET[k]:"sin presupuesto")}).join(", ")+". Separa el "+AHO+"% de cada ingreso para ahorro. Objetivo de ahorro \""+GOAL.x+"\" de US$"+GOAL.target+(metaFin()?" hasta el "+metaFin():" sin plazo")+". Lista de lo cargado (id: qué es): "+(conLista?C.list||"(nada)":"(no hace falta para esta nota)")+". NOTA: "+txt}
@@ -775,6 +786,11 @@ $("nb").onclick=async function(){
   CR=CR.filter(function(o){return cambios(o).length});
   var CRX=CR.filter(function(o){return o.it.t==="X"}),CRI=CR.filter(function(o){return o.it.t==="I"}),CRM=CR.filter(function(o){return o.it.t==="M"}),CRE=CR.filter(function(o){return o.it.t==="E"||o.it.t==="F"});
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
+  // Separar ahora para el ahorro: el % se calcula sobre lo que tenés en el día a día (o en efectivo o transferencia, si lo dice).
+  var SPo=[],spNo="",sp=r.separar;if(sp&&typeof sp==="object"){var spde=pMed(sp.de),spp=parseFloat(sp.porcentaje),spm=Number(sp.monto),spb=spde==="e"?efVal():spde==="t"?trVal():diaVal();
+   var spa=spp>0&&spp<=100?Math.round(Math.max(spb,0)*spp/100):spm>0?Math.round(spm):0;
+   if(spa>0)SPo.push({ars:spa,p:spp>0&&spp<=100?spp:null,b:spb,de:spde,me:spde||(trVal()>=spa||efVal()<spa?"t":"e")});
+   else spNo="Ahora no tenés plata "+(spde==="e"?"en efectivo":spde==="t"?"por transferencia":"en "+ACC[0][0])+" para separar.";}
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
   // Un solo día de una rutina: la fecha se lleva al día de la semana de la rutina (si la IA se corre, va al próximo que corresponde).
   var CF=(r.cancelar_fecha||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t==="R"&&Cn.indexOf(C.o[c.id])<0}).map(function(c){var e=C.o[c.id].e;return{r:e,f:proxDias(ok.test(c.fecha)?c.fecha:today,rds(e))}});
@@ -783,7 +799,7 @@ $("nb").onclick=async function(){
   var RU=[];(r.rutinas||[]).forEach(function(u){if(!u||!u.titulo)return;var h=hhmm(u.hora),ds=ordDias(diasDe(u.dias!=null?u.dias:u.dia));if(!h||!ds.length)return;
    RU.push({id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),ds:ds,d:ds[0],t:h,t2:hhmm(u.hasta),x:String(u.titulo),from:today,to:""})});
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
-  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null&&!AJC.length&&!AJP.length&&!AJO.length){out.textContent="No encontré gastos, eventos, ingresos, ajustes ni nada para corregir en esa nota. Probá con más detalle.";medir("vacio");return}
+  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null&&!AJC.length&&!AJP.length&&!AJO.length&&!SPo.length){out.textContent=spNo||"No encontré gastos, eventos, ingresos, ajustes ni nada para corregir en esa nota. Probá con más detalle.";medir("vacio");return}
   // Vista previa editable: cada ítem se puede corregir (✎) o quitar (×) antes de guardar.
   var AA=A!=null?[{m:A}]:[],FF=FX!=null?[{v:FX}]:[],NSo=NS.map(function(d){return{f:d}});
   var CAT=Object.keys(BUDGET).concat(AJC.filter(function(o){return o.tp==="n"}).map(function(o){return o.n})).map(function(c){return[c,c]}),DIA=DN.map(function(n,i){return[i,n]}),DIR=[["e","De transferencia a efectivo"],["t","De efectivo a transferencia"]];
@@ -803,6 +819,8 @@ $("nb").onclick=async function(){
    {a:AJO,t:function(o){return"Ajuste del objetivo: "+(o.x!==GOAL.x?"\""+GOAL.x+"\" → \""+o.x+"\"":"\""+o.x+"\"")+(o.t!==GOAL.target?" · meta "+usd(GOAL.target)+" → "+usd(o.t):" · meta "+usd(o.t))+(o.h!==(GOAL.hasta||"")?" · "+(o.h?"hasta el "+fLarga(o.h):"sin plazo"):"")},f:[["x","Objetivo","text"],["t","Meta (US$)","number"],["h","Fecha límite (opcional)","date"]]},
    {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
    {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
+   {a:SPo,t:function(s){var fx=FF.length?FF[0].v:L.fx,dd=s.de==="e"?"tu efectivo":s.de==="t"?"transferencia":ACC[0][0];
+     return"Ahorro: "+(s.p!=null&&Math.round(Math.max(s.b,0)*s.p/100)===s.ars?"el "+pctTxt(s.p)+" de lo que tenés en "+dd+" ("+money(s.b)+") es ":"separar ")+money(s.ars)+(fx>0?" (≈ "+usd(s.ars/fx)+")":"")+" · pasa al ahorro desde "+medTxt(s.me)},f:[["ars","Pesos","number"],["me","Sale de",MED]]},
    {a:Cn,t:function(c){return c.t==="R"?"Terminar la "+descr(c)+" · deja de aparecer desde hoy (lo anterior queda)":"Borrar: "+descr(c)}},
    {a:CF,t:function(c){var f=proxDias(c.f,rds(c.r));return"Cancelar solo el "+DN[new Date(f+"T00:00").getDay()].toLowerCase()+" "+fd(f)+": "+c.r.x+" "+c.r.t+" · las demás semanas sigue"},f:[["f","Qué día","date"]]},
    {a:NSo,t:function(d){return"Sin clases el "+fd(d.f)},f:[["f","Fecha","date"]]},
@@ -837,6 +855,7 @@ $("nb").onclick=async function(){
    var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
    yes.style.marginTop="10px";
    yes.onclick=function(){
+    if(SPo.length&&!((FF.length?FF[0].v:L.fx)>0)){toast("Para pasar plata al ahorro necesito saber a cuánto está el dólar: cargalo en Objetivo de ahorro y probá de nuevo.");return}
     if(IN.some(function(i){return i.p==null})){var w=out.querySelector(".pctin");if(w){w.classList.add("falta");w.scrollIntoView({block:"center",behavior:"smooth"})}toast("Elegí cuánto separás para ahorro de cada ingreso (puede ser 0%).");return}
     aplicarAjustes(AJC,AJP,AJO);
     CRX.forEach(function(o){var e=o.it.e;if(o.c!==e.c)aprender(o.x,o.c);e.m=o.m;e.c=o.c;e.x=o.x;e.f=o.f;e.me=o.me});
@@ -847,9 +866,11 @@ $("nb").onclick=async function(){
     Cn.forEach(function(c){if(c.t==="R"){var re=c.e;if(re.from&&re.from>=today)drop(RUT,re);else re.to=plus(today,-1)}else if(c.t==="F")L.hidden.push(c.e.f+"|"+c.e.x);else if(c.t==="E")drop(L.events,c.e);else if(c.t==="I"){drop(L.saves,aporteDe(c.e));drop(L.ing,c.e)}else if(c.t==="M")drop(L.mv,c.e);else drop(L.expenses,c.e)});
     CF.forEach(function(c){var k=c.r.id+"|"+proxDias(c.f,rds(c.r));if(L.rskip.indexOf(k)<0)L.rskip.push(k)});
     NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){aprender(g.x,g.c);L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){sumarIng(i.f,i.v,i.p,i.me)});MV.forEach(function(m){L.mv.push(m)});
-    if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});$("nt").value="";out.innerHTML="";save();render();
+    if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});
+    SPo.forEach(function(s){L.saves.push({f:today,ars:s.ars,fx:L.fx,m:Math.round(s.ars/L.fx*100)/100,me:s.me==="e"?"e":"t"})});$("nt").value="";out.innerHTML="";save();render();
     var nc=CRX.length+CRI.length+CRM.length+CRE.length+AJC.length+AJP.length+AJO.length;
     medir("guardo");
+    if(SPo.length&&n===SPo.length)toast("Listo: pasé "+money(SPo[0].ars)+" al ahorro (≈ "+usd(SPo[0].ars/L.fx)+").");else
     toast(nc?"Listo, "+(nc===1?"corregí lo que me dijiste":"corregí "+nc+" cosas")+(n>nc?" y guardé el resto":"")+".":"Guardé lo de tu nota.")};
    no.onclick=function(){out.innerHTML="";medir("descarto")};
    out.appendChild(yes);out.appendChild(no)}
@@ -1410,6 +1431,7 @@ function medTxt(me){return me==="e"?"💵 efectivo":"🏦 transferencia"}
 function efVal(){var v=+(L.bal&&L.bal.ef)||0;
  L.ing.forEach(function(o){if(med(o)==="e"){v+=o.v;var s=aporteDe(o);if(s&&s.ars)v-=s.ars}});
  L.expenses.forEach(function(e){if(med(e)==="e")v-=e.m});
+ L.saves.forEach(function(s){if(s.ars&&!s.ing&&s.me==="e")v-=s.ars});
  L.mv.forEach(function(m){v+=m.a==="e"?m.m:-m.m});
  return v}
 function trVal(){return diaVal()-efVal()}
