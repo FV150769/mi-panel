@@ -90,7 +90,7 @@ async function datos(lg0: string, id: string) {
         };
       }
     }
-    return { t: Date.now(), lg, prox: prox[0] || null, ult: jug[jug.length - 1] || null, tb };
+    return { t: Date.now(), lg, prox: prox[0] || null, fix: prox.slice(0, 6), ult: jug[jug.length - 1] || null, tb };
   }
   return null;
 }

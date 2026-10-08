@@ -40,7 +40,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v51";
+var DOC=null,VER="v52";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -1222,32 +1222,38 @@ async function eqDatos(k,forzar){var e=EQS[k],key="panel-eqd-"+k,c=null;try{c=JS
   if(r.error||!r.data||r.data.error)throw new Error((r.data&&r.data.error)||"sin datos");
   var d=r.data;d.t=Date.now();try{localStorage.setItem(key,JSON.stringify(d))}catch(_){}return d}
  catch(err){if(c){c.viejo=1;return c}throw err}}
-function eqCuando(f){var d=new Date(f),h=new Date(),n=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(h.getFullYear(),h.getMonth(),h.getDate()))/864e5);
- var dia=n===0?"Hoy":n===1?"Mañana":DN[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1);return dia+" a las "+pad(d.getHours())+":"+pad(d.getMinutes())+(n>1&&n<8?" (en "+n+" días)":"")}
-async function renderEquipo(forzar){var card=$("eqcard"),b=$("eqb");if(!card||!b)return;var k=document.body.classList.contains("auth")?"":EQUIPO,e=EQS[k];
- if(!k||!e||!e.es){card.style.display="none";return}
- card.style.display="";$("eqt").textContent="⚽ "+e.n;var my=EQREQ=(EQREQ||0)+1;
- if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML="";b.appendChild(el("p","sem","Buscando el próximo partido…"))}
- var d;try{d=await eqDatos(k,forzar)}catch(err){if(my===EQREQ){b.innerHTML="";b.appendChild(el("p","sem","No pude traer los datos del partido. Probá más tarde."))}return}
- if(my!==EQREQ)return;b.innerHTML="";
- function fila(lbl){var r=el("div","eqrow");r.appendChild(el("small","",lbl));b.appendChild(r);return r}
- var p=d.prox;
- if(p){var r=fila(p.est==="in"?"🔴 Jugando ahora":"Próximo partido"),loc=p.loc?e.n:p.riv,vis=p.loc?p.riv:e.n;
-  r.appendChild(el("b","",p.est==="in"&&p.gy!=null?loc+" "+(p.loc?p.gy:p.go)+" - "+(p.loc?p.go:p.gy)+" "+vis:loc+" vs "+vis));
-  r.appendChild(el("span","",eqCuando(p.f)+" · "+(p.loc?"de local":"de visitante")+(LIGAS[d.lg]?" · "+LIGAS[d.lg]:"")));
-  if(p.est!=="in"){var dd=new Date(p.f),f=iso(dd),t=pad(dd.getHours())+":"+pad(dd.getMinutes()),x="⚽ "+loc+" vs "+vis,ya=L.events.some(function(v){return v.f===f&&v.x===x});
-   var ag=el("button",ya?"x":"lk",ya?"✓ Está en tu agenda":"📅 Agregar a mi agenda");ag.disabled=ya;ag.style.padding="0";
-   ag.onclick=function(){if(L.events.some(function(v){return v.f===f&&v.x===x}))return;L.events.push({f:f,t:t,x:x,imp:false});save();render();toast("Agregué "+x+" a tu agenda ("+fd(f)+" "+t+").");renderEquipo()};r.appendChild(ag)}}
- else fila("Próximo partido").appendChild(el("span","","Todavía no hay fecha confirmada."));
- var u=d.ult;
- if(u&&u.gy!=null){var r2=fila("Último partido"),gy=+u.gy,go=+u.go,res=gy>go?["G","Ganó"]:gy<go?["P","Perdió"]:["E","Empató"];
-  var bb=el("b");bb.appendChild(el("i","res "+res[0],res[0]));bb.appendChild(document.createTextNode(" "+(u.loc?e.n+" "+u.gy+" - "+u.go+" "+u.riv:u.riv+" "+u.go+" - "+u.gy+" "+e.n)));r2.appendChild(bb);
-  r2.appendChild(el("span","",res[1]+" · "+fd(iso(new Date(u.f)))))}
- var tb=d.tb;
- if(tb&&tb.pos){var r3=fila("En la tabla"+(LIGAS[d.lg]?" · "+LIGAS[d.lg]:""));r3.appendChild(el("b","",tb.pos+"° de "+tb.n+(tb.zona?" en la "+tb.zona:"")+" · "+cant(tb.pts,"punto","puntos")));
-  r3.appendChild(el("span","",cant(tb.pj,"jugado","jugados")+": "+cant(tb.g,"ganado","ganados")+", "+cant(tb.e,"empatado","empatados")+", "+cant(tb.p,"perdido","perdidos")))}
- var pie=el("p","eqpie"),at=new Date(d.t);pie.appendChild(document.createTextNode((d.viejo?"Sin conexión: datos de las ":"Datos de ESPN · actualizado a las ")+pad(at.getHours())+":"+pad(at.getMinutes())+" "));
- var rf=el("button","x","↻ Actualizar");rf.onclick=function(){b.dataset.k="";renderEquipo(true)};pie.appendChild(rf);b.appendChild(pie)}
+// Detalle del equipo arriba de todo, aparte de la agenda de la persona: una línea con el próximo partido y la posición;
+// al tocarla se despliega el fixture (próximos partidos), el último resultado y la tabla. Se recuerda si lo dejaste abierto.
+function eqCorto(f){var d=new Date(f),h=new Date(),n=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(h.getFullYear(),h.getMonth(),h.getDate()))/864e5);
+ return(n===0?"hoy":n===1?"mañana":DN[d.getDay()].slice(0,3).toLowerCase()+" "+d.getDate()+"/"+(d.getMonth()+1))+" "+pad(d.getHours())+":"+pad(d.getMinutes())}
+function eqVs(e,p){return p.loc?e.n+" vs "+p.riv:p.riv+" vs "+e.n}
+async function renderEquipo(forzar){var box=$("eqfix"),sum=$("eqsum"),b=$("eqb");if(!box||!b)return;var k=document.body.classList.contains("auth")?"":EQUIPO,e=EQS[k];
+ if(!k||!e||!e.es){box.hidden=true;return}
+ box.hidden=false;var my=EQREQ=(EQREQ||0)+1;
+ if(b.dataset.k!==k){b.dataset.k=k;b.innerHTML="";sum.textContent="⚽ "+e.n+": buscando el próximo partido…"}
+ var d;try{d=await eqDatos(k,forzar)}catch(err){if(my===EQREQ){sum.textContent="⚽ "+e.n+": no pude traer los partidos";b.innerHTML="";b.appendChild(el("p","eqpie","Probá más tarde."))}return}
+ if(my!==EQREQ)return;
+ // La línea de arriba: próximo partido (o el que se está jugando) y la posición
+ var p=d.prox,tb=d.tb;sum.innerHTML="";sum.appendChild(el("b","",(p&&p.est==="in"?"🔴 ":"⚽ ")+e.n));
+ sum.appendChild(el("span","",p?(p.est==="in"?" · jugando ahora vs "+p.riv+(p.gy!=null?" ("+p.gy+"-"+p.go+")":""):" · "+(p.loc?"vs ":"en cancha de ")+p.riv+", "+eqCorto(p.f)):" · sin partido confirmado"));
+ if(tb&&tb.pos)sum.appendChild(el("small",""," · "+tb.pos+"°"));
+ // Lo desplegado: fixture, último partido y tabla
+ b.innerHTML="";var fx=(d.fix&&d.fix.length?d.fix:p?[p]:[]);
+ if(fx.length){b.appendChild(el("small","eqlbl","Fixture · "+(LIGAS[d.lg]||"")));var ul=el("div","eqlist");
+  fx.forEach(function(q){var r=el("div","eqm"),dd=new Date(q.f),f=iso(dd),t=pad(dd.getHours())+":"+pad(dd.getMinutes()),x="⚽ "+eqVs(e,q),ya=L.events.some(function(v){return v.f===f&&v.x===x});
+   r.appendChild(el("span","eqd",eqCorto(q.f)));r.appendChild(el("span","eqr",(q.loc?"🏠 ":"✈️ ")+eqVs(e,q)));
+   var ag=el("button","x",ya?"✓":"📅");ag.title=ya?"Ya está en tu agenda":"Agregar a mi agenda";ag.setAttribute("aria-label",ag.title+": "+eqVs(e,q));ag.disabled=ya||q.est==="in";
+   ag.onclick=function(){if(L.events.some(function(v){return v.f===f&&v.x===x}))return;L.events.push({f:f,t:t,x:x,imp:false});save();render();toast("Agregué "+x+" a tu agenda ("+fd(f)+" "+t+").");renderEquipo()};
+   r.appendChild(ag);ul.appendChild(r)});b.appendChild(ul)}
+ var u=d.ult,lin=el("div","eqres");
+ if(u&&u.gy!=null){var gy=+u.gy,go=+u.go,res=gy>go?"G":gy<go?"P":"E",s1=el("span");s1.appendChild(el("i","res "+res,res));
+  s1.appendChild(document.createTextNode(" Último: "+(u.loc?e.n+" "+u.gy+"-"+u.go+" "+u.riv:u.riv+" "+u.go+"-"+u.gy+" "+e.n)+" ("+fd(iso(new Date(u.f)))+")"));lin.appendChild(s1)}
+ if(tb&&tb.pos)lin.appendChild(el("span","","📊 "+tb.pos+"° de "+tb.n+(tb.zona?" en la "+tb.zona:"")+" · "+cant(tb.pts,"punto","puntos")+" en "+cant(tb.pj,"partido","partidos")+" ("+tb.g+"G "+tb.e+"E "+tb.p+"P)"));
+ if(lin.firstChild)b.appendChild(lin);
+ var pie=el("p","eqpie"),at=new Date(d.t);pie.appendChild(document.createTextNode((d.viejo?"Sin conexión: datos de las ":"Datos de ESPN · ")+pad(at.getHours())+":"+pad(at.getMinutes())+" "));
+ var rf=el("button","x","↻ Actualizar");rf.onclick=function(){sum.querySelector("span")&&(sum.querySelector("span").textContent=" · actualizando…");renderEquipo(true)};pie.appendChild(rf);b.appendChild(pie)}
+(function(){var x=$("eqfix");if(!x)return;try{x.open=localStorage.getItem("panel-eqfix")==="1"}catch(_){}
+ x.addEventListener("toggle",function(){try{localStorage.setItem("panel-eqfix",x.open?"1":"0")}catch(_){}})})();
 document.addEventListener("visibilitychange",function(){if(!document.hidden)renderEquipo()});
 // Elegir equipo desde arriba de todo: un botón chico al lado de PETACA que abre las 4 opciones y guarda al tocar.
 (function(){
