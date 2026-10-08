@@ -567,3 +567,14 @@ body.eq-union .estadio{display:block;background-image:url(estadio-union.jpg?v=1)
 h2.grp{text-shadow:0 1px 0 rgba(255,255,255,.6)}
 .credito{font-size:11px;line-height:1.4;color:var(--mute);text-align:center;margin:18px 0 0;padding:0 8px}
 .credito a{color:inherit}
+/* Tu equipo: próximo partido, último resultado y tabla */
+.eqrow{padding:8px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.4}
+.eqrow:first-child{border-top:0;padding-top:0}
+.eqrow small{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mute)}
+.eqrow b{display:block;font-size:16px;margin:1px 0}
+.eqrow span{display:block;color:var(--mute)}
+.eqrow button.lk{margin-top:4px;min-height:32px}
+.eqrow i.res{display:inline-block;font-style:normal;font-size:11px;font-weight:800;color:#fff;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;vertical-align:2px}
+.res.G{background:#16A34A}.res.E{background:#9CA3AF}.res.P{background:#DC2626}
+.eqpie{font-size:11px;color:var(--mute);margin:8px 0 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.eqpie button.x{font-size:11px;text-decoration:underline}
