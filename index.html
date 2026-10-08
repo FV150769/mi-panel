@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#12A150">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=69">
+<link rel="stylesheet" href="styles.css?v=70">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -72,7 +72,7 @@
 <li>"el viernes a las 10 tengo dentista, avisame"</li>
 <li>"gym de lunes a viernes a las 19" · "este jueves no hay gym"</li>
 <li>"saqué 20 mil del cajero"</li>
-<li>"ahorrá el 10% de lo que tengo" · "separá 50 mil para el ahorro"</li>
+<li>"ahorrá el 10% de lo que tengo" · "separá 50 mil para el ahorro" · "invertí 100 mil en un plazo fijo"</li>
 <li>"me equivoqué, el gasto del super eran 6 mil"</li>
 <li>"subí el presupuesto de salidas a 50 mil" · "agregá la categoría Mascota"</li>
 </ul>
@@ -180,8 +180,8 @@
 <input type="number" id="am" placeholder="Monto (USD)" inputmode="decimal" aria-label="Monto a sumar">
 <button id="ab">Sumar al ahorro</button><button id="ar">Retirar del ahorro</button>
 </div>
-<p class="sem" style="margin:10px 0 0">¿Querés pasar plata de tu día a día al ahorro? Poné cuánto en pesos: se descuenta de lo que te queda y se suma al ahorro en dólares.</p>
-<div class="add"><input type="number" id="dam" placeholder="Pesos ($)" inputmode="decimal" aria-label="Pesos para pasar al ahorro"><select id="dame" aria-label="De dónde sale"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="dab">Pasar al ahorro</button></div>
+<p class="sem" style="margin:10px 0 0">¿Querés pasar plata de tu día a día al ahorro o invertirla? Poné cuánto en pesos: se descuenta de lo que te queda y se suma al ahorro (en dólares) o a tu cuenta Inversiones.</p>
+<div class="add"><input type="number" id="dam" placeholder="Pesos ($)" inputmode="decimal" aria-label="Pesos para pasar"><select id="dad" aria-label="A dónde va"><option value="ahorro">💰 Al ahorro</option><option value="inversiones">📈 A Inversiones</option></select><select id="dame" aria-label="De dónde sale"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="dab">Pasar</button></div>
 <p class="hint">💡 Ponele fecha a tu objetivo en Ajustes y te digo cuánto ahorrar por mes para llegar.</p>
 </section>
 <section class="goal" data-c="cuentas" data-name="Cuentas">
@@ -334,6 +334,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=69"></script>
+<script src="app.js?v=70"></script>
 </body>
 </html>
