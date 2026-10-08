@@ -16,9 +16,20 @@ var CAP=0,CAPLATER=false; // CAP=1: ya cargó su capital inicial. CAPLATER: toc�
 var AHO=10,WP=null; // AHO: % de cada ingreso que se propone separar para ahorro. WP: % elegido para el ingreso que se está cargando
 var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
+// Equipo del usuario (se guarda en su cuenta): cambia la camiseta de Petaca y los colores del panel. Sin equipo, Petaca es albiceleste.
+// En la pantalla de entrada siempre es albiceleste, porque todavía no se sabe quién entra. Solo colores de camiseta, sin escudos.
+var EQUIPO="",EQS={"":{n:"Sin equipo (albiceleste)",img:"petaca-arg.svg?v=2",tc:"#12A150",d:"la camiseta albiceleste, en su trono con la bandera argentina"},
+ boca:{n:"Boca",img:"petaca-boca.svg?v=1",tc:"#0B4DA2",d:"la camiseta azul con la franja amarilla"},
+ colon:{n:"Colón",img:"petaca-colon.svg?v=1",tc:"#C8151B",d:"la camiseta mitad roja y mitad negra"},
+ union:{n:"Unión",img:"petaca-union.svg?v=1",tc:"#D8121A",d:"la camiseta a bastones rojos y blancos"}};
+function eqDe(k){return k&&EQS[k]?k:""}
+function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUIPO]||EQS[""];
+ Object.keys(EQS).forEach(function(k){if(k)document.body.classList.toggle("eq-"+k,!a&&k===EQUIPO)});
+ document.querySelectorAll("img.masc,.charla img").forEach(function(i){if(i.getAttribute("src")!==e.img)i.src=e.img;if(i.classList.contains("masc"))i.alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y "+e.d});
+ var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=a?"#12A150":e.tc}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v46";
+var DOC=null,VER="v47";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -699,8 +710,8 @@ function aplicarAjustes(AJC,AJP,AJO){if(!AJC.length&&!AJP.length&&!AJO.length)re
  AJO.forEach(function(o){GOAL={x:o.x,target:o.t,saved:GOAL.saved||0,pl:o.h?{u:"f"}:null,hasta:o.h||null}});
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var op=document.createElement("option");op.textContent=k;cs.appendChild(op)});
  HAVECFG=true;if($("aj")&&$("aj").open)ajForm()}
-function cfgObj(){return{ONB:ONB,CAP:CAP,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{EQUIPO:EQUIPO,ONB:ONB,CAP:CAP,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;EQUIPO=eqDe(c.EQUIPO);vestir();ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -865,6 +876,10 @@ function ajList(box,title,items,ph,num,fixed){
  return function(){return[].map.call(rows.children,function(r){var i=r.querySelectorAll("input");return{n:i[0].value.trim(),v:i[1]?parseFloat(String(i[1].value).replace(",",".")):null,o:r._o}})}}
 function ajForm(){
  var f=$("ajf");f.innerHTML="";$("ajm").textContent="";
+ var eq=el("div","aj"),eqr=el("div","add ajr eqr"),es=el("select"),ei=el("img");eq.appendChild(el("h3","","Tu equipo"));es.id="ajeq";es.setAttribute("aria-label","Tu equipo");
+ Object.keys(EQS).forEach(function(k){var o=el("option","",EQS[k].n);o.value=k;es.appendChild(o)});es.value=EQUIPO;ei.className="eqprev";ei.alt="";
+ function eqpv(){ei.src=EQS[es.value].img}es.onchange=eqpv;eqpv();eqr.appendChild(ei);eqr.appendChild(es);eq.appendChild(eqr);
+ eq.appendChild(el("p","sem","Cambia la camiseta de Petaca y los colores del panel.")),f.appendChild(eq);
  AJ.cat=ajList(f,"Categorías y presupuesto mensual",Object.keys(BUDGET).map(function(k){return[k,BUDGET[k],k]}),"Categoría","Presupuesto ($)",function(o){return o==="Otros"});
  var g=el("div","aj");g.appendChild(el("h3","","Objetivo de ahorro"));var gr=el("div","add ajr ajg");
  [["x","Nombre del objetivo","text",GOAL.x],["target","Meta (US$)","number",GOAL.target]].forEach(function(s){var i=el("input");i.type=s[2];i.id="ajg-"+s[0];i.value=s[3];i.placeholder=s[1];i.title=s[1];i.setAttribute("aria-label",s[1]);if(s[2]==="number")i.inputMode="decimal";gr.appendChild(i)});
@@ -912,7 +927,7 @@ function ajSave(){
  function remap(R,old,p){var nb={};Object.keys(L.bal).forEach(function(k){if(k.charAt(0)!==p)nb[k]=L.bal[k]});
   var na=R.map(function(r,j){if(r.o!=null&&L.bal[p+r.o]!=null)nb[p+j]=L.bal[p+r.o];return[r.n,r.o!=null?old[r.o][1]:0]});L.bal=nb;return na}
  ACC=remap(A,ACC,"a");USD=remap(U,USD,"u");if(cap!=null){L.bal.a0=cap;CAP=1}if(ef)L.bal.ef=ef;else delete L.bal.ef;
- GOAL={x:gx,target:gt,saved:GOAL.saved||0,pl:gp.pl,hasta:gp.hasta};AHO=ah;
+ GOAL={x:gx,target:gt,saved:GOAL.saved||0,pl:gp.pl,hasta:gp.hasta};AHO=ah;EQUIPO=eqDe($("ajeq").value);vestir();
  HAVECFG=true;cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
  save();render();ajForm();$("ajm").textContent="Ajustes guardados."}
 $("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
@@ -955,16 +970,19 @@ $("iax").onclick=async function(){var m=$("iam");if(!SB||!UID)return;var r=await
 var PRE=null;
 var PRECAT=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas","Facultad","Salud","Ropa","Suscripciones","Deporte","Regalos","Viajes"],PREON=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas"];
 function preNum(v){var n=parseFloat(String(v).replace(",","."));return n>0?n:0}
-function preStart(){if(PRE)return;PRE={paso:0,cat:PRECAT.map(function(n){return{n:n,on:PREON.indexOf(n)>=0,v:""}}),pesos:"",ef:"",usd:"",ing:"",aho:String(AHO),gx:"",gt:"",gu:"m",gn:""};
+function preStart(){if(PRE)return;PRE={paso:0,cat:PRECAT.map(function(n){return{n:n,on:PREON.indexOf(n)>=0,v:""}}),pesos:"",ef:"",usd:"",ing:"",aho:String(AHO),gx:"",gt:"",gu:"m",gn:"",eq:EQUIPO};
  document.body.classList.add("pre-open");$("pre").style.display="";prePaint()}
 function preEnd(){$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open");PRE=null}
 function preCampo(P,k,txt,ph,num){var lb=el("label","",txt),i=el("input");if(num){i.type="number";i.inputMode="decimal";i.min="0"}i.placeholder=ph;i.value=P[k];i.oninput=function(){P[k]=i.value};lb.appendChild(i);return lb}
 function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.appendChild(c);
- var h=el("div","prh"),im=el("img");im.src="petaca.svg?v=28";im.alt="";h.appendChild(im);var ht=el("div");ht.appendChild(el("small","prk","Pretemporada · paso "+(P.paso+1)+" de 3"));
+ var h=el("div","prh"),im=el("img");im.src=(EQS[P.eq]||EQS[""]).img;im.alt="";h.appendChild(im);var ht=el("div");ht.appendChild(el("small","prk","Pretemporada · paso "+(P.paso+1)+" de 3"));
  var t=el("h2","",["Armá tu plantel de gastos","¿Con cuánto arrancás?","Tu objetivo de ahorro"][P.paso]);t.id="pret";ht.appendChild(t);h.appendChild(ht);c.appendChild(h);
  var ps=el("div","pasos");for(var i=0;i<3;i++)ps.appendChild(el("i",i<=P.paso?"on":""));c.appendChild(ps);
  var msg=el("p","sem prm");
  if(P.paso===0){
+  var eqw=el("div","preq");eqw.appendChild(el("p","sem","¿De qué cuadro sos? Petaca se pone tu camiseta."));var eqb=el("div","eqbs");
+  Object.keys(EQS).forEach(function(k){var b=el("button","eqb"+(P.eq===k?" on":""));b.type="button";b.setAttribute("aria-pressed",String(P.eq===k));var i=el("img");i.src=EQS[k].img;i.alt="";b.appendChild(i);b.appendChild(el("span","",k?EQS[k].n:"Ninguno"));
+   b.onclick=function(){P.eq=k;prePaint()};eqb.appendChild(b)});eqw.appendChild(eqb);c.appendChild(eqw);
   c.appendChild(el("p","sem","¡Te damos la bienvenida al club! Elegí en qué gastás y, si querés, ponele un presupuesto por mes a cada categoría: Petaca te avisa cuando te estés por pasar. \"Otros\" va siempre."));
   P.cat.forEach(function(k){var r=el("div","prc"),lb=el("label"),cb=el("input"),nv=el("input");cb.type="checkbox";cb.checked=k.on;
    nv.type="number";nv.inputMode="decimal";nv.min="0";nv.placeholder="$ / mes";nv.value=k.v;nv.disabled=!k.on;nv.setAttribute("aria-label","Presupuesto por mes de "+k.n);nv.oninput=function(){k.v=nv.value};
@@ -1005,7 +1023,7 @@ function preFin(todo){var P=PRE,NB={};
  if(!todo){ACC=[["Día a día",preNum(P.pesos)]];CAP=1;USD=[["Ahorro en dólares",preNum(P.usd)]];Object.keys(L.bal).forEach(function(k){if(/^[au]\d+$/.test(k))delete L.bal[k]});if(preNum(P.ef))L.bal.ef=preNum(P.ef);else delete L.bal.ef;
   AHO=Math.min(preNum(P.aho),100);var iv=preNum(P.ing);if(iv)sumarIng(today,iv,AHO);
   if(P.gx.trim()&&preNum(P.gt)){var n=parseInt(P.gn,10);GOAL={x:P.gx.trim(),target:preNum(P.gt),saved:0,pl:P.gu?{u:P.gu,n:n}:null,hasta:P.gu?sumaPlazo(today,n,P.gu):null}}}
- ONB=1;HAVECFG=true;preEnd();save();render();
+ EQUIPO=eqDe(P.eq);ONB=1;HAVECFG=true;preEnd();vestir();save();render();
  stat(todo?"Listo. Cuando quieras, armá tus categorías en El vestuario → Ajustes.":"¡Listo, tu equipo está armado! Lo podés cambiar cuando quieras en El vestuario → Ajustes.")}
 // Capital inicial: la plata que había en el día a día antes del primer movimiento cargado. Es la base de "te queda" y de los consejos.
 // A quien no lo cargó (cuentas viejas o que saltearon la pretemporada) se lo pedimos al entrar. Si ya corrigió el saldo con ajustes, no hace falta.
@@ -1015,7 +1033,7 @@ function primerMov(){var f="";L.expenses.concat(L.ing).forEach(function(e){var d
 function capTxt(){var f=primerMov();return f&&f<today?"la plata que tenías en "+ACC[0][0]+" el "+fd(f)+", antes del primer movimiento que cargaste":"la plata que tenés hoy en "+ACC[0][0]}
 function capStart(){if(PRE||CAPLATER||ONB===0||!UID||!capFalta()||$("pre").style.display!=="none")return;
  var w=$("pre"),c=el("div","pc"),h=el("div","prh"),im=el("img"),ht=el("div"),t=el("h2","","¿Con cuánto arrancaste?"),f=el("div","prf"),lb=el("label","","Capital inicial (en pesos)"),i=el("input"),msg=el("p","sem prm"),b=el("div","prb"),izq=el("span"),der=el("span"),no=el("button","x","Más tarde"),ok=el("button","","Guardar");
- im.src="petaca.svg?v=28";im.alt="";t.id="pret";ht.appendChild(el("small","prk","Falta un dato"));ht.appendChild(t);h.appendChild(im);h.appendChild(ht);c.appendChild(h);
+ im.src=(EQS[EQUIPO]||EQS[""]).img;im.alt="";t.id="pret";ht.appendChild(el("small","prk","Falta un dato"));ht.appendChild(t);h.appendChild(im);h.appendChild(ht);c.appendChild(h);
  c.appendChild(el("p","sem","Contale a Petaca "+capTxt()+". Así lo que te queda y los consejos cuentan toda tu plata, no solo los ingresos que cargaste. Si no tenías nada, poné 0."));
  i.type="number";i.inputMode="decimal";i.min="0";i.placeholder="Ej: 100,000";lb.appendChild(i);f.appendChild(lb);c.appendChild(f);c.appendChild(msg);
  no.onclick=function(){CAPLATER=true;capEnd()};
@@ -1121,7 +1139,7 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
       m.animate([{transform:"translate("+(-lejos)+"px,0) rotate("+(-dir*10)+"deg)"},{transform:"translate("+(-lejos*.4)+"px,-14px) rotate("+(dir*6)+"deg)",offset:.5},{transform:"translate(0,0) rotate(0)"}],{duration:900,easing:"ease-out"});
      vuelve.onfinish=function(){globo(rnd(VUELTA),2200);fin()}},3500)}},1300)});
 })();
-// Inicio: el tablero va cambiando de rival y resultado. En la pantalla de entrada Petaca se viste de albiceleste.
+// Inicio: el tablero va cambiando de rival y resultado. Petaca se viste según la pantalla y el equipo (ver vestir).
 (function(){
  var t=document.querySelector(".tablero"),m=document.querySelector("header .masc");if(!t||!m)return;
  var b=t.querySelectorAll("b"),s=t.querySelectorAll("span"),mi=t.querySelector("small");
@@ -1133,8 +1151,6 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   var min=Math.floor(Math.random()*90)+1,ex=min>=88&&Math.random()<.6;
   gira(b[0],a);gira(b[1],c);gira(s[1],RIV[ri]);mi.textContent=ex?"90' + "+(Math.floor(Math.random()*7)+1):min+"'"}
  marcador();setInterval(function(){if(document.body.classList.contains("auth")&&!document.hidden)marcador()},7000);
- function vestir(){var a=document.body.classList.contains("auth"),u=a?"petaca-arg.svg?v=2":"petaca.svg?v=28";if(m.getAttribute("src")!==u)m.src=u;
-  m.alt=a?"Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta albiceleste, en su trono con la bandera argentina":"Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta azul y oro, tirado en su trono"}
  vestir();new MutationObserver(vestir).observe(document.body,{attributes:true,attributeFilter:["class"]});
 })();
 // Nota de voz: 🎤 Hablar dicta la nota en el cuadro de texto, para revisarla antes de tocar "Entender nota".

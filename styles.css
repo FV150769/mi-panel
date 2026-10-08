@@ -352,7 +352,7 @@ h2.grp{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:20px;letter
 summary{font-size:15px;font-weight:700}
 .hero,section{border:0;border-radius:18px;box-shadow:0 1px 0 rgba(14,26,51,.04),0 6px 18px rgba(14,26,51,.07)}
 /* Tarjeta principal: verde cancha */
-.hero{background:linear-gradient(135deg,#14AA55 0,#0B7F3D 100%);color:#fff;position:relative;overflow:hidden}
+.hero{background:linear-gradient(135deg,var(--h1,#14AA55) 0,var(--h2,#0B7F3D) 100%);color:#fff;position:relative;overflow:hidden}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:180px;height:180px;border:3px solid rgba(255,255,255,.18);border-radius:50%;pointer-events:none}
 .hero #frase{color:#fff;font-weight:800}
 .hero .legend,.hero .sem{color:rgba(255,255,255,.88)}
@@ -361,7 +361,7 @@ summary{font-size:15px;font-weight:700}
 .hero .fill.over{background:#FF5C7A!important}
 .hero button{background:var(--sun);border-color:var(--sun);color:var(--ink)}
 .hero :focus-visible{outline-color:#fff}
-.track{background:#E3ECDF}
+.track{background:var(--trk,#E3ECDF)}
 .fill,#metas .fill,#cats .cat .fill,#hist .cat .fill{background:var(--acc)!important}
 .fill.over{background:var(--warn)!important}
 #metas .fill{background:linear-gradient(90deg,var(--cel),var(--acc))!important}
@@ -375,16 +375,16 @@ button.lk{background:none;color:var(--acc2);font-weight:600;padding:0 8px}
 #un,#ar{background:#fff;color:var(--ink);border:1.5px solid #CFDCCB}
 #ordtop{background:var(--acc2)}
 input,select,textarea{border:1.5px solid #D5E0D0;border-radius:12px;background:#fff}
-input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(18,161,80,.18)}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--ring,rgba(18,161,80,.18))}
 :focus-visible{outline:2px solid var(--acc)}
 .day.today b{background:var(--acc);color:#fff}
 .ev time{color:var(--acc2);font-weight:600}
 .mg button{border-radius:10px;padding:2px}
 .mg button.t{border:2px solid var(--acc)}
-.mg button.h{background:#DDF3E4}
+.mg button.h{background:var(--kpi2,#DDF3E4)}
 .mg i{color:var(--acc)}
 #alerta{border:0;border-left:6px solid var(--sun);border-radius:16px;background:#FFF8DB}
-.kpi{background:#F1F7EE;border-radius:14px}
+.kpi{background:var(--kpi,#F1F7EE);border-radius:14px}
 .kpi b{font-weight:800}
 /* La charla técnica: tarjetas como en la cancha */
 .charla{display:flex;align-items:center;gap:8px}
@@ -539,3 +539,21 @@ html.huye,html.huye body{overflow-x:hidden}
 .hint{font-size:13px;line-height:1.4;color:var(--mute);margin:10px 0 0;padding:6px 10px;border-left:3px solid var(--sun);background:var(--bg);border-radius:0 8px 8px 0}
 .hero .hint{color:inherit;background:rgba(255,255,255,.12);border-left-color:var(--sun)}
 body.sinhints .hint{display:none}
+
+/* ===== Tu equipo: colores del panel según el cuadro (solo adentro; la entrada queda verde cancha) ===== */
+body.eq-boca{--acc:#0B4DA2;--acc2:#083A7A;--bg:#EEF2F9;--line:#DDE4F0;--sun:#FDB913;--cel:#FDB913;--h1:#1658C0;--h2:#0A3880;--kpi:#EDF2FA;--kpi2:#DCE6F7;--ring:rgba(11,77,162,.2);--trk:#DFE6F2}
+body.eq-colon{--acc:#C8151B;--acc2:#8E0E12;--bg:#F5F1F1;--line:#E8DEDE;--sun:#FFFFFF;--cel:#1C1C1C;--h1:#C8151B;--h2:#1C1C1C;--kpi:#F7EFEF;--kpi2:#F6DCDD;--ring:rgba(200,21,27,.2);--trk:#EADFDF}
+body.eq-union{--acc:#D8121A;--acc2:#A00D13;--bg:#FBF2F2;--line:#F0DDDD;--sun:#FFFFFF;--cel:#FFB3B6;--h1:#E5262D;--h2:#A00D13;--kpi:#FBEDED;--kpi2:#F8DADB;--ring:rgba(216,18,26,.2);--trk:#F0E0E0}
+body.eq-boca .hero{background:linear-gradient(180deg,transparent 0 44%,rgba(253,185,19,.22) 44% 56%,transparent 56%),linear-gradient(135deg,var(--h1),var(--h2))}
+body.eq-colon .hero{background:linear-gradient(100deg,#C8151B 0 50%,#1C1C1C 50% 100%)}
+body.eq-union .hero{background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 28px,transparent 28px 56px),linear-gradient(135deg,var(--h1),var(--h2))}
+body.eq-colon .hero button,body.eq-union .hero button{color:var(--acc2)}
+/* Elegir equipo: en Ajustes y en la pretemporada */
+.eqr{align-items:center}
+.eqr .eqprev{width:56px;height:auto;flex:none}
+.eqbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 14px}
+.eqb{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;padding:6px 4px;font-weight:600;font-size:12px;min-height:0}
+.eqb img{width:100%;max-width:64px;height:auto}
+.eqb.on{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc);background:var(--kpi,#F1F7EE)}
+body.eq-colon .hint,body.eq-union .hint{border-left-color:var(--acc)}
+body.eq-colon .hero .hint,body.eq-union .hero .hint{border-left-color:#fff}

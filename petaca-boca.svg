@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 170" role="img" aria-label="Petaca, un bebé jefe rubio con corona y pañal, con la camiseta azul con la franja amarilla, tirado en su trono">
+<title>Petaca de Boca</title>
+<g stroke="#0E1A33" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <!-- Trono: marco dorado y respaldo con los colores de Boca -->
+  <path d="M34 96 L34 54 Q34 22 80 20 Q126 22 126 54 L126 96 Z" fill="#F5B042"/>
+  <clipPath id="resp"><path d="M44 96 L44 58 Q44 32 80 30 Q116 32 116 58 L116 96 Z"/></clipPath>
+  <g clip-path="url(#resp)" stroke="none">
+    <rect x="40" y="28" width="80" height="70" fill="#1F5BC4"/>
+    <rect x="40" y="54" width="80" height="16" fill="#FDB913"/>
+  </g>
+  <path d="M44 96 L44 58 Q44 32 80 30 Q116 32 116 58 L116 96 Z" fill="none"/>
+  <circle cx="80" cy="17" r="5" fill="#F5B042"/>
+  <circle cx="34" cy="52" r="5" fill="#F5B042"/>
+  <circle cx="126" cy="52" r="5" fill="#F5B042"/>
+  <!-- Asiento y base -->
+  <rect x="30" y="104" width="100" height="22" rx="8" fill="#1F5BC4"/>
+  <rect x="34" y="124" width="92" height="17" rx="4" fill="#1A4FAE"/>
+  <path d="M30 141 L130 141 L125 150 L35 150 Z" fill="#F5B042"/>
+  <path d="M38 150 L48 150 L46 162 L40 162 Z M112 150 L122 150 L120 162 L114 162 Z" fill="#F5B042"/>
+</g>
+<!-- Apoyabrazos con volutas doradas, al frente -->
+<g stroke="#0E1A33" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <rect x="18" y="90" width="22" height="44" rx="10" fill="#1F5BC4"/>
+  <rect x="120" y="90" width="22" height="44" rx="10" fill="#1F5BC4"/>
+  <circle cx="29" cy="92" r="9" fill="#F5B042"/>
+  <circle cx="131" cy="92" r="9" fill="#F5B042"/>
+  <path d="M29 92 m-4 0 a4 4 0 1 1 4 4" fill="none" stroke-width="2"/>
+  <path d="M131 92 m4 0 a4 4 0 1 0 -4 4" fill="none" stroke-width="2"/>
+</g>
+<!-- Petaca -->
+<g stroke="#0E1A33" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <!-- Codos detrás de la cabeza -->
+  <ellipse cx="78" cy="56" rx="9" ry="7" fill="#FFDCC0" transform="rotate(-20 78 56)"/>
+  <ellipse cx="122" cy="54" rx="9" ry="7" fill="#FFDCC0" transform="rotate(20 122 54)"/>
+  <!-- Cuerpo tirado hacia atrás, con la camiseta azul con la franja amarilla -->
+  <g transform="rotate(-28 90 92)">
+    <clipPath id="cuerpo"><ellipse cx="90" cy="92" rx="23" ry="16"/></clipPath>
+    <ellipse cx="90" cy="92" rx="23" ry="16" fill="#103F91" stroke="none"/>
+    <!-- Franja amarilla horizontal: se endereza contra la inclinación del cuerpo -->
+    <g clip-path="url(#cuerpo)"><g transform="rotate(28 90 92)">
+      <rect x="50" y="86" width="80" height="11" fill="#FDB913" stroke="none"/>
+    </g></g>
+    <ellipse cx="90" cy="92" rx="23" ry="16" fill="none"/>
+  </g>
+  <!-- Pañal -->
+  <ellipse cx="65" cy="106" rx="15" ry="11" fill="#FFFFFF"/>
+  <!-- Piernas cruzadas, apoyadas en el apoyabrazos -->
+  <ellipse cx="42" cy="99" rx="21" ry="7.5" fill="#FFDCC0" transform="rotate(16 42 99)"/>
+  <ellipse cx="17" cy="87" rx="5" ry="7.5" fill="#FFDCC0" transform="rotate(-15 17 87)"/>
+  <ellipse cx="43" cy="94" rx="20" ry="7" fill="#FFDCC0" transform="rotate(6 43 94)"/>
+  <ellipse cx="22" cy="83" rx="5" ry="7.5" fill="#FFDCC0" transform="rotate(-30 22 83)"/>
+  <!-- Cabeza -->
+  <circle cx="100" cy="60" r="24" fill="#FFDCC0"/>
+  <!-- Flequillo rubio asomando bajo la corona -->
+  <path d="M77 56 Q79 40 100 38 Q121 40 123 56 Q114 47 100 47 Q86 47 77 56 Z" fill="#FFD23F"/>
+  <!-- Corona, un poco ladeada -->
+  <g transform="rotate(10 100 36)">
+    <path d="M82 44 L80 26 L90 34 L100 20 L110 34 L120 26 L118 44 Z" fill="#F5B042"/>
+    <path d="M82 44 L118 44" fill="none"/>
+    <circle cx="80" cy="25" r="3" fill="#F5B042" stroke-width="2"/>
+    <circle cx="100" cy="19" r="3" fill="#F5B042" stroke-width="2"/>
+    <circle cx="120" cy="25" r="3" fill="#F5B042" stroke-width="2"/>
+    <circle cx="100" cy="37" r="2.6" fill="#E11D48" stroke-width="1.6"/>
+  </g>
+</g>
+<!-- Cara: mirada de "acá mando yo" -->
+<ellipse cx="91" cy="62" rx="3.8" ry="4.4" fill="#0E1A33"/>
+<ellipse cx="109" cy="62" rx="3.8" ry="4.4" fill="#0E1A33"/>
+<rect x="86" y="56" width="10" height="5" fill="#FFDCC0"/>
+<rect x="104" y="56.5" width="10" height="4.5" fill="#FFDCC0"/>
+<path d="M86.5 61 L95.5 61 M104.5 61 L113.5 61" stroke="#0E1A33" stroke-width="2" stroke-linecap="round"/>
+<circle cx="92.3" cy="63" r="1.2" fill="#FFFFFF"/>
+<circle cx="110.3" cy="63" r="1.2" fill="#FFFFFF"/>
+<path d="M86 54 L95 53" stroke="#C99A06" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M104 52 Q109 47 114 51" fill="none" stroke="#C99A06" stroke-width="2.4" stroke-linecap="round"/>
+<ellipse cx="83" cy="70" rx="5" ry="3.4" fill="#FF8FA3" opacity=".6"/>
+<ellipse cx="117" cy="70" rx="5" ry="3.4" fill="#FF8FA3" opacity=".6"/>
+<path d="M98.5 67 Q100 68.5 101.5 67" fill="none" stroke="#0E1A33" stroke-width="1.8" stroke-linecap="round"/>
+<path d="M94 74 Q101 77 107 71" fill="none" stroke="#0E1A33" stroke-width="2.2" stroke-linecap="round"/>
+<path d="M106 69.5 Q108 70.5 107.6 72.6" fill="none" stroke="#0E1A33" stroke-width="1.4" stroke-linecap="round"/>
+
+</svg>
