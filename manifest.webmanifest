@@ -1,7 +1,7 @@
 {
   "name": "PETACA",
   "short_name": "PETACA",
-  "description": "Tu guita y tu agenda, ordenadas como un 5 de los de antes.",
+  "description": "Cuentas y agenda, con la pelota al piso.",
   "lang": "es-AR",
   "start_url": "./",
   "scope": "./",

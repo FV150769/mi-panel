@@ -80,12 +80,14 @@ body.auth .eqsel{display:none}
 .eqpie{font-size:11px;color:rgba(255,255,255,.65);margin:6px 0 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .eqfix .eqpie button.x{font-size:11px;text-decoration:underline;color:rgba(255,255,255,.85)}
 
-/* Usuario y sesión, en una línea */
-.cuenta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px;margin:0 0 14px}
+/* Sesión, en una línea (el usuario se elige en Configuración → Tu cuenta) */
+.cuenta{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 16px;margin:0 0 14px}
 .cuenta .sem{margin:0}
-.cuenta #uname{min-height:36px}
-.cuenta #us{min-height:36px;padding:4px 14px}
 #ses button.x{color:var(--ink);font-weight:600}
+#usrp{margin:10px 0 0}
+#uedit{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+#uedit input{flex:1 1 160px;width:auto;max-width:260px;min-height:40px}
+#uedit #us{min-height:40px;padding:4px 14px}
 
 /* ===== Tarjetas: figuritas ===== */
 section,.hero,#alerta{background:var(--panel);border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:16px 18px}
@@ -142,7 +144,7 @@ input::placeholder,textarea::placeholder{color:#7D889B}
 input:focus,select:focus,textarea:focus{outline:0;border-color:var(--acc);box-shadow:0 0 0 3px var(--ring)}
 .add{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
 
-/* ===== La guita: la cancha ===== */
+/* ===== Las cuentas: la cancha ===== */
 .hero{position:relative;overflow:hidden;color:#fff;margin:0 0 16px;padding:18px 20px;
  background:repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 56px,transparent 56px 112px),linear-gradient(160deg,var(--h1),var(--h2))}
 /* Mitad de cancha y círculo central, en tiza */
@@ -363,7 +365,12 @@ body.pre-open{overflow:hidden}
 .prc input:is([type=number],[data-num]){flex:0 0 130px;min-height:38px;padding:6px 10px}
 .prc input:disabled{opacity:.4}
 .prf label{display:flex;flex-direction:column;gap:5px;margin:12px 0 0;font-weight:700;font-size:14px}
+.prf label>input{flex:none}
 .prf .add{margin:0}
+/* Monto con moneda: el número y US$ / pesos en la misma fila */
+.prf .add.mon{flex-wrap:nowrap}
+.prf .add.mon input{flex:1 1 auto;min-width:0}
+.prf .add.mon select{flex:0 0 112px;width:auto}
 .prm{color:var(--warn);font-weight:700;min-height:1em}
 .prb{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 .prb>span{display:flex;gap:8px;align-items:center}
@@ -498,10 +505,7 @@ body.eq-union .estadio{display:block;background-image:url(estadio-union.jpg?v=1)
  .mg{gap:3px}
  .mg button{min-height:40px;font-size:13px;padding:1px}
  .ev{gap:8px}
- /* Usuario: el campo y "Guardar" en la misma fila */
- #usrp{flex:1 1 100%}
- #uedit{display:flex;align-items:center;gap:6px;margin-top:6px}
- #uedit input{flex:1 1 auto;width:auto;max-width:none!important}
+ #uedit input{max-width:none}
  #ajf .ajr input:is([type=number],[data-num]){flex-basis:110px}
  #pre{padding:12px 8px}
  #pre .pc{padding:16px}

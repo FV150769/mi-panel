@@ -6,7 +6,7 @@
 <title>PETACA</title>
 <link rel="icon" href="icons/favicon-32.png?v=29" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=29">
-<link rel="manifest" href="manifest.webmanifest?v=29">
+<link rel="manifest" href="manifest.webmanifest?v=30">
 <meta name="apple-mobile-web-app-title" content="PETACA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#12A150">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=56">
+<link rel="stylesheet" href="styles.css?v=59">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -23,7 +23,7 @@
 <p id="aviso" class="sem" style="color:var(--warn);font-weight:700">Cargando… Si este mensaje no desaparece, la página no pudo iniciar. Cerrala y abrila de nuevo, o copiame lo que dice acá.</p>
 <header class="top">
 <div class="marca"><img class="masc" data-pose="sentado" src="img/petaca-pateando-arg.png?v=2" alt="Petaca, la mascota: un bebé rubio jugador de fútbol con la camiseta de la Selección"><div><h1>PETACA</h1>
-<p class="sub" id="fecha"></p><p class="lema">Tu guita y tu agenda, ordenadas como un 5 de los de antes.</p></div></div>
+<p class="sub" id="fecha"></p><p class="lema">Pelota al piso y cabeza levantada.</p></div></div>
 <div class="eqsel"><button type="button" class="eqchip" id="eqbtn" aria-haspopup="true" aria-expanded="false" aria-controls="eqpop">⚽ Tu equipo ▾</button>
 <div class="eqpop" id="eqpop" role="dialog" aria-label="Elegí tu equipo" hidden><b>¿De qué cuadro sos?</b><div class="eqbs" id="eqops"></div></div></div>
 </header>
@@ -37,7 +37,6 @@
 </section>
 <section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 6)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rpb">Guardar contraseña</button></div><p class="sem" id="rpm"></p></section>
 <div class="cuenta">
-<p class="sem" id="usrp" style="display:none">Usuario: <span id="uver" style="display:none"><b id="ushow"></b> <button class="x" id="ued" style="text-decoration:underline">Modificar</button></span><span id="uedit"><input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <button class="x" id="ucan" style="display:none;text-decoration:underline">Cancelar</button></span> <span id="um"></span></p>
 <p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="guib" style="text-decoration:underline">📖 Guía</button> <button class="x" id="ord" style="text-decoration:underline">↕ Armar la formación</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 </div>
 <div id="ordtop" style="display:none"><span>Armá tu formación: arrastrá cada grupo o tarjeta desde su barra ⠿</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">¡Listo!</button></span></div>
@@ -55,13 +54,13 @@
 </ol>
 </div>
 <details class="gtema"><summary>1. Primeros pasos</summary>
-<p>Lo primero es contarle a Petaca <b>con cuánta plata arrancás</b> (tu capital inicial) y cuánto de eso está en efectivo. Lo cargás en <b>El vestuario → Ajustes</b>, o en la pretemporada si recién empezás.</p>
+<p>Lo primero es contarle a Petaca <b>con cuánta plata arrancás</b> (tu capital inicial), cuánto de eso está en efectivo y, si tenés, <b>cuánto tenés ahorrado e invertido</b>. Se carga <b>una sola vez</b>, en la pretemporada o cuando Petaca te lo pregunta: después sigue con tu día a día. Si el saldo no coincide con tu banco, corregilo con ✎ en Cuentas.</p>
 <p>En Ajustes también elegís tus <b>categorías de gasto</b> con un presupuesto por mes, el <b>% que querés separar</b> de cada ingreso para ahorrar y tu <b>objetivo de ahorro</b>.</p>
 <p>Arriba a la derecha, en <b>⚽ Tu equipo</b>, elegís tu cuadro: Petaca se pone su camiseta, el panel toma sus colores y ves el próximo partido.</p>
-<p>Arriba de todo podés elegir un <b>usuario</b> para entrar sin escribir el mail.</p>
+<p>En <b>⚙️ Configuración → Tu cuenta</b> podés elegir un <b>usuario</b> para entrar sin escribir el mail.</p>
 </details>
 <details class="gtema"><summary>2. Cargar ingresos y gastos</summary>
-<p><b>Ingresos:</b> en 💸 La guita escribí el monto, elegí si entró por 🏦 transferencia o en 💵 efectivo y tocá <b>Sumar ingreso</b>. Antes de confirmar elegís qué % separar para ahorro: eso pasa solo a tus dólares, al precio del dólar blue.</p>
+<p><b>Ingresos:</b> en 💸 Las cuentas escribí el monto, elegí si entró por 🏦 transferencia o en 💵 efectivo y tocá <b>Sumar ingreso</b>. Antes de confirmar elegís qué % separar para ahorro: eso pasa solo a tus dólares, al precio del dólar blue.</p>
 <p><b>Gastos:</b> en Gastos del mes cargá monto, categoría, detalle y cómo lo pagaste. Las barras de cada categoría muestran cuánto llevás de tu presupuesto.</p>
 <p>Si lo preferís, cargá todo desde "Contale a Petaca" (ver el punto 3).</p>
 </details>
@@ -90,7 +89,7 @@
 <details class="gtema"><summary>6. Agenda, rutinas y avisos</summary>
 <p>En 📅 El fixture cargás <b>fechas importantes</b> (turnos, parciales, vencimientos), ves los <b>próximos 7 días</b> y el mes completo.</p>
 <p>Las <b>rutinas</b> son lo que se repite (gym, clases, fútbol): elegís los días con los botones L M M J V S D.</p>
-<p>Con <b>Avisos por Telegram</b>, Petaca te manda un mensaje antes de cada evento marcado con 🔔.</p>
+<p>Con <b>Avisos por Telegram</b> (en ⚙️ Configuración), Petaca te manda un mensaje antes de cada evento marcado con 🔔.</p>
 </details>
 <details class="gtema"><summary>7. Si te equivocaste</summary>
 <p><b>↶ Deshacer</b> vuelve atrás el último cambio (podés tocarlo varias veces).</p>
@@ -104,7 +103,8 @@
 <p>Todo se guarda en tu cuenta: entrás desde el celu o la compu y ves lo mismo.</p>
 <p>En el celu, la <b>barra de abajo</b> te lleva directo a cada parte del panel, y <b>✍️ Contale</b> te deja escribiendo una nota.</p>
 <p><b>Instalala en el celular:</b> en iPhone, Safari → Compartir → "Agregar a inicio". En Android, Chrome → menú ⋮ → "Instalar app".</p>
-<p>Con <b>↕ Armar la formación</b> (arriba) ordenás las secciones a tu gusto. En <b>Copia de seguridad</b> podés exportar tus datos.</p>
+<p>Con <b>↕ Armar la formación</b> (arriba) ordenás las secciones a tu gusto.</p>
+<p>Todo lo que se configura está junto en <b>⚙️ Configuración</b>: los ajustes, la IA de Petaca, los avisos por Telegram, tu cuenta y la copia de seguridad para exportar tus datos.</p>
 </details>
 <label class="sem hintsw"><input type="checkbox" id="hintsw" checked> Mostrar las recomendaciones 💡 en cada sección</label>
 </details></section>
@@ -118,8 +118,8 @@
 </section>
 </div>
 
-<div class="grupo" data-g="dinero" data-name="La guita">
-<h2 class="grp">💸 La guita</h2>
+<div class="grupo" data-g="dinero" data-name="Las cuentas">
+<h2 class="grp">💸 Las cuentas</h2>
 <div class="hero">
 <p id="frase"></p>
 <p class="sem medios" id="medios"></p>
@@ -175,6 +175,12 @@
 <p class="hint">💡 Si algo quedó mal, tocá ✎ para corregirlo o × para borrarlo. ↶ Deshacer (en "Contale a Petaca") vuelve atrás el último cambio.</p>
 </details>
 </section>
+<section data-c="hist" data-name="Histórico">
+<details>
+<summary>Histórico</summary>
+<div id="hist"></div>
+</details>
+</section>
 </div>
 </div>
 
@@ -211,8 +217,8 @@
 </div>
 </div>
 
-<div class="grupo" data-g="ajustes" data-name="El vestuario">
-<h2 class="grp">🧰 El vestuario</h2>
+<div class="grupo" data-g="ajustes" data-name="Configuración">
+<h2 class="grp">⚙️ Configuración</h2>
 <div class="cols">
 <section class="goal" data-c="ajustes" data-name="Ajustes"><details id="aj"><summary>Ajustes</summary>
 <p class="sem" style="margin-top:0">Configurá tus categorías de gasto, tu objetivo de ahorro y tus cuentas. Se guarda en tu cuenta.</p>
@@ -231,24 +237,7 @@
 <p class="sem" id="iam"></p>
 <p class="sem">Tu clave queda guardada en tu cuenta y solo se usa para entender tus notas. Ojo: en el plan gratis de Gemini, Google puede usar lo que le mandás para mejorar sus productos.</p>
 </details></section>
-<section data-c="hist" data-name="Histórico">
-<details>
-<summary>Histórico</summary>
-<div id="hist"></div>
-</details>
-</section>
-<section class="goal" data-c="copia" data-name="Copia de seguridad"><details><summary>Copia de seguridad</summary>
-<p class="sem">Exportá tus datos para guardarlos o pasarlos a otra versión del panel. Para importar, pegá el texto y tocá Importar.</p>
-<textarea id="bk" rows="5" aria-label="Copia de seguridad"></textarea>
-<div class="add"><button id="bx">Exportar</button><button id="bi">Importar</button></div>
-<p class="sem" id="bm"></p>
-</details></section>
-</div>
-</div>
-
-<div class="grupo" data-g="avisos" data-name="Avisos">
-<h2 class="grp">📣 Avisos</h2>
-<section><details id="tgd"><summary>Avisos por Telegram</summary>
+<section class="goal" data-c="tg" data-name="Avisos por Telegram"><details id="tgd"><summary>Avisos por Telegram</summary>
 <p class="sem" style="margin-top:0">Recibí en tu Telegram los eventos marcados con 🔔.</p>
 <ol class="sem tgp">
 <li>En Telegram, abrí el bot del panel<span id="tgbot"></span> y tocá <b>Iniciar</b>.</li>
@@ -263,6 +252,17 @@
 <div class="add"><button id="tgas">Guardar horarios</button></div>
 <p class="sem" id="tgam"></p>
 </details></section>
+<section class="goal" data-c="perfil" data-name="Tu cuenta"><details id="cud"><summary>Tu cuenta</summary>
+<p class="sem" style="margin-top:0">Con un usuario entrás sin escribir el mail.</p>
+<p class="sem" id="usrp" style="display:none">Usuario: <span id="uver" style="display:none"><b id="ushow"></b> <button class="x" id="ued" style="text-decoration:underline">Modificar</button></span><span id="uedit"><input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario"> <button id="us">Guardar</button> <button class="x" id="ucan" style="display:none;text-decoration:underline">Cancelar</button></span> <span id="um"></span></p>
+</details></section>
+<section class="goal" data-c="copia" data-name="Copia de seguridad"><details><summary>Copia de seguridad</summary>
+<p class="sem">Exportá tus datos para guardarlos o pasarlos a otra versión del panel. Para importar, pegá el texto y tocá Importar.</p>
+<textarea id="bk" rows="5" aria-label="Copia de seguridad"></textarea>
+<div class="add"><button id="bx">Exportar</button><button id="bi">Importar</button></div>
+<p class="sem" id="bm"></p>
+</details></section>
+</div>
 </div>
 
 <img class="descanso" data-pose="acostado" src="img/petaca-acostado-arg.png?v=2" alt="" loading="lazy">
@@ -270,15 +270,15 @@
 <p class="credito" id="credito" style="display:none"></p>
 <nav class="tabs" id="tabs" aria-label="Ir a una parte del panel">
 <button type="button" data-g="inicio"><i aria-hidden="true">🏟️</i>Inicio</button>
-<button type="button" data-g="dinero"><i aria-hidden="true">💸</i>La guita</button>
+<button type="button" data-g="dinero"><i aria-hidden="true">💸</i>Cuentas</button>
 <button type="button" data-g="nota"><i aria-hidden="true">✍️</i>Contale</button>
 <button type="button" data-g="tiempo"><i aria-hidden="true">📅</i>Fixture</button>
-<button type="button" data-g="ajustes"><i aria-hidden="true">🧰</i>Vestuario</button>
+<button type="button" data-g="ajustes"><i aria-hidden="true">⚙️</i>Ajustes</button>
 </nav>
 <div id="toast" role="status" aria-live="polite" style="display:none"></div>
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=56"></script>
+<script src="app.js?v=59"></script>
 </body>
 </html>
