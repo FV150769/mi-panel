@@ -505,8 +505,6 @@ html.huye,html.huye body{overflow-x:hidden}
 .tablero span.gira{animation:aparece .5s ease}
 @keyframes gira{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
 @keyframes aparece{from{opacity:0}to{opacity:1}}
-.globo.charla{border-color:#12A150}
-.globo.charla::after{border-color:#12A150}
 @media (prefers-reduced-motion:reduce){.tablero b.gira,.tablero span.gira{animation:none}}
 
 /* Días de una rutina: L M M J V S D para marcar los que se repite */
@@ -526,3 +524,18 @@ html.huye,html.huye body{overflow-x:hidden}
 #mic.grabando{background:var(--warn);border-color:var(--warn);color:#fff;animation:latido 1.2s ease-in-out infinite}
 @keyframes latido{50%{box-shadow:0 0 0 6px rgba(198,40,40,.25)}}
 @media (prefers-reduced-motion:reduce){#mic.grabando{animation:none}}
+
+/* Guía de uso y recomendaciones 💡 */
+.guia{margin-bottom:16px}
+.guia .claves{background:var(--bg);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:14px;line-height:1.45}
+.guia .claves ol{margin:6px 0 0;padding-left:20px}
+.guia .claves li{margin:4px 0}
+.guia .gtema{border-top:1px solid var(--line);padding:2px 0}
+.guia .gtema summary{font-size:14px;min-height:38px}
+.guia .gtema p,.guia .gtema ul{font-size:14px;line-height:1.5;margin:0 0 8px}
+.guia .gtema ul{padding-left:20px;color:var(--mute)}
+.guia .hintsw{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:10px;margin:4px 0 0;font-size:13px}
+.guia .hintsw input{min-height:0;width:18px;height:18px;flex:none}
+.hint{font-size:13px;line-height:1.4;color:var(--mute);margin:10px 0 0;padding:6px 10px;border-left:3px solid var(--sun);background:var(--bg);border-radius:0 8px 8px 0}
+.hero .hint{color:inherit;background:rgba(255,255,255,.12);border-left-color:var(--sun)}
+body.sinhints .hint{display:none}

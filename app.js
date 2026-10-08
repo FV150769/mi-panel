@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v43";
+var DOC=null,VER="v45";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -1121,23 +1121,21 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
       m.animate([{transform:"translate("+(-lejos)+"px,0) rotate("+(-dir*10)+"deg)"},{transform:"translate("+(-lejos*.4)+"px,-14px) rotate("+(dir*6)+"deg)",offset:.5},{transform:"translate(0,0) rotate(0)"}],{duration:900,easing:"ease-out"});
      vuelve.onfinish=function(){globo(rnd(VUELTA),2200);fin()}},3500)}},1300)});
 })();
-// Inicio: el tablero va cambiando de rival y resultado, y Petaca tira frases de fútbol de vez en cuando.
+// Inicio: el tablero va cambiando de rival y resultado. En la pantalla de entrada Petaca se viste de albiceleste.
 (function(){
  var t=document.querySelector(".tablero"),m=document.querySelector("header .masc");if(!t||!m)return;
  var b=t.querySelectorAll("b"),s=t.querySelectorAll("span"),mi=t.querySelector("small");
  var RIV=["DEUDAS","GASTOS HORMIGA","LA TARJETA","INFLACIÓN","EL ALQUILER","DELIVERY","IMPUESTOS","CUOTAS","EXPENSAS","EL CHINO"];
- var FR=["¡Vamos, vamos, que se puede! 💪","Los partidos se ganan en la semana… y la plata también.","¡Dale, campeón! Entrá que arrancamos.","Partido a partido: anotá cada gasto.","Hay que dejar todo en la cancha, menos la billetera.","Defensa ordenada, billetera cuidada. 🛡️","¡Qué golazo ahorrar este mes! ⚽","El que no ahorra no sale campeón.","Jugá simple: un gasto, una nota.","La pelota no se mancha, y tus cuentas tampoco.","¡Aguante el presupuesto! 🎉","Tranqui, que esto se da vuelta en el segundo tiempo.","¡Movete que te gana la inflación!","Con orden atrás, arriba algo vamos a hacer.","Cada peso cuenta, como cada gol."];
- var ri=-1,fi=-1;
+ var ri=-1;
  function otro(a,i){var j;do j=Math.floor(Math.random()*a.length);while(a.length>1&&j===i);return j}
  function gira(x,txt){x.classList.remove("gira");void x.offsetWidth;x.textContent=txt;x.classList.add("gira")}
  function marcador(){ri=otro(RIV,ri);var a=Math.floor(Math.random()*5),c=Math.floor(Math.random()*3);if(Math.random()<.75&&c>=a)a=c+1;
   var min=Math.floor(Math.random()*90)+1,ex=min>=88&&Math.random()<.6;
   gira(b[0],a);gira(b[1],c);gira(s[1],RIV[ri]);mi.textContent=ex?"90' + "+(Math.floor(Math.random()*7)+1):min+"'"}
- function frase(){if(!document.body.classList.contains("auth")||m.classList.contains("enojado")||m.style.visibility||document.hidden||document.querySelector(".globo"))return;
-  fi=otro(FR,fi);var r=m.getBoundingClientRect();if(!r.width)return;var g=el("div","globo charla",FR[fi]);
-  g.style.left=Math.min(Math.max(r.left+r.width/2,120),innerWidth-120)+"px";g.style.top=Math.max(r.top-6,60)+"px";document.body.appendChild(g);setTimeout(function(){g.remove()},3800)}
  marcador();setInterval(function(){if(document.body.classList.contains("auth")&&!document.hidden)marcador()},7000);
- setTimeout(frase,2500);setInterval(frase,10000);
+ function vestir(){var a=document.body.classList.contains("auth"),u=a?"petaca-arg.svg?v=1":"petaca.svg?v=28";if(m.getAttribute("src")!==u)m.src=u;
+  m.alt=a?"Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta albiceleste, en su trono con la bandera argentina":"Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta azul y oro, tirado en su trono"}
+ vestir();new MutationObserver(vestir).observe(document.body,{attributes:true,attributeFilter:["class"]});
 })();
 // Nota de voz: 🎤 Hablar dicta la nota en el cuadro de texto, para revisarla antes de tocar "Entender nota".
 // Si el navegador pasa la voz a texto solo (Chrome, Safari), se usa eso: es gratis y no gasta cupo de IA.
@@ -1177,4 +1175,16 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   if(rec){var r=rec;r.stop();return}
   if(mr){if(mr.state!=="inactive")mr.stop();return}
   if(usarSR)dictar();else grabar()};
+})();
+// Guía de uso: se abre sola la primera vez; cuando la cerrás queda cerrada (se vuelve a abrir con "📖 Guía", arriba).
+// Las recomendaciones 💡 de cada sección se pueden ocultar desde la guía (se recuerda en este dispositivo).
+(function(){
+ var g=$("guia"),sw=$("hintsw");if(!g)return;
+ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+ if(ls("panel-guia")!=="visto")g.open=true;
+ g.addEventListener("toggle",function(){if(!g.open)ls("panel-guia","visto")});
+ function hints(on){document.body.classList.toggle("sinhints",!on);sw.checked=on}
+ hints(ls("panel-hints")!=="0");
+ sw.onchange=function(){hints(sw.checked);ls("panel-hints",sw.checked?"1":"0")};
+ $("guib").onclick=function(){g.open=true;$("guias").scrollIntoView({behavior:"smooth",block:"start"})};
 })();

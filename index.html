@@ -14,14 +14,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=43">
+<link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
 <main>
 <p id="aviso" class="sem" style="color:var(--warn);font-weight:700">Cargando… Si este mensaje no desaparece, la página no pudo iniciar. Cerrala y abrila de nuevo, o copiame lo que dice acá.</p>
 <header class="top">
-<div class="marca"><img class="masc" src="petaca.svg?v=28" alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta azul y oro, tirado en su trono"><div><h1>PETACA</h1>
+<div class="marca"><img class="masc" src="petaca-arg.svg?v=1" alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta albiceleste, en su trono con la bandera argentina"><div><h1>PETACA</h1>
 <p class="sub" id="fecha"></p><p class="lema">Tu guita y tu agenda, ordenadas como un 5 de los de antes.</p></div></div>
 </header>
 <section id="login" style="margin-bottom:16px;display:none">
@@ -34,17 +34,81 @@
 <section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 6)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rpb">Guardar contraseña</button></div><p class="sem" id="rpm"></p></section>
 <div class="cuenta">
 <p class="sem" id="usrp" style="display:none">Usuario: <span id="uver" style="display:none"><b id="ushow"></b> <button class="x" id="ued" style="text-decoration:underline">Modificar</button></span><span id="uedit"><input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <button class="x" id="ucan" style="display:none;text-decoration:underline">Cancelar</button></span> <span id="um"></span></p>
-<p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="ord" style="text-decoration:underline">↕ Armar la formación</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
+<p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="guib" style="text-decoration:underline">📖 Guía</button> <button class="x" id="ord" style="text-decoration:underline">↕ Armar la formación</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 </div>
 <div id="ordtop" style="display:none"><span>Armá tu formación: arrastrá cada grupo o tarjeta desde su barra ⠿</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">¡Listo!</button></span></div>
 
 <div id="alerta" style="display:none"></div>
+<section class="guia" id="guias"><details id="guia"><summary>📖 Guía de uso: cómo sacarle jugo a Petaca</summary>
+<div class="claves">
+<b>⭐ Las 5 claves</b>
+<ol>
+<li><b>Cargá todo en el día.</b> Un gasto o un ingreso tarda 5 segundos en "Contale a Petaca" (o dictalo con 🎤). Si lo dejás para después, se olvida.</li>
+<li><b>Separá el ahorro apenas cobrás,</b> no lo que sobre a fin de mes. Petaca te pregunta cuánto separar de cada ingreso.</li>
+<li><b>Fijate siempre si fue 🏦 transferencia o 💵 efectivo,</b> y cargá cuando sacás del cajero. Así sabés dónde está tu plata.</li>
+<li><b>Si el saldo no coincide con tu banco o tu billetera,</b> corregilo con ✎ en Cuentas: no lo dejes desfasado.</li>
+<li><b>Mirá la charla técnica una vez por semana</b> y ponele fecha a tu objetivo: Petaca te dice cuánto ahorrar por mes.</li>
+</ol>
+</div>
+<details class="gtema"><summary>1. Primeros pasos</summary>
+<p>Lo primero es contarle a Petaca <b>con cuánta plata arrancás</b> (tu capital inicial) y cuánto de eso está en efectivo. Lo cargás en <b>El vestuario → Ajustes</b>, o en la pretemporada si recién empezás.</p>
+<p>En Ajustes también elegís tus <b>categorías de gasto</b> con un presupuesto por mes, el <b>% que querés separar</b> de cada ingreso para ahorrar y tu <b>objetivo de ahorro</b>.</p>
+<p>Arriba de todo podés elegir un <b>usuario</b> para entrar sin escribir el mail.</p>
+</details>
+<details class="gtema"><summary>2. Cargar ingresos y gastos</summary>
+<p><b>Ingresos:</b> en 💸 La guita escribí el monto, elegí si entró por 🏦 transferencia o en 💵 efectivo y tocá <b>Sumar ingreso</b>. Antes de confirmar elegís qué % separar para ahorro: eso pasa solo a tus dólares, al precio del dólar blue.</p>
+<p><b>Gastos:</b> en Gastos del mes cargá monto, categoría, detalle y cómo lo pagaste. Las barras de cada categoría muestran cuánto llevás de tu presupuesto.</p>
+<p>Si lo preferís, cargá todo desde "Contale a Petaca" (ver el punto 3).</p>
+</details>
+<details class="gtema"><summary>3. Contale a Petaca (escribí o hablá)</summary>
+<p>Escribí como le hablarías a un amigo, o tocá <b>🎤 Hablar</b> y decilo. Podés poner varias cosas juntas. Algunos ejemplos:</p>
+<ul>
+<li>"gasté 8 mil en el super en efectivo"</li>
+<li>"me entraron 500 mil por transferencia, separo 20%"</li>
+<li>"el viernes a las 10 tengo dentista, avisame"</li>
+<li>"gym de lunes a viernes a las 19" · "este jueves no hay gym"</li>
+<li>"saqué 20 mil del cajero"</li>
+<li>"me equivoqué, el gasto del super eran 6 mil"</li>
+<li>"subí el presupuesto de salidas a 50 mil" · "agregá la categoría Mascota"</li>
+</ul>
+<p>Petaca <b>siempre te muestra lo que entendió antes de guardar</b>: tocá ✎ para corregir algo, × para sacarlo y "Guardar en el panel" cuando esté bien.</p>
+</details>
+<details class="gtema"><summary>4. Efectivo, transferencia y cuentas</summary>
+<p>Cada ingreso y gasto es por 🏦 transferencia (banco, billetera virtual, débito, QR) o en 💵 efectivo. Arriba de todo ves cuánto tenés de cada uno.</p>
+<p>Si <b>sacás del cajero</b> o <b>depositás efectivo</b>, cargalo en <b>Cuentas</b> con "Pasar": no es gasto ni ingreso, solo cambia dónde está la plata.</p>
+<p>Si lo que dice Petaca no coincide con lo que tenés de verdad, tocá ✎ al lado del saldo en Cuentas y poné el número real.</p>
+</details>
+<details class="gtema"><summary>5. Ahorro y objetivo</summary>
+<p>Lo que separás de cada ingreso se suma solo a tu ahorro en dólares. También podés sumar o retirar a mano en <b>Objetivo de ahorro</b>.</p>
+<p>Si le ponés una <b>fecha</b> a tu objetivo (en Ajustes), Petaca calcula cuánto tenés que ahorrar por mes para llegar.</p>
+</details>
+<details class="gtema"><summary>6. Agenda, rutinas y avisos</summary>
+<p>En 📅 El fixture cargás <b>fechas importantes</b> (turnos, parciales, vencimientos), ves los <b>próximos 7 días</b> y el mes completo.</p>
+<p>Las <b>rutinas</b> son lo que se repite (gym, clases, fútbol): elegís los días con los botones L M M J V S D.</p>
+<p>Con <b>Avisos por Telegram</b>, Petaca te manda un mensaje antes de cada evento marcado con 🔔.</p>
+</details>
+<details class="gtema"><summary>7. Si te equivocaste</summary>
+<p><b>↶ Deshacer</b> vuelve atrás el último cambio (podés tocarlo varias veces).</p>
+<p>En <b>Movimientos cargados</b> y en las listas, ✎ corrige y × borra. También podés decírselo a Petaca: "me equivoqué, era en efectivo".</p>
+</details>
+<details class="gtema"><summary>8. Resumen y charla técnica</summary>
+<p>El <b>Resumen</b> muestra cuánto tenés hoy, cuánto entró y gastaste en total, tu ahorro y dónde más gastás.</p>
+<p>La <b>charla técnica</b> te da consejos: 🟥 <b>Tarjeta roja</b> es urgente, 🟨 <b>Amarilla</b> es para prestar atención, <b>Del DT</b> es una sugerencia y <b>¡Golazo!</b> es que vas bien.</p>
+</details>
+<details class="gtema"><summary>9. Tu cuenta, el celular y tus datos</summary>
+<p>Todo se guarda en tu cuenta: entrás desde el celu o la compu y ves lo mismo.</p>
+<p><b>Instalala en el celular:</b> en iPhone, Safari → Compartir → "Agregar a inicio". En Android, Chrome → menú ⋮ → "Instalar app".</p>
+<p>Con <b>↕ Armar la formación</b> (arriba) ordenás las secciones a tu gusto. En <b>Copia de seguridad</b> podés exportar tus datos.</p>
+</details>
+<label class="sem hintsw"><input type="checkbox" id="hintsw" checked> Mostrar las recomendaciones 💡 en cada sección</label>
+</details></section>
 <div class="grupo" data-g="nota" data-name="Contale a Petaca">
 <section style="margin-bottom:16px">
 <h2>Contale a Petaca</h2>
 <textarea id="nt" rows="3" placeholder="Ej: gasté 8 mil en efectivo en farmacia y el viernes a las 10 tengo trámite. O: me equivoqué, el gasto de farmacia eran 6 mil y fue con transferencia" aria-label="Nota"></textarea>
 <div class="add"><button id="nb">Entender nota</button><button id="mic" type="button" class="mic" style="display:none" aria-label="Dictar la nota con la voz">🎤 Hablar</button><button id="un" disabled>↶ Deshacer</button></div>
 <div id="nr" class="sem"></div>
+<p class="hint">💡 Podés escribir o dictar varias cosas juntas: gastos, ingresos, eventos, rutinas, correcciones ("me equivoqué…") o cambios de ajustes. Antes de guardar siempre te muestro lo que entendí.</p>
 </section>
 </div>
 
@@ -58,6 +122,7 @@
 <div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><select id="wme" aria-label="Cómo te entró"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="wb">Sumar ingreso</button></div>
 <div id="wp" class="wp"></div>
 <p class="sem" id="sem"></p>
+<p class="hint">💡 Cargá cada ingreso el día que te entra y elegí si fue por transferencia o en efectivo: así siempre sabés dónde está tu plata.</p>
 
 </div>
 <div class="cols">
@@ -78,6 +143,7 @@
 <select id="gme" aria-label="Cómo lo pagaste"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select>
 <button id="gb">Agregar gasto</button>
 </div>
+<p class="hint">💡 Anotá también los gastos chicos (un café, el kiosco): son los que más se escapan sin que te des cuenta.</p>
 </section>
 <section class="goal" data-c="objetivo" data-name="Objetivo de ahorro">
 <h2>⚽ <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 2.5 A7.5 7.5 0 1 1 3.2 6.8"/></svg>Objetivo de ahorro</h2>
@@ -86,6 +152,7 @@
 <input type="number" id="am" placeholder="Monto (USD)" inputmode="decimal" aria-label="Monto a sumar">
 <button id="ab">Sumar al ahorro</button><button id="ar">Retirar del ahorro</button>
 </div>
+<p class="hint">💡 Ponele fecha a tu objetivo en Ajustes y te digo cuánto ahorrar por mes para llegar.</p>
 </section>
 <section class="goal" data-c="cuentas" data-name="Cuentas">
 <details><summary>Cuentas</summary>
@@ -99,6 +166,7 @@
 <section class="goal" data-c="movs" data-name="Movimientos cargados">
 <details><summary>Movimientos cargados</summary>
 <div id="mov"></div>
+<p class="hint">💡 Si algo quedó mal, tocá ✎ para corregirlo o × para borrarlo. ↶ Deshacer (en "Contale a Petaca") vuelve atrás el último cambio.</p>
 </details>
 </section>
 </div>
@@ -117,6 +185,7 @@
 <input id="et" placeholder="Qué tenés que hacer" aria-label="Evento">
 <button id="eb">Agregar evento</button>
 </div>
+<p class="hint">💡 Cargá turnos, parciales y vencimientos apenas te enterás. Lo importante marcalo con 🔔 para que te avise por Telegram.</p>
 </section>
 <section data-c="agenda" data-name="Próximos 7 días">
 <h2 id="agt">Próximos 7 días</h2>
@@ -131,6 +200,7 @@
 <div class="add"><label class="sem" style="margin:0">Desde <input type="date" id="rf"></label><label class="sem" style="margin:0">Hasta (opcional) <input type="date" id="rto"></label></div>
 <div class="add"><button id="rb">Agregar rutina</button><button id="rc" class="x" style="display:none">Cancelar edición</button></div>
 <p class="sem" id="rm"></p>
+<p class="hint">💡 También se lo podés decir a Petaca: "gym de lunes a viernes a las 19" o "este jueves no hay gym".</p>
 </details></section>
 </div>
 </div>
@@ -194,6 +264,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=43"></script>
+<script src="app.js?v=45"></script>
 </body>
 </html>
