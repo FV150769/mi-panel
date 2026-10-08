@@ -52,7 +52,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v67";
+var DOC=null,VER="v68";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -64,7 +64,7 @@ function reportar(msg,det){try{msg=String(msg||"").slice(0,500);if(!msg||REPV[ms
  if(SB){SB.from("errores").insert(row).then(function(){},function(){});return}
  fetch(SUPABASE_URL+"/rest/v1/errores",{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(row)}).catch(function(){})}catch(e){}}
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t;if(/^(No pude|Error)/.test(t))reportar(t)}
-function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}
+function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}if(DOC)pend(L.t);
  if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){if(e&&e.code==="sesion")sinSes();else stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
 // SYNCED: ya se bajó la nube al entrar. Antes de eso no se guarda nada automático (como el dólar), porque subiría
 // la copia vieja de este dispositivo y pisaría los cambios hechos en otro.
@@ -790,7 +790,7 @@ $("nb").onclick=async function(){
   var SPo=[],spNo="",sp=r.separar;if(sp&&typeof sp==="object"){var spde=pMed(sp.de),spp=parseFloat(sp.porcentaje),spm=Number(sp.monto),spb=spde==="e"?efVal():spde==="t"?trVal():diaVal();
    var spa=spp>0&&spp<=100?Math.round(Math.max(spb,0)*spp/100):spm>0?Math.round(spm):0;
    if(spa>0)SPo.push({ars:spa,p:spp>0&&spp<=100?spp:null,b:spb,de:spde,me:spde||(trVal()>=spa||efVal()<spa?"t":"e")});
-   else spNo="Ahora no tenés plata "+(spde==="e"?"en efectivo":spde==="t"?"por transferencia":"en "+ACC[0][0])+" para separar.";}
+   else spNo="Según lo que cargaste en Petaca, "+(spde==="e"?"en efectivo":spde==="t"?"por transferencia":"en "+ACC[0][0])+" tenés "+(spb<0?"−":"")+money(Math.abs(spb))+", así que no hay de dónde separar. Si en realidad tenés más, corregí el saldo en Cuentas (o contame el ingreso que te entró) y pedímelo de nuevo.";}
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
   // Un solo día de una rutina: la fecha se lleva al día de la semana de la rutina (si la IA se corre, va al próximo que corresponde).
   var CF=(r.cancelar_fecha||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t==="R"&&Cn.indexOf(C.o[c.id])<0}).map(function(c){var e=C.o[c.id].e;return{r:e,f:proxDias(ok.test(c.fecha)?c.fecha:today,rds(e))}});
@@ -799,7 +799,7 @@ $("nb").onclick=async function(){
   var RU=[];(r.rutinas||[]).forEach(function(u){if(!u||!u.titulo)return;var h=hhmm(u.hora),ds=ordDias(diasDe(u.dias!=null?u.dias:u.dia));if(!h||!ds.length)return;
    RU.push({id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),ds:ds,d:ds[0],t:h,t2:hhmm(u.hasta),x:String(u.titulo),from:today,to:""})});
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
-  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null&&!AJC.length&&!AJP.length&&!AJO.length&&!SPo.length){out.textContent=spNo||"No encontré gastos, eventos, ingresos, ajustes ni nada para corregir en esa nota. Probá con más detalle.";medir("vacio");return}
+  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null&&!AJC.length&&!AJP.length&&!AJO.length&&!SPo.length){if(spNo){out.innerHTML="";out.appendChild(el("p","",spNo));var bcu=el("button","x","Corregir el saldo en Cuentas");bcu.onclick=function(){var sc=document.querySelector('[data-c="cuentas"]');mostrar(sc);if(sc)sc.scrollIntoView({behavior:"smooth",block:"start"})};out.appendChild(bcu);medir("vacio");return}out.textContent="No encontré gastos, eventos, ingresos, ajustes ni nada para corregir en esa nota. Probá con más detalle.";medir("vacio");return}
   // Vista previa editable: cada ítem se puede corregir (✎) o quitar (×) antes de guardar.
   var AA=A!=null?[{m:A}]:[],FF=FX!=null?[{v:FX}]:[],NSo=NS.map(function(d){return{f:d}});
   var CAT=Object.keys(BUDGET).concat(AJC.filter(function(o){return o.tp==="n"}).map(function(o){return o.n})).map(function(c){return[c,c]}),DIA=DN.map(function(n,i){return[i,n]}),DIR=[["e","De transferencia a efectivo"],["t","De efectivo a transferencia"]];
@@ -908,8 +908,28 @@ async function sesionOk(){if(!SB||!UID)return false;
 var SINSES="Tu sesión se venció y no pude renovarla. Lo que cargaste quedó en este dispositivo: se sube solo cuando vuelva la conexión o cuando entres de nuevo.";
 function sinSes(){stat(SINSES);reportar("Sesión vencida: no se pudo renovar")}
 function push(){if(!HAVECFG)return Promise.resolve();var d=JSON.parse(JSON.stringify({L:L,cfg:cfgObj()}));
- return sesionOk().then(function(ok){if(!ok)throw{code:"sesion"};return SB.from("panel_state").upsert({user_id:UID,data:d,updated_at:new Date().toISOString()})}).then(function(r){if(r.error)throw r.error})}
-function adopt(q){setTimeout(blue,0);if(q.cfg){applyCfg(q.cfg);HAVECFG=true}L=norm(q.L);PREV=snap();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}render()}
+ return sesionOk().then(function(ok){if(!ok)throw{code:"sesion"};return SB.from("panel_state").upsert({user_id:UID,data:d,updated_at:new Date().toISOString()})}).then(function(r){if(r.error)throw r.error;sincro(d)})}
+// Cambios sin subir: cada guardado deja a este dispositivo "pendiente" (KEY-pend, con la hora del cambio) hasta que la nube lo
+// confirma, y se recuerda la última versión que coincidía con la nube (KEY-base). Si mientras tanto la cuenta cambió en otro
+// dispositivo, al volver a sincronizar se juntan las dos versiones (juntar) en vez de pisar una con la otra.
+function pend(t){try{localStorage.setItem(KEY+"-pend",String(t))}catch(e){}}
+function pendiente(){try{return+(localStorage.getItem(KEY+"-pend")||0)}catch(e){return 0}}
+function base0(){try{return JSON.parse(localStorage.getItem(KEY+"-base")||"null")}catch(e){return null}}
+function sincro(d){try{localStorage.setItem(KEY+"-base",JSON.stringify(d));if(pendiente()<=((d.L&&d.L.t)||0))localStorage.removeItem(KEY+"-pend")}catch(e){}}
+// Junta tres versiones: b (la última que coincidía con la nube), lo (este dispositivo) y nu (la nube). En las listas quedan las
+// cosas nuevas de los dos lados y se van las que se borraron en cualquiera (una cosa editada cuenta como borrada y nueva).
+// En lo demás, si cambió en este dispositivo vale lo de acá; si no, lo de la nube. Sin b (nunca sincronizó con esta versión),
+// en las listas quedan las cosas de los dos lados sin repetir y en lo demás gana lo de este dispositivo.
+function juntar(b,lo,nu){function k(x){return JSON.stringify(x===undefined?null:x)}var nb=!b||!b.L;if(nb)b={L:nu.L,cfg:nu.cfg};
+ function lista(B,Lo,N){var c={},o=[];function cu(a,n){(a||[]).forEach(function(x){var q=k(x);c[q]=(c[q]||0)+n})}
+  if(nb){var cl={};cu(N,1);(Lo||[]).forEach(function(x){var q=k(x);cl[q]=(cl[q]||0)+1});Object.keys(cl).forEach(function(q){c[q]=Math.max(c[q]||0,cl[q])})}else{cu(N,1);cu(Lo,1);cu(B,-1)}
+  (N||[]).concat(Lo||[]).forEach(function(x){var q=k(x);if(c[q]>0){o.push(x);c[q]--}});return o}
+ function obj(B,Lo,N,col){B=B||{};Lo=Lo||{};N=N||{};var o={};Object.keys(N).concat(Object.keys(Lo),Object.keys(B)).forEach(function(x){if(x in o)return;
+  var v=k(Lo[x])!==k(B[x])?Lo[x]:N[x];if(col&&col[x]&&(Array.isArray(Lo[x])||Array.isArray(N[x])))v=lista(B[x],Lo[x],N[x]);
+  else if(col&&col[x]==="o")v=obj(B[x],Lo[x],N[x]);if(v!==undefined)o[x]=v});return o}
+ var CL={events:1,expenses:1,saves:1,hidden:1,skip:1,ing:1,mv:1,rskip:1,calno:1,bal:"o"},CC={RUT:1,FECHAS:1,CALS:1,PAL:"o",BUDGET:"o"};
+ return{L:obj(b.L,lo.L,nu.L,CL),cfg:obj(b.cfg,lo.cfg,nu.cfg||lo.cfg,CC)}}
+function adopt(q){setTimeout(blue,0);if(q.cfg){applyCfg(q.cfg);HAVECFG=true}L=norm(q.L);PREV=snap();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}sincro(q);render()}
 async function pull(){
  if(!await sesionOk()){sinSes();return}
  var r=await SB.from("panel_state").select("data").eq("user_id",UID).maybeSingle();
@@ -917,15 +937,20 @@ async function pull(){
  var q=r.data&&r.data.data;
  if(q&&q.L){if(!HAVECFG&&q.cfg){applyCfg(q.cfg);HAVECFG=true;render()}
   // Nunca pisar datos con una copia vacía: si un lado está vacío y el otro no, gana el que tiene datos.
-  var ev=vacio(q.L),lv=vacio(L);if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();SYNCED=true;stat("Sincronizado con tu nube · "+VER);
+  // Si este dispositivo tiene cambios sin subir y la cuenta también cambió desde la última vez, se juntan las dos versiones.
+  var ev=vacio(q.L),lv=vacio(L),bs=base0(),pe=pendiente(),jn=false;
+  if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();
+  else if(pe&&(!bs||!bs.L||(q.L.t||0)!==(bs.L.t||0))){var m=juntar(bs,{L:L,cfg:cfgObj()},q);applyCfg(m.cfg);HAVECFG=true;L=norm(m.L);save0();PREV=snap();render();await push();jn=true}
+  else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();SYNCED=true;stat("Sincronizado con tu nube · "+VER);
+  if(jn)toast("Subí a tu cuenta lo que habías cargado en este dispositivo sin conexión, junto con lo de tus otros dispositivos.");
   if(ONB===0)preStart();else capStart();calSync()}
  else{HAVECFG=true;ONB=0;await push();SYNCED=true;stat("Nube inicializada · "+VER);preStart()}
 }
 async function enter(session){
- UID=session.user.id;var ow=DUENO;try{ow=ow||localStorage.getItem("panel-owner")}catch(e){}if(ow&&ow!==UID)resetLocal();DUENO=UID;try{localStorage.setItem("panel-owner",UID)}catch(e){}DOC={set:function(){return push()}};loginUI(false,session.user.email);
+ UID=session.user.id;var ow=DUENO;try{ow=ow||localStorage.getItem("panel-owner")}catch(e){}if(ow&&ow!==UID){apartar(ow);resetLocal()}DUENO=UID;recuperar(UID);try{localStorage.setItem("panel-owner",UID)}catch(e){}DOC={set:function(){return push()}};loginUI(false,session.user.email);
  loadUser();
  try{await pull()}catch(e){stat("No pude sincronizar: "+(e&&e.message||e))}
- SB.channel("ps-"+UID).on("postgres_changes",{event:"*",schema:"public",table:"panel_state",filter:"user_id=eq."+UID},function(p){var q=p.new&&p.new.data;if(q&&q.L&&(q.L.t||0)>(L.t||0))adopt(q)}).subscribe()}
+ SB.channel("ps-"+UID).on("postgres_changes",{event:"*",schema:"public",table:"panel_state",filter:"user_id=eq."+UID},function(p){var q=p.new&&p.new.data;if(q&&q.L&&(q.L.t||0)>(L.t||0)){if(pendiente())pull().catch(function(){});else adopt(q)}}).subscribe()}
 // La sesión dura una hora y se renueva sola, pero al volver de segundo plano (celular dormido) puede salir un pedido con la vieja
 // y Supabase contesta "JWT expired". En ese caso se renueva la sesión y se repite el pedido una vez, sin mostrar el error.
 async function sbFetch(url,o){
@@ -942,7 +967,7 @@ async function startSB(){
  var r=await SB.auth.getSession();
  if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · "+VER)}
  SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;SYNCED=false;if(PRE)preEnd();else capEnd();try{SB.removeAllChannels()}catch(e){}
-  if(SALIR){resetLocal();DUENO=null;try{localStorage.removeItem("panel-owner")}catch(e){}}else authMsg("Tu sesión se cerró. Volvé a entrar: lo que cargaste quedó en este dispositivo y se sube al entrar.");
+  if(SALIR){apartar(DUENO);resetLocal();DUENO=null;try{localStorage.removeItem("panel-owner")}catch(e){}}else authMsg("Tu sesión se cerró. Volvé a entrar: lo que cargaste quedó en este dispositivo y se sube al entrar.");
   SALIR=false;loginUI(true)}})}
 // SALIR: la persona tocó "Salir" (se borra lo del dispositivo). DUENO: de quién es lo que hay en el dispositivo.
 var SALIR=false,DUENO=null;
@@ -1033,7 +1058,12 @@ $("ordok").onclick=function(){ordUI(false)};
 $("ordr").onclick=function(){LAYOUT=null;applyLayout();HAVECFG=true;save();ordUI(true)};
 // Datos locales por usuario: la copia del navegador se borra al cerrar sesión o si entra otra cuenta, para no mezclar datos.
 var DEFCFG=JSON.stringify(cfgObj());
-function resetLocal(){applyCfg(JSON.parse(DEFCFG));HAVECFG=false;L=norm({});UNDO.length=0;PREV=snap();updUndo();try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+"-cfg")}catch(e){}render();blue()}
+// Cambios sin subir de una cuenta que se va de este dispositivo (sale o entra otra): quedan aparte (KEY-sin-subir-<cuenta>)
+// y, cuando esa cuenta vuelve a entrar acá, se recuperan y se juntan con su nube.
+function apartar(u){if(!u||!pendiente()||!HAVECFG)return;try{localStorage.setItem(KEY+"-sin-subir-"+u,JSON.stringify({L:L,cfg:cfgObj(),base:base0(),pend:pendiente()}))}catch(e){}}
+function recuperar(u){var k=KEY+"-sin-subir-"+u,o=null;try{o=JSON.parse(localStorage.getItem(k)||"null")}catch(e){}if(!o||!o.L)return;
+ applyCfg(o.cfg);HAVECFG=true;L=norm(o.L);try{localStorage.setItem(KEY,JSON.stringify(L));localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()));if(o.base)localStorage.setItem(KEY+"-base",JSON.stringify(o.base));else localStorage.removeItem(KEY+"-base");pend(o.pend||L.t);localStorage.removeItem(k)}catch(e){}PREV=snap();render()}
+function resetLocal(){applyCfg(JSON.parse(DEFCFG));HAVECFG=false;L=norm({});UNDO.length=0;PREV=snap();updUndo();try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+"-cfg");localStorage.removeItem(KEY+"-base");localStorage.removeItem(KEY+"-pend")}catch(e){}render();blue()}
 try{var cs0=localStorage.getItem(KEY+"-cfg");if(cs0){applyCfg(JSON.parse(cs0));HAVECFG=true;render()}}catch(e){}
 startSB().catch(function(e){document.body.classList.remove("auth");stat("Error al iniciar Supabase: "+(e&&e.message||e))});
 PREV=snap();updUndo();
