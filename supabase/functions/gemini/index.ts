@@ -33,7 +33,7 @@ function hoyAR() {
 // Cada intento tiene 14 s y en total no se esperan más de 30 s, para que la página no quede colgada.
 const PENSAR: (Record<string, unknown> | null)[] = [{ thinkingLevel: "minimal" }, { thinkingBudget: 0 }, null];
 const pensarOk: Record<string, number> = {};
-async function llamar(key: string, prompt: string) {
+async function llamar(key: string, prompt: string, audio?: { mime: string; data: string }) {
   const intentos = [
     "gemini-flash-latest",
     "gemini-flash-lite-latest",
@@ -63,7 +63,10 @@ async function llamar(key: string, prompt: string) {
           headers: bearer
             ? { "Content-Type": "application/json", "Authorization": "Bearer " + key }
             : { "Content-Type": "application/json", "x-goog-api-key": key },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: gen }),
+          body: JSON.stringify({
+            contents: [{ parts: audio ? [{ inline_data: { mime_type: audio.mime, data: audio.data } }, { text: prompt }] : [{ text: prompt }] }],
+            generationConfig: gen,
+          }),
           signal: AbortSignal.timeout(Math.min(14000, queda)),
         },
       );
@@ -135,7 +138,18 @@ Deno.serve(async (req) => {
     return json({ ok: true });
   }
 
-  const prompt = String(body?.prompt || "");
+  // Nota de voz: si el navegador no sabe pasar la voz a texto, la página manda el audio y Gemini lo transcribe.
+  let audio: { mime: string; data: string } | undefined;
+  if (body?.audio) {
+    const mime = String(body?.mime || "").split(";")[0];
+    const data = String(body.audio);
+    if (!/^audio\/[a-z0-9.+-]+$/i.test(mime)) return json({ error: "Formato de audio no soportado" }, 400);
+    if (data.length > 3_000_000) return json({ error: "El audio es demasiado largo (máximo un par de minutos)" }, 400);
+    audio = { mime, data };
+  }
+  const prompt = audio
+    ? 'Transcribí este audio en español rioplatense tal cual lo dice la persona (montos con números, ej: "8 mil"). Devolvé SOLO un JSON: {"texto": string}. Si no se entiende nada, {"texto": ""}.'
+    : String(body?.prompt || "");
   if (!prompt) return json({ error: "Falta el texto" }, 400);
   if (prompt.length > 20000) return json({ error: "La nota es demasiado larga" }, 400);
 
@@ -154,7 +168,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  const r = await llamar(key, prompt);
+  const r = await llamar(key, prompt, audio);
   if (!r.ok) {
     const msg = r.d?.error?.message || "Gemini no respondió";
     return json({ error: propia ? errorClavePropia(r.status, msg) : msg }, 502);

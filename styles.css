@@ -522,3 +522,7 @@ html.huye,html.huye body{overflow-x:hidden}
 .tip.mal .tipk{color:var(--warn)}
 .tip.ojo .tipk{color:#B45309}
 .tip.bien .tipk{color:#15803D}
+/* Botón para dictar la nota */
+#mic.grabando{background:var(--warn);border-color:var(--warn);color:#fff;animation:latido 1.2s ease-in-out infinite}
+@keyframes latido{50%{box-shadow:0 0 0 6px rgba(198,40,40,.25)}}
+@media (prefers-reduced-motion:reduce){#mic.grabando{animation:none}}

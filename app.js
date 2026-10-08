@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v42";
+var DOC=null,VER="v43";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -561,7 +561,7 @@ function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-A
 // Gemini vía la Edge Function "gemini" de Supabase: la clave vive como secreto en Supabase y nunca llega al navegador.
 // Si tarda más de 35 segundos se deja de esperar y la nota se entiende sin IA, así la página nunca queda trabada.
 async function gemini(p){
- var to,r=await Promise.race([SB.functions.invoke("gemini",{body:{prompt:p}}),new Promise(function(_,no){to=setTimeout(function(){no(new Error("Gemini: tardó demasiado en responder"))},35000)})]).finally(function(){clearTimeout(to)});
+ var to,r=await Promise.race([SB.functions.invoke("gemini",{body:typeof p==="string"?{prompt:p}:p}),new Promise(function(_,no){to=setTimeout(function(){no(new Error("Gemini: tardó demasiado en responder"))},35000)})]).finally(function(){clearTimeout(to)});
  if(r.error){var m=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)m=b.error}catch(e){}throw new Error("Gemini: "+m)}
  return r.data}
 $("nb").onclick=async function(){
@@ -758,7 +758,20 @@ $("ued").onclick=function(){$("um").textContent="";userUI(true);$("uname").focus
 $("ucan").onclick=function(){$("um").textContent="";userUI(false)};
 $("uname").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("us").click()}else if(e.key==="Escape"&&UNAME)$("ucan").click()});
 $("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});if(r.error)return($("um").textContent=r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo.");var nuevo=!UNAME;UNAME=u;userUI(false);$("um").textContent=nuevo?"Listo: ya podés entrar con "+u+".":"Guardado.";setTimeout(function(){$("um").textContent=""},5000)};
-document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}if(UID)SB.auth.getSession().then(pull).catch(function(){})});
+document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}nuevaVersion(true);if(UID)SB.auth.getSession().then(pull).catch(function(){})});
+// Actualización: la app instalada en el celular queda abierta en segundo plano y no vuelve a bajar la página.
+// Al volver a la app (y cada 30 minutos) se fija si hay una versión nueva publicada; si no estás escribiendo nada, se actualiza sola.
+var NVTOT=0;
+async function nuevaVersion(volviendo){
+ try{if(Date.now()-NVTOT<60000)return;NVTOT=Date.now();
+  var h=await (await fetch(location.pathname+"?nv="+Date.now(),{cache:"no-store"})).text(),m=h.match(/app\.js\?v=(\d+)/),v=m?+m[1]:0;
+  if(!(v>+VER.slice(1)))return;
+  var ocupado=$("nt").value.trim()||$("nr").querySelector("button")||document.querySelector("main input:focus,main textarea:focus")||PRE||busy;
+  if(volviendo&&!ocupado){location.reload();return}
+  var t=$("toast");if(!t)return;t.innerHTML="";t.appendChild(el("span","","Hay una versión nueva de Petaca."));
+  var b=el("button","","Actualizar");b.onclick=function(){location.reload()};t.appendChild(b);
+  var x=el("button","x","×");x.setAttribute("aria-label","Cerrar aviso");x.onclick=function(){t.style.display="none"};t.appendChild(x);t.style.display="";clearTimeout(TOT)}catch(e){}}
+setInterval(function(){if(!document.hidden)nuevaVersion(false)},30*60*1000);
 // Orden personalizado: el usuario arrastra grupos y tarjetas (o usa ↑ ↓); se guarda en su cuenta.
 var LAYOUT=null;
 function grupos(){return[].slice.call(document.querySelectorAll("main>.grupo"))}
@@ -1125,4 +1138,43 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   g.style.left=Math.min(Math.max(r.left+r.width/2,120),innerWidth-120)+"px";g.style.top=Math.max(r.top-6,60)+"px";document.body.appendChild(g);setTimeout(function(){g.remove()},3800)}
  marcador();setInterval(function(){if(document.body.classList.contains("auth")&&!document.hidden)marcador()},7000);
  setTimeout(frase,2500);setInterval(frase,10000);
+})();
+// Nota de voz: 🎤 Hablar dicta la nota en el cuadro de texto, para revisarla antes de tocar "Entender nota".
+// Si el navegador pasa la voz a texto solo (Chrome, Safari), se usa eso: es gratis y no gasta cupo de IA.
+// Si no puede (o falla, como en algunas apps instaladas en iPhone), se graba el audio y Gemini lo transcribe.
+(function(){
+ var b=$("mic"),nt=$("nt"),out=$("nr");if(!b||!nt)return;
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition,GRAB=!!(window.MediaRecorder&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+ if(!SR&&!GRAB)return;b.style.display="";
+ var rec=null,mr=null,chunks=[],tope=null,usarSR=!!SR,base="";
+ function ui(on,txt){b.classList.toggle("grabando",on);b.textContent=on?"⏹ Listo":"🎤 Hablar";b.setAttribute("aria-pressed",String(on));if(txt!=null)out.textContent=txt}
+ function poner(t){t=String(t||"").trim();if(!t)return;nt.value=(base?base+" ":"")+t}
+ function dictar(){base=nt.value.trim();var fin="";rec=new SR();rec.lang="es-AR";rec.interimResults=true;rec.continuous=true;
+  rec.onresult=function(e){var tmp="";for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fin+=e.results[i][0].transcript+" ";else tmp+=e.results[i][0].transcript}poner(fin+tmp)};
+  rec.onerror=function(e){var c=e.error;rec=null;
+   if(c==="not-allowed"&&!GRAB||c==="audio-capture")return ui(false,"Petaca necesita permiso para usar el micrófono. Habilitalo en el navegador y probá de nuevo.");
+   if(c==="no-speech")return ui(false,"No te escuché. Tocá 🎤 Hablar y decí la nota.");
+   if(c==="aborted")return ui(false);
+   // El dictado del navegador no anda acá: se pasa a grabar el audio.
+   if(GRAB){usarSR=false;ui(false);grabar()}else ui(false,"No pude usar el micrófono ("+c+").")};
+  rec.onend=function(){if(rec){rec=null;ui(false,nt.value.trim()?"Revisá el texto y tocá \"Entender nota\".":"No te escuché. Probá de nuevo.")}};
+  try{rec.start();ui(true,"Te escucho… hablá y tocá ⏹ Listo cuando termines.")}catch(e){rec=null;if(GRAB){usarSR=false;grabar()}}}
+ async function grabar(){
+  if(!SB||!UID)return ui(false,"Para mandar audio a Petaca iniciá sesión.");
+  var st;try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return ui(false,"Petaca necesita permiso para usar el micrófono. Habilitalo en el navegador y probá de nuevo.")}
+  var tipo=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"].filter(function(t){return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)})[0];
+  base=nt.value.trim();chunks=[];mr=tipo?new MediaRecorder(st,{mimeType:tipo}):new MediaRecorder(st);
+  mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};
+  mr.onstop=async function(){clearTimeout(tope);st.getTracks().forEach(function(t){t.stop()});var m=mr.mimeType||tipo||"audio/webm";mr=null;ui(false,"Pasando tu audio a texto…");
+   var bl=new Blob(chunks,{type:m});if(bl.size<1500)return ui(false,"No te escuché. Probá de nuevo.");
+   try{var d=await new Promise(function(ok,no){var fr=new FileReader();fr.onload=function(){ok(String(fr.result).split(",")[1]||"")};fr.onerror=no;fr.readAsDataURL(bl)});
+    var r=await gemini({audio:d,mime:m});if(!r||!String(r.texto||"").trim())return ui(false,"No entendí el audio. Probá de nuevo, más cerca del micrófono.");
+    poner(r.texto);ui(false,"Revisá el texto y tocá \"Entender nota\".")}
+   catch(e){ui(false,"No pude pasar el audio a texto: "+(e&&e.message||e))}};
+  mr.start();ui(true,"Grabando… hablá y tocá ⏹ Listo cuando termines (hasta 2 minutos).");
+  tope=setTimeout(function(){if(mr&&mr.state!=="inactive")mr.stop()},120000)}
+ b.onclick=function(){
+  if(rec){var r=rec;r.stop();return}
+  if(mr){if(mr.state!=="inactive")mr.stop();return}
+  if(usarSR)dictar();else grabar()};
 })();
