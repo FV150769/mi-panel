@@ -52,7 +52,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v68";
+var DOC=null,VER="v69";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -341,6 +341,9 @@ function renderResumen(){
  pinta()}
 $("ar").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:-m});$("am").value="";save();render()};
 $("ab").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:m});$("am").value="";save();render()};
+$("dab").onclick=function(){var m=parseFloat($("dam").value);if(!(m>0))return;if(!(L.fx>0))return toast("Para pasar plata al ahorro necesito saber a cuánto está el dólar: cargalo en Cuentas.");
+ pasarAhorro(m,$("dame").value);$("dam").value="";save();render();var q=diaVal();
+ toast("Pasé "+money(m)+" al ahorro (≈ "+usd(m/L.fx)+"). Te quedan "+mny(q)+" en "+ACC[0][0]+(q<0?": si tenés más, corregí el saldo en Cuentas.":"."))};
 var APPTOT=1;
 var HIST=[["Sin datos",1]];
 function renderHist(){
@@ -459,7 +462,10 @@ function editMov(r,m){
 function bal(k,d){return L.bal&&L.bal[k]!=null?L.bal[k]:d}
 function accVal(i){return bal("a"+i,ACC[i][1])}
 function usdVal(i){return bal("u"+i,USD[i][1])}
-function ajusteDiario(x,me){if(!x)return;me=me==="e"?"e":"t";if(x<0)L.expenses.push({f:today,m:-x,c:"Otros",x:"Ajuste de saldo",me:me});else L.ing.push({f:today,k:mon(),v:x,adj:1,me:me});save();render()}
+function ajustarSaldo(x,me){if(!x)return;me=me==="e"?"e":"t";if(x<0)L.expenses.push({f:today,m:-x,c:"Otros",x:"Ajuste de saldo",me:me});else L.ing.push({f:today,k:mon(),v:x,adj:1,me:me})}
+function ajusteDiario(x,me){if(!x)return;ajustarSaldo(x,me);save();render()}
+// Montos que pueden ser negativos ("−$50.000").
+function mny(x){return(x<0?"−":"")+money(Math.abs(x))}
 function setBal(k,v){if(!L.bal)L.bal={};L.bal[k]=v;save();render()}
 function editBal(r,cur,fn){
  r.innerHTML="";r.style.flexWrap="wrap";
@@ -787,10 +793,10 @@ $("nb").onclick=async function(){
   var CRX=CR.filter(function(o){return o.it.t==="X"}),CRI=CR.filter(function(o){return o.it.t==="I"}),CRM=CR.filter(function(o){return o.it.t==="M"}),CRE=CR.filter(function(o){return o.it.t==="E"||o.it.t==="F"});
   var FX=r.cotizacion>0?Number(r.cotizacion):null;
   // Separar ahora para el ahorro: el % se calcula sobre lo que tenés en el día a día (o en efectivo o transferencia, si lo dice).
-  var SPo=[],spNo="",sp=r.separar;if(sp&&typeof sp==="object"){var spde=pMed(sp.de),spp=parseFloat(sp.porcentaje),spm=Number(sp.monto),spb=spde==="e"?efVal():spde==="t"?trVal():diaVal();
-   var spa=spp>0&&spp<=100?Math.round(Math.max(spb,0)*spp/100):spm>0?Math.round(spm):0;
-   if(spa>0)SPo.push({ars:spa,p:spp>0&&spp<=100?spp:null,b:spb,de:spde,me:spde||(trVal()>=spa||efVal()<spa?"t":"e")});
-   else spNo="Según lo que cargaste en Petaca, "+(spde==="e"?"en efectivo":spde==="t"?"por transferencia":"en "+ACC[0][0])+" tenés "+(spb<0?"−":"")+money(Math.abs(spb))+", así que no hay de dónde separar. Si en realidad tenés más, corregí el saldo en Cuentas (o contame el ingreso que te entró) y pedímelo de nuevo.";}
+  // Si según lo cargado no hay plata (o no alcanza), se puede decir cuánto tenés hoy: Petaca corrige el saldo y calcula con eso.
+  var SPo=[],sp=r.separar;if(sp&&typeof sp==="object"){var spde=pMed(sp.de),spp=parseFloat(sp.porcentaje),spm=Number(sp.monto),spb=spde==="e"?efVal():spde==="t"?trVal():diaVal();
+   if(!(spp>0&&spp<=100))spp=null;var spa=spp?Math.round(Math.max(spb,0)*spp/100):spm>0?Math.round(spm):0;
+   if(spa>0||spp)SPo.push({ars:spa,p:spp,b:spb,b0:spb,de:spde,me:spde||(spa>0&&trVal()<spa&&efVal()>=spa?"e":"t"),falta:!(spa>0)});}
   var Cn=(r.cancelar||[]).filter(function(k){return C.o[k]}).map(function(k){return C.o[k]});
   // Un solo día de una rutina: la fecha se lleva al día de la semana de la rutina (si la IA se corre, va al próximo que corresponde).
   var CF=(r.cancelar_fecha||[]).filter(function(c){return c&&C.o[c.id]&&C.o[c.id].t==="R"&&Cn.indexOf(C.o[c.id])<0}).map(function(c){var e=C.o[c.id].e;return{r:e,f:proxDias(ok.test(c.fecha)?c.fecha:today,rds(e))}});
@@ -799,7 +805,7 @@ $("nb").onclick=async function(){
   var RU=[];(r.rutinas||[]).forEach(function(u){if(!u||!u.titulo)return;var h=hhmm(u.hora),ds=ordDias(diasDe(u.dias!=null?u.dias:u.dia));if(!h||!ds.length)return;
    RU.push({id:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),ds:ds,d:ds[0],t:h,t2:hhmm(u.hasta),x:String(u.titulo),from:today,to:""})});
   out.innerHTML="";if(nota)out.appendChild(el("p","sem",nota));
-  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null&&!AJC.length&&!AJP.length&&!AJO.length&&!SPo.length){if(spNo){out.innerHTML="";out.appendChild(el("p","",spNo));var bcu=el("button","x","Corregir el saldo en Cuentas");bcu.onclick=function(){var sc=document.querySelector('[data-c="cuentas"]');mostrar(sc);if(sc)sc.scrollIntoView({behavior:"smooth",block:"start"})};out.appendChild(bcu);medir("vacio");return}out.textContent="No encontré gastos, eventos, ingresos, ajustes ni nada para corregir en esa nota. Probá con más detalle.";medir("vacio");return}
+  if(!G.length&&!E.length&&!IN.length&&!MV.length&&!CR.length&&A==null&&!Cn.length&&!CF.length&&!NS.length&&!RU.length&&FX==null&&!AJC.length&&!AJP.length&&!AJO.length&&!SPo.length){out.textContent="No encontré gastos, eventos, ingresos, ajustes ni nada para corregir en esa nota. Probá con más detalle.";medir("vacio");return}
   // Vista previa editable: cada ítem se puede corregir (✎) o quitar (×) antes de guardar.
   var AA=A!=null?[{m:A}]:[],FF=FX!=null?[{v:FX}]:[],NSo=NS.map(function(d){return{f:d}});
   var CAT=Object.keys(BUDGET).concat(AJC.filter(function(o){return o.tp==="n"}).map(function(o){return o.n})).map(function(c){return[c,c]}),DIA=DN.map(function(n,i){return[i,n]}),DIR=[["e","De transferencia a efectivo"],["t","De efectivo a transferencia"]];
@@ -819,8 +825,18 @@ $("nb").onclick=async function(){
    {a:AJO,t:function(o){return"Ajuste del objetivo: "+(o.x!==GOAL.x?"\""+GOAL.x+"\" → \""+o.x+"\"":"\""+o.x+"\"")+(o.t!==GOAL.target?" · meta "+usd(GOAL.target)+" → "+usd(o.t):" · meta "+usd(o.t))+(o.h!==(GOAL.hasta||"")?" · "+(o.h?"hasta el "+fLarga(o.h):"sin plazo"):"")},f:[["x","Objetivo","text"],["t","Meta (US$)","number"],["h","Fecha límite (opcional)","date"]]},
    {a:AA,t:function(s){return(s.m<0?"Retiro del ahorro: ":"Aporte al ahorro: ")+usd(Math.abs(s.m))},f:[["m","USD (negativo si retirás)","number"]]},
    {a:FF,t:function(x){return"Cotización del dólar: "+money(x.v)},f:[["v","Pesos por US$","number"]]},
-   {a:SPo,t:function(s){var fx=FF.length?FF[0].v:L.fx,dd=s.de==="e"?"tu efectivo":s.de==="t"?"transferencia":ACC[0][0];
-     return"Ahorro: "+(s.p!=null&&Math.round(Math.max(s.b,0)*s.p/100)===s.ars?"el "+pctTxt(s.p)+" de lo que tenés en "+dd+" ("+money(s.b)+") es ":"separar ")+money(s.ars)+(fx>0?" (≈ "+usd(s.ars/fx)+")":"")+" · pasa al ahorro desde "+medTxt(s.me)},f:[["ars","Pesos","number"],["me","Sale de",MED]]},
+   {a:SPo,t:function(s){var fx=FF.length?FF[0].v:L.fx,dd=spDonde(s),q=s.b-s.ars;
+     if(s.falta)return"Ahorro: el "+pctTxt(s.p)+" de lo que tenés en "+dd+". Según lo que cargaste tenés "+mny(s.b)+": decime cuánto tenés hoy y lo calculo.";
+     return"Ahorro: "+(s.p!=null&&Math.round(Math.max(s.b,0)*s.p/100)===s.ars?"el "+pctTxt(s.p)+" de lo que tenés en "+dd+" ("+money(s.b)+") es ":"separar ")+money(s.ars)+(fx>0?" (≈ "+usd(s.ars/fx)+")":"")+" · pasa al ahorro desde "+medTxt(s.me)
+      +(s.aj?" · corrijo lo que tenés en "+dd+": de "+mny(s.b0)+" a "+money(s.b):"")+(q<0?" · ⚠️ te quedaría "+mny(q)+" en "+dd:"")},
+    f:[["ars","Pesos","number"],["me","Sale de",MED]],
+    // Cuánto tenés hoy: hace falta si no hay plata cargada; si no alcanza, es opcional (para corregir el saldo).
+    x:function(s,row){if(!s.falta&&(s.aj||s.b>=s.ars))return;var w=el("div","add spq"),qi=el("input"),qb=el("button","","Calcular"),qc=el("button","lk","Corregir en Cuentas");
+     qi.type="number";qi.inputMode="decimal";qi.placeholder="Lo que tenés hoy ($)";qi.setAttribute("aria-label","Cuánto tenés hoy en "+spDonde(s));
+     qb.type="button";qb.onclick=function(){var R=parseFloat(qi.value);if(!(R>0))return qi.focus();s.aj=Math.round(R-s.b0);s.b=R;if(s.p)s.ars=Math.round(R*s.p/100);s.falta=false;if(MEDN)MEDN.editados=Math.min(100,MEDN.editados+1);draw()};
+     qi.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();qb.click()}};
+     qc.type="button";qc.onclick=function(){var sc=document.querySelector('[data-c="cuentas"]');mostrar(sc);if(sc)sc.scrollIntoView({behavior:"smooth",block:"start"})};
+     w.appendChild(qi);w.appendChild(qb);w.appendChild(qc);row.after(w)}},
    {a:Cn,t:function(c){return c.t==="R"?"Terminar la "+descr(c)+" · deja de aparecer desde hoy (lo anterior queda)":"Borrar: "+descr(c)}},
    {a:CF,t:function(c){var f=proxDias(c.f,rds(c.r));return"Cancelar solo el "+DN[new Date(f+"T00:00").getDay()].toLowerCase()+" "+fd(f)+": "+c.r.x+" "+c.r.t+" · las demás semanas sigue"},f:[["f","Qué día","date"]]},
    {a:NSo,t:function(d){return"Sin clases el "+fd(d.f)},f:[["f","Fecha","date"]]},
@@ -855,7 +871,8 @@ $("nb").onclick=async function(){
    var yes=el("button","","Guardar en el panel"),no=el("button","x","Descartar");
    yes.style.marginTop="10px";
    yes.onclick=function(){
-    if(SPo.length&&!((FF.length?FF[0].v:L.fx)>0)){toast("Para pasar plata al ahorro necesito saber a cuánto está el dólar: cargalo en Objetivo de ahorro y probá de nuevo.");return}
+    if(SPo.some(function(s){return s.falta})){var qw=out.querySelector(".spq input");if(qw){qw.focus();qw.scrollIntoView({block:"center",behavior:"smooth"})}toast("Decime cuánto tenés hoy para calcular cuánto ahorrar.");return}
+    if(SPo.length&&!((FF.length?FF[0].v:L.fx)>0)){toast("Para pasar plata al ahorro necesito saber a cuánto está el dólar: cargalo en Cuentas y probá de nuevo.");return}
     if(IN.some(function(i){return i.p==null})){var w=out.querySelector(".pctin");if(w){w.classList.add("falta");w.scrollIntoView({block:"center",behavior:"smooth"})}toast("Elegí cuánto separás para ahorro de cada ingreso (puede ser 0%).");return}
     aplicarAjustes(AJC,AJP,AJO);
     CRX.forEach(function(o){var e=o.it.e;if(o.c!==e.c)aprender(o.x,o.c);e.m=o.m;e.c=o.c;e.x=o.x;e.f=o.f;e.me=o.me});
@@ -867,10 +884,10 @@ $("nb").onclick=async function(){
     CF.forEach(function(c){var k=c.r.id+"|"+proxDias(c.f,rds(c.r));if(L.rskip.indexOf(k)<0)L.rskip.push(k)});
     NSo.forEach(function(d){L.skip.push(d.f)});RU.forEach(function(u){RUT.push(u)});G.forEach(function(g){aprender(g.x,g.c);L.expenses.push(g)});E.forEach(function(e){L.events.push(e)});IN.forEach(function(i){sumarIng(i.f,i.v,i.p,i.me)});MV.forEach(function(m){L.mv.push(m)});
     if(FF.length){L.fx=FF[0].v;L.fxAuto=false}if(AA.length)L.saves.push({f:today,m:AA[0].m});
-    SPo.forEach(function(s){L.saves.push({f:today,ars:s.ars,fx:L.fx,m:Math.round(s.ars/L.fx*100)/100,me:s.me==="e"?"e":"t"})});$("nt").value="";out.innerHTML="";save();render();
+    SPo.forEach(function(s){if(s.aj)ajustarSaldo(s.aj,s.me);pasarAhorro(s.ars,s.me)});$("nt").value="";out.innerHTML="";save();render();
     var nc=CRX.length+CRI.length+CRM.length+CRE.length+AJC.length+AJP.length+AJO.length;
     medir("guardo");
-    if(SPo.length&&n===SPo.length)toast("Listo: pasé "+money(SPo[0].ars)+" al ahorro (≈ "+usd(SPo[0].ars/L.fx)+").");else
+    if(SPo.length&&n===SPo.length)toast("Listo: pasé "+money(SPo[0].ars)+" al ahorro (≈ "+usd(SPo[0].ars/L.fx)+"). Te quedan "+mny(diaVal())+" en "+ACC[0][0]+".");else
     toast(nc?"Listo, "+(nc===1?"corregí lo que me dijiste":"corregí "+nc+" cosas")+(n>nc?" y guardé el resto":"")+".":"Guardé lo de tu nota.")};
    no.onclick=function(){out.innerHTML="";medir("descarto")};
    out.appendChild(yes);out.appendChild(no)}
@@ -1442,6 +1459,10 @@ function capStart(){if(PRE||CAPLATER||ONB===0||!UID||$("pre").style.display!=="n
 function capEnd(){if(PRE)return;$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open")}
 // Ahorro por ingreso: al cargar un ingreso se separa un % (el de Ajustes o el que elijas para ese ingreso) y pasa en dólares al ahorro.
 // El aporte queda ligado al ingreso (aporte.ing = ingreso.id, en pesos en aporte.ars): si editás o borrás el ingreso, el aporte y el saldo se acomodan solos.
+// Pasar plata del día a día al ahorro (en pesos, desde transferencia o efectivo): se descuenta del día a día y suma al ahorro
+// en dólares a la cotización de hoy. Lo usan las notas ("separá 50 mil para el ahorro") y "Pasar al ahorro" en Objetivo de ahorro.
+function pasarAhorro(ars,me){ars=Math.round(ars);if(!(ars>0)||!(L.fx>0))return false;L.saves.push({f:today,ars:ars,fx:L.fx,m:Math.round(ars/L.fx*100)/100,me:me==="e"?"e":"t"});return true}
+function spDonde(s){return s.de==="e"?"tu efectivo":s.de==="t"?"transferencia":ACC[0][0]}
 function sepTot(){var t=0;L.saves.forEach(function(e){if(e.ars)t+=e.ars});return t}
 function diaVal(){return accVal(0)+ingTot()-sumM(L.expenses)-sepTot()}
 function pctOk(p){p=parseFloat(String(p).replace(",","."));return p>0?Math.min(p,100):0}
