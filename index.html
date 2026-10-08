@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#12A150">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=61">
+<link rel="stylesheet" href="styles.css?v=62">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -89,6 +89,7 @@
 <details class="gtema"><summary>6. Agenda, rutinas y avisos</summary>
 <p>En <b>📅 Fechas importantes</b> cargás turnos, parciales y vencimientos. La semana día por día y el mes completo están en <b>📅 Agenda y rutinas</b>.</p>
 <p>Las <b>rutinas</b> son lo que se repite (gym, clases, fútbol): elegís los días con los botones L M M J V S D. Las de hoy aparecen arriba de todo, en <b>📋 ¿Qué tenés hoy?</b></p>
+<p>Con <b>⚙️ Configuración → Tus calendarios</b> traés tus eventos de Google Calendar, el iPhone u Outlook: vinculando el link del calendario (después se actualiza solo) o subiendo el archivo una vez. Lo que se repite todas las semanas pasa como rutina.</p>
 <p>Con <b>Avisos por Telegram</b> (en ⚙️ Configuración), Petaca te manda un mensaje antes de cada evento marcado con 🔔.</p>
 </details>
 <details class="gtema"><summary>7. Si te equivocaste</summary>
@@ -105,7 +106,7 @@
 <p>En el celu, la <b>barra de abajo</b> te lleva directo a cada parte del panel, y <b>✍️ Contale</b> te deja escribiendo una nota.</p>
 <p><b>Instalala en el celular:</b> en iPhone, Safari → Compartir → "Agregar a inicio". En Android, Chrome → menú ⋮ → "Instalar app".</p>
 <p>Con <b>↕ Armar la formación</b> (arriba) ordenás las secciones a tu gusto.</p>
-<p>Todo lo que se configura está junto en <b>⚙️ Configuración</b>: los ajustes, la IA de Petaca, los avisos por Telegram, tu cuenta y la copia de seguridad para exportar tus datos.</p>
+<p>Todo lo que se configura está junto en <b>⚙️ Configuración</b>: los ajustes, tus calendarios, la IA de Petaca, los avisos por Telegram, tu cuenta y la copia de seguridad para exportar tus datos.</p>
 </details>
 <label class="sem hintsw"><input type="checkbox" id="hintsw" checked> Mostrar las recomendaciones 💡 en cada sección</label>
 </details></section>
@@ -136,6 +137,7 @@
 <div class="grupo" data-g="fechas" data-name="Fechas importantes">
 <section style="margin-bottom:16px">
 <h2>Fechas importantes</h2>
+<p class="sem" id="calh" style="display:none;margin:0 0 8px">📲 ¿Tenés tus fechas en Google Calendar, el iPhone u Outlook? <button class="lk" id="calir">Traelas a Petaca</button></p>
 <p class="sem" id="tgh" style="display:none;margin:0 0 8px">🔔 ¿Querés que te avise por Telegram? <button class="lk" id="tgo">Activar avisos</button></p>
 <div id="prox"></div>
 <div class="add">
@@ -225,13 +227,31 @@
 </div>
 
 <div class="grupo menu" data-g="ajustes" data-name="Configuración">
-<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-ajustes"><i aria-hidden="true">⚙️</i><span>Configuración<small>Ajustes, IA de Petaca, avisos por Telegram, tu cuenta y copia de seguridad</small></span></button></h2>
+<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-ajustes"><i aria-hidden="true">⚙️</i><span>Configuración<small>Ajustes, tus calendarios, IA de Petaca, avisos por Telegram, tu cuenta y copia de seguridad</small></span></button></h2>
 <div class="cols" id="m-ajustes">
 <section class="goal" data-c="ajustes" data-name="Ajustes"><details id="aj"><summary>Ajustes</summary>
 <p class="sem" style="margin-top:0">Configurá tus categorías de gasto, tu objetivo de ahorro y tus cuentas. Se guarda en tu cuenta.</p>
 <div id="ajf"></div>
 <div class="add"><button id="ajs">Guardar ajustes</button><button class="x" id="ajc">Descartar cambios</button></div>
 <p class="sem" id="ajm"></p>
+</details></section>
+<section class="goal" data-c="cal" data-name="Tus calendarios"><details id="cald"><summary>Tus calendarios</summary>
+<p class="sem" style="margin-top:0">Traé tus eventos de Google Calendar, el calendario del iPhone u Outlook. Lo que se repite todas las semanas pasa como rutina. Antes de agregar nada, te muestro lo que encontré.</p>
+<h3 class="tgh3">Vincular con el link del calendario</h3>
+<p class="sem">Petaca lo lee ahora y, cada vez que abrís la app, suma lo nuevo. El link es privado: no lo compartas con nadie.</p>
+<details class="calcomo"><summary>¿Dónde encuentro el link?</summary>
+<ul class="sem tgp">
+<li><b>Google Calendar</b> (desde la compu, en calendar.google.com): ⚙️ Configuración → en "Configuración de mis calendarios" elegí el tuyo → <b>Integrar el calendario</b> → copiá la <b>Dirección secreta en formato iCal</b>.</li>
+<li><b>iPhone (iCloud)</b>: app Calendario → <b>Calendarios</b> → ⓘ al lado del calendario → activá <b>Calendario público</b> → <b>Compartir enlace</b> → Copiar.</li>
+<li><b>Outlook</b> (en outlook.com): ⚙️ Configuración → Calendario → <b>Calendarios compartidos</b> → Publicar un calendario → elegí el calendario y "Puede ver todos los detalles" → Publicar → copiá el <b>vínculo ICS</b>.</li>
+</ul></details>
+<div class="add"><input id="calu" type="url" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://… o webcal://…" aria-label="Link del calendario"><button id="calb">Vincular</button></div>
+<div id="call"></div>
+<h3 class="tgh3">O subí un archivo, una sola vez</h3>
+<p class="sem">Si exportaste tu calendario, subí el <b>.ics</b> (o el <b>.zip</b> que baja Google en ⚙️ Configuración → Importar y exportar → Exportar).</p>
+<label class="calfile"><input type="file" id="calf" accept=".ics,.zip,text/calendar,application/zip" multiple><span>📂 Elegir archivo</span></label>
+<p class="sem" id="calm"></p>
+<div id="calp"></div>
 </details></section>
 <section class="goal" data-c="ia" data-name="IA de Petaca"><details id="iad"><summary>IA de Petaca</summary>
 <p class="sem" style="margin-top:0">"Contale a Petaca" usa Gemini, la IA de Google. Sin clave propia compartís la IA con el resto, con un límite de 15 notas por día. Con tu propia clave, que es gratis, tenés tu propio cupo.</p>
@@ -286,6 +306,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=61"></script>
+<script src="app.js?v=62"></script>
 </body>
 </html>

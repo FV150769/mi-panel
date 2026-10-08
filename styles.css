@@ -318,6 +318,21 @@ body.sinhints .hint{display:none}
 .tgp{margin:6px 0 0;padding-left:20px}
 .tgp li{margin:3px 0}
 .tgh3{font-size:15px;margin:16px 0 0}
+/* Tus calendarios */
+.calcomo{margin:8px 0 0}
+.calcomo>summary{font-size:14px;color:var(--acc2)}
+.calfile{position:relative;display:inline-flex;margin:10px 0 0}
+.calfile input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
+.calfile span{display:inline-flex;align-items:center;min-height:44px;padding:8px 18px;background:var(--panel);color:var(--ink);border:var(--borde);border-radius:999px;box-shadow:0 3px 0 var(--ink);font:700 15px/1 var(--f-cond);letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
+.calfile input:focus-visible+span{outline:3px solid var(--acc);outline-offset:2px}
+#call .row{flex-wrap:wrap;gap:2px 12px}
+#call .row small{color:var(--mute);font-weight:500}
+#call .row>span:last-child{display:flex;align-items:center;gap:12px;margin-left:auto;flex:none}
+#call .row button.x.des{width:auto;padding:0 4px}
+/* Subtítulos dentro de las tarjetas de Configuración (Tus calendarios, Avisos por Telegram) */
+.goal h3.tgh3{font-size:16px;letter-spacing:.05em;margin:18px 0 2px}
+.calprev{margin:12px 0 0;padding:12px 14px;border:2px dashed var(--line);border-radius:var(--radio-s);background:var(--bg)}
+.calprev>p:first-child{margin:0 0 6px;font-weight:700}
 #tgd .tgav label{display:flex;flex-direction:column;gap:4px;flex:1 1 120px;margin:0}
 
 /* ===== Aviso de abajo con "Deshacer" ===== */

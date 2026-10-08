@@ -12,6 +12,7 @@ var TG=false,TGCHAT="",TGAV={d:[7,1],h:"09:00",hs:0};
 var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelBot"), para mostrar el link en Avisos
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var ONB=1; // 0 = cuenta nueva que todavía no terminó la pretemporada (la bienvenida de 3 pasos)
+var CALS=[]; // calendarios vinculados por link: {id,u,n,t,err} (ver "Tus calendarios")
 var CAP=0,CAPLATER=false,PAT=0; // CAP=1: ya cargó su capital inicial. PAT=1: ya contó cuánto tiene ahorrado e invertido. CAPLATER: tocó "Más tarde" en esta visita
 var AHO=10,WP=null; // AHO: % de cada ingreso que se propone separar para ahorro. WP: % elegido para el ingreso que se está cargando
 var SEED={events:[],expenses:[]};
@@ -49,8 +50,8 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
   if(f){cr.appendChild(document.createTextNode("Foto de fondo: "));var l1=document.createElement("a");l1.href=f.u;l1.target="_blank";l1.rel="noopener";l1.textContent=f.t;cr.appendChild(l1);
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
-try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v61";
+try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
+var DOC=null,VER="v62";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -70,7 +71,7 @@ var UNDO=[],PREV=null,HAVECFG=false,SYNCED=false;
 function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
 function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
 function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
-function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],mv:q.mv||[],bal:q.bal||{},rskip:q.rskip||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
+function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],mv:q.mv||[],bal:q.bal||{},rskip:q.rskip||[],calno:q.calno||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
 window.addEventListener("error",function(e){reportar("Error en la página: "+e.message,(e.error&&e.error.stack)||(e.filename+":"+e.lineno+":"+e.colno));var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message+" (quedó registrado para arreglarlo)"}stat("Error en la página: "+e.message)});
 window.addEventListener("unhandledrejection",function(e){var r=e.reason;reportar("Error sin manejar: "+(r&&(r.message||r.code)||r),r&&r.stack)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -219,7 +220,7 @@ function render(){var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
   list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.t||"Todo el día"));r.appendChild(el("span","",e.x));evBtns(r,e,f);box.appendChild(r)});
   ag.appendChild(box);
  }
- renderMes();renderRut();renderHoy();
+ renderMes();renderRut();renderHoy();calUI();
  var ex=allExp(),tot=0,by={};
  ex.forEach(function(e){tot+=e.m;by[e.c]=(by[e.c]||0)+e.m});
  var bt=0;for(var k in BUDGET)bt+=BUDGET[k];
@@ -355,14 +356,18 @@ function renderHist(){
  if(app)h.appendChild(el("p","sem","Las barras parten de tus capturas de la app y suman lo que cargás en este panel."));
 }
 function mon(){var d=new Date(now);d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)}
+var PROXALL=false;
 function renderExtra(){
  renderHist();renderMov();
  var pr=$("prox");pr.innerHTML="";
- FECHAS.filter(function(e){return e.f>=today&&vis(e)}).map(function(e){return{o:e,k:"F"}}).concat(L.events.filter(function(e){return e.f>=today}).map(function(e){return{o:e,k:"E"}})).sort(function(a,b){return(a.o.f+a.o.t).localeCompare(b.o.f+b.o.t)}).forEach(function(it){var e=it.o;
+ // Las 8 más cercanas; con calendarios traídos pueden ser muchas, así que el resto queda en "Ver todas".
+ var PL=FECHAS.filter(function(e){return e.f>=today&&vis(e)}).map(function(e){return{o:e,k:"F"}}).concat(L.events.filter(function(e){return e.f>=today}).map(function(e){return{o:e,k:"E"}})).sort(function(a,b){return(a.o.f+a.o.t).localeCompare(b.o.f+b.o.t)});
+ (PROXALL?PL:PL.slice(0,8)).forEach(function(it){var e=it.o;
   var n=Math.round((new Date(e.f+"T00:00")-new Date(today+"T00:00"))/864e5),r=el("div","row");
   r.appendChild(el("span","",(e.t?e.t+" ":"")+e.x));
   var rt=el("span","",fd(e.f)+(n===0?" · hoy":n===1?" · mañana":" · en "+n+" días"));if(n<=7)r.style.fontWeight="700";
   evBtns(rt,it,e.f,r);r.appendChild(rt);pr.appendChild(r)});
+ if(PL.length>8){var vt=el("button","lk",PROXALL?"Ver menos":"Ver todas ("+PL.length+")");vt.style.padding="0";vt.onclick=function(){PROXALL=!PROXALL;render()};pr.appendChild(vt)}
  var sp=0;L.expenses.forEach(function(e){sp+=e.m});
  var wk=mon(),ws=0;L.expenses.forEach(function(e){if(e.f>=wk)ws+=e.m});
  var wi=null,wsep=0;L.ing.forEach(function(e){if(e.k===wk&&!e.adj)wi=(wi||0)+e.v});L.saves.forEach(function(e){if(e.ars&&e.f>=wk)wsep+=e.ars});var wl=(wi||0)-wsep-ws;
@@ -588,13 +593,14 @@ function descr(it){var e=it.e;
 function cands(){var o={},t=[];
  function add(p,e){var k=p+t.length;o[k]={t:p,e:e};t.push(k+": "+descr(o[k]))}
  FECHAS.forEach(function(e){if(vis(e)&&e.f>=today)add("F",e)});
- L.events.forEach(function(e){add("E",e)});
+ L.events.filter(function(e){return e.f>=plus(today,-14)}).sort(function(a,b){return(a.f+a.t).localeCompare(b.f+b.t)}).slice(0,80).forEach(function(e){add("E",e)});
  L.expenses.slice(-15).forEach(function(e){add("X",e)});
  L.ing.slice(-8).forEach(function(e){add("I",e)});
  L.mv.slice(-5).forEach(function(e){add("M",e)});
  RUT.forEach(function(e){if(!e.to||e.to>=today)add("R",e)});
  return{o:o,list:t.join(" | ")}}
-function drop(a,x){var i=a.indexOf(x);if(i>=0)a.splice(i,1)}
+// Lo que vino de un calendario y se borra queda anotado (L.calno), así el calendario vinculado no lo vuelve a traer.
+function drop(a,x){var i=a.indexOf(x);if(i>=0){a.splice(i,1);if(x&&x.cal&&(a===L.events||a===RUT)&&L.calno.indexOf(x.cal)<0)L.calno.push(x.cal)}}
 function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d}
 function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. En cada ingreso agregá \"porcentaje_ahorro\":number SOLO si la nota dice cuánto separar de ese ingreso, si no null. Para los gastos usá SIEMPRE una de las categorías actuales (la más parecida por el detalle); si ninguna encaja, Otros. Ajustes actuales del usuario: presupuesto por mes de cada categoría: "+Object.keys(BUDGET).map(function(k){return k+" "+(BUDGET[k]>0?"$"+BUDGET[k]:"sin presupuesto")}).join(", ")+"; separa el "+AHO+"% de cada ingreso para ahorro; objetivo de ahorro \""+GOAL.x+"\" de US$"+GOAL.target+(metaFin()?" hasta el "+metaFin():" sin plazo")+". Si la nota pide CAMBIAR un ajuste (el presupuesto de una categoría, crear, renombrar o quitar una categoría, el % que separa de cada ingreso o el objetivo de ahorro), devolvé \"ajustes\":{\"categorias\":[{\"nombre\":categoría actual o nueva,\"presupuesto\":number nuevo por mes o null si no cambia,\"nuevo_nombre\":string o \"\",\"quitar\":true solo si la quiere borrar}],\"porcentaje_ahorro\":number o null,\"objetivo\":{\"nombre\":string o \"\",\"meta_usd\":number o null,\"fecha_limite\":\"YYYY-MM-DD\" o \"\"} o null}; si no pide cambiar nada, no lo devuelvas. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000; '5,000' y '5.000' son cinco mil (la coma o el punto separan los miles), '1,5 palos' es 1500000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé también \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" si dice hasta qué hora o \"\",\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
 // Gemini vía la Edge Function "gemini" de Supabase: la clave vive como secreto en Supabase y nunca llega al navegador.
@@ -738,8 +744,8 @@ function aplicarAjustes(AJC,AJP,AJO){if(!AJC.length&&!AJP.length&&!AJO.length)re
  AJO.forEach(function(o){GOAL={x:o.x,target:o.t,saved:GOAL.saved||0,pl:o.h?{u:"f"}:null,hasta:o.h||null}});
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var op=document.createElement("option");op.textContent=k;cs.appendChild(op)});
  HAVECFG=true;if($("aj")&&$("aj").open)ajForm()}
-function cfgObj(){return{EQUIPO:EQUIPO,ONB:ONB,CAP:CAP,PAT:PAT,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
-function applyCfg(c){if(!c)return;EQUIPO=eqDe(c.EQUIPO);vestir();ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;PAT=c.PAT?1:0;AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{EQUIPO:EQUIPO,ONB:ONB,CAP:CAP,PAT:PAT,CALS:CALS,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT}}
+function applyCfg(c){if(!c)return;EQUIPO=eqDe(c.EQUIPO);vestir();ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;PAT=c.PAT?1:0;CALS=c.CALS||[];AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
  cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
@@ -755,7 +761,7 @@ async function pull(){
  if(q&&q.L){if(!HAVECFG&&q.cfg){applyCfg(q.cfg);HAVECFG=true;render()}
   // Nunca pisar datos con una copia vacía: si un lado está vacío y el otro no, gana el que tiene datos.
   var ev=vacio(q.L),lv=vacio(L);if(lv&&!ev)adopt(q);else if(ev&&!lv)await push();else if((q.L.t||0)>=(L.t||0))adopt(q);else await push();SYNCED=true;stat("Sincronizado con tu nube · "+VER);
-  if(ONB===0)preStart();else capStart()}
+  if(ONB===0)preStart();else capStart();calSync()}
  else{HAVECFG=true;ONB=0;await push();SYNCED=true;stat("Nube inicializada · "+VER);preStart()}
 }
 async function enter(session){
@@ -1000,6 +1006,144 @@ $("ias").onclick=async function(){var m=$("iam"),k=$("iak").value.replace(/\s+/g
  m.textContent="¡Golazo! Tu clave funciona: desde ahora Petaca usa tu propio cupo."};
 $("iax").onclick=async function(){var m=$("iam");if(!SB||!UID)return;var r=await SB.from("ia_claves").delete().eq("user_id",UID);
  m.textContent=r.error?"No pude quitarla: "+r.error.message:"Listo, volvés a usar la IA compartida.";if(!r.error)$("iax").style.display="none"};
+// Tus calendarios: traer los eventos de Google Calendar, el iPhone (iCloud) u Outlook, con un archivo .ics/.zip (una vez)
+// o con el link privado del calendario (Petaca lo vuelve a leer al abrir la app y suma lo nuevo).
+// Lo que se repite todas las semanas con horario pasa como rutina; lo demás que se repite (cumpleaños, cada 15 días,
+// una vez por mes) se agenda hasta un año adelante. Cada cosa traída guarda su id del calendario (cal) y cómo vino (ch):
+// así no se duplica y, si la cambiaste en Petaca, no se pisa. Lo que borrás queda en L.calno para no volver a traerlo.
+var CALPLAN=null,CALBUSY=false;
+var DIA2={SU:0,MO:1,TU:2,WE:3,TH:4,FR:5,SA:6};
+function icsTxt(v){return String(v).replace(/\\n/gi," ").replace(/\\([,;\\])/g,"$1").replace(/\s+/g," ").trim()}
+// Hora de pared en otra zona horaria → hora de acá. Si la zona no es conocida (Outlook usa nombres de Windows), queda como está.
+function enZona(y,mo,d,h,mi,tz){try{var g=Date.UTC(y,mo,d,h,mi),q={};
+ new Intl.DateTimeFormat("en-US",{timeZone:tz,hourCycle:"h23",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}).formatToParts(new Date(g)).forEach(function(x){q[x.type]=+x.value});
+ return new Date(g-(Date.UTC(q.year,q.month-1,q.day,q.hour%24,q.minute)-g))}catch(e){return null}}
+function icsFecha(v,p){var m=/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/.exec(String(v).trim());if(!m)return null;
+ if(!m[4])return{f:m[1]+"-"+m[2]+"-"+m[3],t:"",ad:true};
+ var dt=m[7]?new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5])):p&&p.TZID?enZona(+m[1],+m[2]-1,+m[3],+m[4],+m[5],p.TZID):null;
+ return dt?{f:iso(dt),t:pad(dt.getHours())+":"+pad(dt.getMinutes()),ad:false}:{f:m[1]+"-"+m[2]+"-"+m[3],t:m[4]+":"+m[5],ad:false}}
+function icsRegla(v){var r={};String(v).split(";").forEach(function(x){var i=x.indexOf("=");if(i>0)r[x.slice(0,i).toUpperCase()]=x.slice(i+1)});var u=r.UNTIL?icsFecha(r.UNTIL,{}):null;
+ return{fq:String(r.FREQ||"").toUpperCase(),iv:Math.max(1,parseInt(r.INTERVAL,10)||1),n:parseInt(r.COUNT,10)||0,hasta:u?u.f:"",
+  bd:r.BYDAY?r.BYDAY.split(",").map(function(x){var m=/^([+-]?\d+)?(MO|TU|WE|TH|FR|SA|SU)$/i.exec(x.trim());return m?{n:m[1]?+m[1]:0,d:DIA2[m[2].toUpperCase()]}:null}).filter(Boolean):[],
+  bmd:r.BYMONTHDAY?r.BYMONTHDAY.split(",").map(Number):[],bm:r.BYMONTH?r.BYMONTH.split(",").map(Number):[]}}
+// Lee un .ics: nombre del calendario y sus eventos (sin las alarmas ni las zonas horarias, que vienen anidadas).
+function icsLeer(txt){txt=String(txt||"");var ls=txt.replace(/\r\n?/g,"\n").replace(/\n[ \t]/g,"").split("\n"),evs=[],cur=null,dep=0,nom="";
+ ls.forEach(function(l){var m=/^([A-Za-z0-9-]+)((?:;[^:]*)?):(.*)$/.exec(l);if(!m)return;var k=m[1].toUpperCase(),v=m[3],p={};
+  if(k==="BEGIN"){if(cur)dep++;else if(v.trim().toUpperCase()==="VEVENT"){cur={ex:[]};dep=0}return}
+  if(k==="END"){if(cur){if(dep)dep--;else{evs.push(cur);cur=null}}return}
+  if(!cur){if(k==="X-WR-CALNAME"&&!nom)nom=icsTxt(v);return}
+  if(dep)return;
+  m[2].split(";").slice(1).forEach(function(x){var i=x.indexOf("=");if(i>0)p[x.slice(0,i).toUpperCase()]=x.slice(i+1).replace(/^"|"$/g,"")});
+  if(k==="UID")cur.uid=v.trim();else if(k==="SUMMARY")cur.x=icsTxt(v);else if(k==="STATUS")cur.st=v.trim().toUpperCase();
+  else if(k==="DTSTART")cur.s=icsFecha(v,p);else if(k==="DTEND")cur.e=icsFecha(v,p);else if(k==="RRULE")cur.rr=icsRegla(v);
+  else if(k==="EXDATE")v.split(",").forEach(function(x){var d=icsFecha(x,p);if(d)cur.ex.push(d.f)});
+  else if(k==="RECURRENCE-ID")cur.rid=icsFecha(v,p)});
+ return{ok:/BEGIN:VCALENDAR/i.test(txt),n:nom,evs:evs}}
+function difDias(a,b){return Math.round((new Date(b+"T00:00")-new Date(a+"T00:00"))/864e5)}
+// n-ésimo día de la semana del mes: 1 = el primero, -1 = el último, 0 = todos.
+function enMes(d,n){if(!n)return true;var k=d.getDate();if(n>0)return Math.ceil(k/7)===n;return Math.ceil((new Date(d.getFullYear(),d.getMonth()+1,0).getDate()-k+1)/7)===-n}
+// Fechas (desde..hasta) en que cae un evento que se repite, como mucho "tope". Respeta INTERVAL, BYDAY, BYMONTHDAY, BYMONTH, COUNT, UNTIL y EXDATE.
+function icsFechas(e,desde,hasta,tope){var r=e.rr,s=e.s.f,d0=new Date(s+"T00:00"),fin=r.hasta&&r.hasta<hasta?r.hasta:hasta,out=[],n=0,l0=monOf(s);
+ for(var f=s,i=0;f<=fin&&i<40000;f=plus(f,1),i++){var d=new Date(f+"T00:00"),dw=d.getDay(),ok;
+  if(r.fq==="DAILY")ok=difDias(s,f)%r.iv===0&&(!r.bd.length||r.bd.some(function(b){return b.d===dw}));
+  else if(r.fq==="WEEKLY")ok=(r.bd.length?r.bd.some(function(b){return b.d===dw}):dw===d0.getDay())&&Math.round(difDias(l0,monOf(f))/7)%r.iv===0;
+  else if(r.fq==="MONTHLY"||r.fq==="YEARLY"){
+   ok=r.fq==="MONTHLY"?((d.getFullYear()-d0.getFullYear())*12+d.getMonth()-d0.getMonth())%r.iv===0
+    :(d.getFullYear()-d0.getFullYear())%r.iv===0&&(r.bm.length?r.bm.indexOf(d.getMonth()+1)>=0:d.getMonth()===d0.getMonth());
+   if(ok)ok=r.bmd.length?r.bmd.some(function(x){return x>0?d.getDate()===x:d.getDate()===new Date(d.getFullYear(),d.getMonth()+1,0).getDate()+x+1})
+    :r.bd.length?r.bd.some(function(b){return b.d===dw&&enMes(d,b.n)}):d.getDate()===d0.getDate()}
+  else ok=f===s;
+  if(!ok)continue;if(r.n&&++n>r.n)break;
+  if(f>=desde&&e.ex.indexOf(f)<0){out.push(f);if(out.length>=tope)break}}
+ return out}
+function calCh(o){return o.ds?[o.ds.join(","),o.t,o.t2||"",o.x,o.from||"",o.to||""].join("|"):[o.f,o.t||"",o.x].join("|")}
+// Qué cambiaría en Petaca con este calendario: nuevos, cambios (de lo que no tocaste) y, si está vinculado, lo que ya no está.
+function calPlan(cal,cid){var fin=plus(today,365),its=[],seen={},P={nuevos:[],cambios:[],quitar:[],mios:[],ya:0,cid:cid};
+ var base={};cal.evs.forEach(function(e){if(e.uid&&!e.rid&&e.rr)base[e.uid]=e});
+ cal.evs.forEach(function(e){if(e.rid&&base[e.uid])base[e.uid].ex.push(e.rid.f)});
+ cal.evs.forEach(function(e){if(!e.uid||!e.s||e.st==="CANCELLED")return;var x=e.x||"(sin título)",k=e.uid+(e.rid?"@"+e.rid.f:"");
+  if(!e.rr){if(e.s.f<today)return;var u=e.e&&e.s.ad?plus(e.e.f,-1):"";its.push({k:k,o:{f:e.s.f,t:e.s.t,x:x+(u>e.s.f?" (hasta "+fd(u)+")":"")}});return}
+  var r=e.rr,sem=!e.s.ad&&r.iv===1&&(r.fq==="WEEKLY"||r.fq==="DAILY")&&!r.bd.some(function(b){return b.n});
+  if(sem){var to=r.hasta||(r.n?icsFechas(e,e.s.f,plus(e.s.f,3650),r.n).pop()||"":"");if(to&&to<today)return;
+   var ds=r.bd.length?r.bd.map(function(b){return b.d}):r.fq==="DAILY"?[1,2,3,4,5,6,0]:[new Date(e.s.f+"T00:00").getDay()];
+   its.push({k:k,R:1,ex:e.ex.filter(function(f){return f>=today}),o:{ds:ordDias(ds),t:e.s.t,t2:e.e&&!e.e.ad&&e.e.f===e.s.f&&e.e.t!==e.s.t?e.e.t:"",x:x,from:e.s.f,to:to}});return}
+  icsFechas(e,today,fin,60).forEach(function(f){its.push({k:k+"@"+f,o:{f:f,t:e.s.t,x:x}})})});
+ var hay={};L.events.concat(RUT).forEach(function(o){if(o.cal)hay[o.cal]=o});
+ its.forEach(function(it){if(seen[it.k])return;seen[it.k]=1;if(L.calno.indexOf(it.k)>=0)return;var o=hay[it.k];
+  if(!o)P.nuevos.push(it);else if(calCh(o)===o.ch&&calCh(it.o)!==o.ch)P.cambios.push([o,it]);else{P.ya++;if(cid!=="f")P.mios.push(o)}});
+ if(cid!=="f")L.events.concat(RUT).forEach(function(o){if(o.cid===cid&&!seen[o.cal]&&calCh(o)===o.ch&&(o.ds?!o.to||o.to>=today:o.f>=today))P.quitar.push(o)});
+ return P}
+function calAplicar(P,cid){
+ P.nuevos.forEach(function(it){var o=it.o;o.cal=it.k;o.cid=cid;o.ch=calCh(o);
+  if(it.R){o.id="r"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);o.d=o.ds[0];RUT.push(o);it.ex.forEach(function(f){L.rskip.push(o.id+"|"+f)})}
+  else{o.imp=false;L.events.push(o)}});
+ P.cambios.forEach(function(c){var o=c[0];Object.keys(c[1].o).forEach(function(k){o[k]=c[1].o[k]});if(o.ds)o.d=o.ds[0];o.ch=calCh(o);o.cid=cid});
+ P.quitar.forEach(function(o){var a=o.ds?RUT:L.events,i=a.indexOf(o);if(i>=0)a.splice(i,1)});
+ P.mios.forEach(function(o){o.cid=cid})}
+function calCuenta(P){var e=P.nuevos.filter(function(i){return!i.R}).length,r=P.nuevos.length-e;
+ return[e?cant(e,"evento","eventos"):"",r?cant(r,"rutina","rutinas"):"",P.cambios.length?cant(P.cambios.length,"cambio","cambios"):"",P.quitar.length?cant(P.quitar.length,"borrado","borrados"):""].filter(Boolean).join(", ")}
+function calNombre(cal,u){if(cal.n)return cal.n;var h="";try{h=new URL(u).hostname}catch(e){}
+ return/google/.test(h)?"Google Calendar":/icloud|apple/.test(h)?"Calendario del iPhone":/outlook|office|live/.test(h)?"Outlook":h||"tu calendario"}
+// Muestra lo que encontró y espera que confirmes antes de tocar tu agenda.
+function calVista(P,nom,ok){var w=$("calp"),m=$("calm");w.innerHTML="";m.textContent="";CALPLAN=null;
+ if(!P.nuevos.length&&!P.cambios.length){m.textContent="En "+nom+" no encontré nada nuevo desde hoy"+(P.ya?" ("+cant(P.ya,"cosa ya estaba","cosas ya estaban")+" en Petaca).":".");if(ok){calAplicar(P,P.cid);ok()}return}
+ CALPLAN=P;var c=el("div","calprev");c.appendChild(el("p","","En "+nom+" encontré "+calCuenta(P)+(P.ya?" ("+cant(P.ya,"cosa ya estaba","cosas ya estaban")+" en Petaca)":"")+":"));
+ var L2=P.nuevos.slice().sort(function(a,b){return((a.o.f||a.o.from)+a.o.t).localeCompare((b.o.f||b.o.from)+b.o.t)});
+ L2.slice(0,8).forEach(function(it){var o=it.o,r=el("div","row");r.appendChild(el("span","",o.ds?"🔁 "+o.x:o.x));r.appendChild(el("span","",o.ds?diasTxt(o.ds)+" "+o.t:fd(o.f)+(o.t?" "+o.t:"")));c.appendChild(r)});
+ if(L2.length>8)c.appendChild(el("p","sem","y "+(L2.length-8)+" más."));
+ c.appendChild(el("p","sem","Lo que se repite todas las semanas queda como rutina (🔁); lo demás se agenda hasta un año adelante. Después lo podés editar o borrar como cualquier otra cosa."));
+ var b=el("div","add"),si=el("button","","Agregar a mi agenda"),no=el("button","x","Cancelar");
+ si.onclick=function(){if(CALPLAN!==P)return;calAplicar(P,P.cid);CALPLAN=null;if(ok)ok();HAVECFG=true;save();render();calUI();w.innerHTML="";
+  toast("Listo: agregué "+calCuenta(P)+" de "+nom+".")};
+ no.onclick=function(){CALPLAN=null;w.innerHTML="";m.textContent=""};b.appendChild(si);b.appendChild(no);c.appendChild(b);w.appendChild(c);c.scrollIntoView({block:"nearest",behavior:"smooth"})}
+async function calBajar(u){var r=await SB.functions.invoke("calendario",{body:{url:u}});
+ if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
+ var cal=icsLeer(r.data&&r.data.ics);if(!cal.ok)throw new Error("Ese link no es de un calendario.");return cal}
+// Lee los .ics de un .zip (Google Calendar exporta así) sin librerías: el navegador descomprime con DecompressionStream.
+async function zipIcs(buf){var b=new Uint8Array(buf),v=new DataView(buf),out=[],e=-1,td=new TextDecoder();
+ for(var i=b.length-22;i>=Math.max(0,b.length-65557);i--)if(v.getUint32(i,true)===0x06054b50){e=i;break}
+ if(e<0)throw new Error("zip");
+ for(var k=0,n=v.getUint16(e+10,true),p=v.getUint32(e+16,true);k<n&&v.getUint32(p,true)===0x02014b50;k++){
+  var met=v.getUint16(p+10,true),cs=v.getUint32(p+20,true),ln=v.getUint16(p+28,true),off=v.getUint32(p+42,true),nom=td.decode(b.subarray(p+46,p+46+ln));
+  p+=46+ln+v.getUint16(p+30,true)+v.getUint16(p+32,true);if(!/\.ics$/i.test(nom))continue;
+  var ini=off+30+v.getUint16(off+26,true)+v.getUint16(off+28,true),dat=b.subarray(ini,ini+cs);
+  if(met===0)out.push(td.decode(dat));else if(met===8)out.push(await new Response(new Blob([dat]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text())}
+ return out}
+function calHora(t){var d=new Date(t);return iso(d)===today?"hoy "+pad(d.getHours())+":"+pad(d.getMinutes()):"el "+fd(iso(d))}
+function calUI(){var l=$("call");if(!l)return;l.innerHTML="";var th=$("calh");if(th)th.style.display=CALS.length||!UID||L.events.some(function(e){return e.cal})?"none":"";
+ CALS.forEach(function(c){var r=el("div","row"),s=el("span","",c.n||"Calendario");s.appendChild(el("small","",c.err?" · ⚠️ "+c.err:c.t?" · leído "+calHora(c.t):""));
+  var rt=el("span"),a=el("button","x","↻"),x=el("button","x des","Desvincular");a.title="Leer ahora";a.setAttribute("aria-label","Leer ahora "+(c.n||"el calendario"));
+  a.onclick=function(){calSync(c)};x.onclick=function(){drop(CALS,c);HAVECFG=true;save();calUI();toast("Dejé de leer "+(c.n||"el calendario")+". Lo que ya trajiste queda en tu agenda.")};
+  rt.appendChild(a);rt.appendChild(x);r.appendChild(s);r.appendChild(rt);l.appendChild(r)})}
+// Calendarios vinculados: al abrir la app (y al volver a ella) se releen si pasaron más de 3 horas; con ↻, en el momento.
+async function calSync(uno){if(CALBUSY||!SB||!UID||!SYNCED||PRE||!CALS.length)return;CALBUSY=true;var hubo=[],cambio=false;
+ try{for(var i=0;i<CALS.length;i++){var c=CALS[i];if(uno?c!==uno:Date.now()-(c.t||0)<3*3600e3)continue;
+   try{var cal=await calBajar(c.u),P=calPlan(cal,c.id);c.n=calNombre(cal,c.u);c.err="";
+    if(P.nuevos.length||P.cambios.length||P.quitar.length){calAplicar(P,c.id);cambio=true;hubo.push(c.n+": "+calCuenta(P))}}
+   catch(e){c.err=String(e&&e.message||e).slice(0,140)}
+   c.t=Date.now()}}
+ finally{CALBUSY=false}
+ HAVECFG=true;if(cambio){save();render();toast("Actualicé tus calendarios. "+hubo.join(" · ")+".")}else{save0();PREV=snap()}
+ calUI();if(uno&&!cambio)toast(uno.err?"No pude leer "+(uno.n||"el calendario")+": "+uno.err:"Ya estaba todo al día con "+(uno.n||"el calendario")+".")}
+$("calb").onclick=async function(){var m=$("calm"),u=$("calu").value.trim().replace(/^webcals?:\/\//i,"https://");$("calp").innerHTML="";
+ if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");
+ if(!/^https:\/\/\S+$/i.test(u))return(m.textContent="Pegá el link completo del calendario: empieza con https:// o webcal://");
+ if(CALS.some(function(x){return x.u===u}))return(m.textContent="Ese calendario ya está vinculado. Tocá ↻ para leerlo ahora.");
+ m.textContent="Leyendo tu calendario…";$("calb").disabled=true;
+ try{var cal=await calBajar(u),id="c"+Date.now().toString(36),nom=calNombre(cal,u),P=calPlan(cal,id);
+  calVista(P,nom,function(){if(!CALS.some(function(x){return x.u===u}))CALS.push({id:id,u:u,n:nom,t:Date.now(),err:""});$("calu").value="";HAVECFG=true;save();calUI();
+   if(!P.nuevos.length&&!P.cambios.length)toast("Vinculé "+nom+": cuando agregues algo ahí, lo sumo solo.")})}
+ catch(e){m.textContent="No pude leer el calendario: "+(e&&e.message||e)}
+ finally{$("calb").disabled=false}};
+$("calf").onchange=async function(){var inp=this,fs=[].slice.call(inp.files||[]),m=$("calm"),evs=[],nom="";$("calp").innerHTML="";if(!fs.length)return;
+ m.textContent="Leyendo el archivo…";
+ try{for(var i=0;i<fs.length;i++){var f=fs[i],ts=/\.zip$/i.test(f.name)||f.type==="application/zip"?await zipIcs(await f.arrayBuffer()):[await f.text()];
+   ts.forEach(function(t){var c=icsLeer(t);if(!c.ok)return;evs=evs.concat(c.evs);if(!nom)nom=c.n})}
+  if(!evs.length&&!nom)return(m.textContent="Ese archivo no tiene un calendario (.ics) adentro.");
+  calVista(calPlan({evs:evs},"f"),nom||fs[0].name.replace(/\.(ics|zip)$/i,""),null)}
+ catch(e){m.textContent=String(e&&e.message)==="zip"?"No pude abrir el .zip. Descomprimilo y subí el archivo .ics que tiene adentro.":"No pude leer el archivo: "+(e&&e.message||e)}
+ finally{inp.value=""}};
+$("calir").onclick=function(){var d=$("cald");mostrar(d);d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})};
 // Pretemporada: la primera vez que alguien entra, 3 pasos para armar sus categorías, sus saldos y su objetivo.
 var PRE=null;
 var PRECAT=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas","Facultad","Salud","Ropa","Suscripciones","Deporte","Regalos","Viajes"],PREON=["Supermercado","Comida y delivery","Transporte","Salidas","Juntadas"];
