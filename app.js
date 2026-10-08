@@ -40,7 +40,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v52";
+var DOC=null,VER="v53";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -1168,31 +1168,49 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
  var SR=window.SpeechRecognition||window.webkitSpeechRecognition,GRAB=!!(window.MediaRecorder&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
  if(!SR&&!GRAB)return;b.style.display="";
  var rec=null,mr=null,chunks=[],tope=null,usarSR=!!SR,base="";
+ // Corte solo: cuando dejás de hablar 3 segundos la grabación termina sola. Si no empezás a hablar, espera 8.
+ var CALLA=3000,ESPERA=8000,calla=null;
+ function callar(ms){clearTimeout(calla);calla=ms?setTimeout(function(){if(rec)rec.stop()},ms):null}
+ // Al grabar audio se mide el volumen del micrófono para saber cuándo hay silencio.
+ // Si el navegador no deja medirlo, no se corta solo: se termina con ⏹ Listo como siempre.
+ function oido(ac,st,corta){if(!ac)return null;var an;try{an=ac.createAnalyser();an.fftSize=1024;ac.createMediaStreamSource(st).connect(an);if(ac.state!=="running")ac.resume().catch(function(){})}catch(e){return null}
+  var bu=new Uint8Array(an.fftSize),piso=-1,seg=0,ult=Date.now(),t0=ult,o={hablo:false,ok:false};
+  o.iv=setInterval(function(){var now=Date.now();if(ac.state!=="running"){ult=t0=now;return}o.ok=true;an.getByteTimeDomainData(bu);var s=0;for(var i=0;i<bu.length;i++){var v=(bu[i]-128)/128;s+=v*v}
+   var n=Math.sqrt(s/bu.length);piso=piso<0||n<piso?n:piso+(n-piso)*.005;
+   if(n>Math.max(.015,piso*2.5)){if(++seg>=2)o.hablo=true;ult=now}else seg=0;
+   if(o.hablo?now-ult>CALLA:now-t0>ESPERA)corta()},100);
+  return o}
  function ui(on,txt){b.classList.toggle("grabando",on);b.textContent=on?"⏹ Listo":"🎤 Hablar";b.setAttribute("aria-pressed",String(on));if(txt!=null)out.textContent=txt}
  function poner(t){t=String(t||"").trim();if(!t)return;nt.value=(base?base+" ":"")+t}
  function dictar(){base=nt.value.trim();var fin="";rec=new SR();rec.lang="es-AR";rec.interimResults=true;rec.continuous=true;
-  rec.onresult=function(e){var tmp="";for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fin+=e.results[i][0].transcript+" ";else tmp+=e.results[i][0].transcript}poner(fin+tmp)};
-  rec.onerror=function(e){var c=e.error;rec=null;
+  rec.onresult=function(e){var tmp="";for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)fin+=e.results[i][0].transcript+" ";else tmp+=e.results[i][0].transcript}poner(fin+tmp);callar(CALLA)};
+  rec.onerror=function(e){var c=e.error;rec=null;callar(0);
    if(c==="not-allowed"&&!GRAB||c==="audio-capture")return ui(false,"Petaca necesita permiso para usar el micrófono. Habilitalo en el navegador y probá de nuevo.");
    if(c==="no-speech")return ui(false,"No te escuché. Tocá 🎤 Hablar y decí la nota.");
    if(c==="aborted")return ui(false);
    // El dictado del navegador no anda acá: se pasa a grabar el audio.
    if(GRAB){usarSR=false;ui(false);grabar()}else ui(false,"No pude usar el micrófono ("+c+").")};
-  rec.onend=function(){if(rec){rec=null;ui(false,nt.value.trim()?"Revisá el texto y tocá \"Entender nota\".":"No te escuché. Probá de nuevo.")}};
-  try{rec.start();ui(true,"Te escucho… hablá y tocá ⏹ Listo cuando termines.")}catch(e){rec=null;if(GRAB){usarSR=false;grabar()}}}
+  rec.onend=function(){callar(0);if(rec){rec=null;ui(false,nt.value.trim()?"Revisá el texto y tocá \"Entender nota\".":"No te escuché. Probá de nuevo.")}};
+  try{rec.start();callar(ESPERA);ui(true,"Te escucho… cuando termines de hablar se corta solo (o tocá ⏹ Listo).")}catch(e){rec=null;callar(0);if(GRAB){usarSR=false;grabar()}}}
  async function grabar(){
   if(!SB||!UID)return ui(false,"Para mandar audio a Petaca iniciá sesión.");
-  var st;try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){return ui(false,"Petaca necesita permiso para usar el micrófono. Habilitalo en el navegador y probá de nuevo.")}
+  // El medidor de volumen se crea antes de pedir el micrófono, todavía dentro del toque (si no, algunos celulares no lo dejan andar).
+  var AC=window.AudioContext||window.webkitAudioContext,ac=null;try{ac=AC?new AC():null}catch(e){}
+  function cerrarAC(){if(ac&&ac.state!=="closed")ac.close().catch(function(){})}
+  var st;try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){cerrarAC();return ui(false,"Petaca necesita permiso para usar el micrófono. Habilitalo en el navegador y probá de nuevo.")}
   var tipo=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"].filter(function(t){return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)})[0];
   base=nt.value.trim();chunks=[];mr=tipo?new MediaRecorder(st,{mimeType:tipo}):new MediaRecorder(st);
   mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};
-  mr.onstop=async function(){clearTimeout(tope);st.getTracks().forEach(function(t){t.stop()});var m=mr.mimeType||tipo||"audio/webm";mr=null;ui(false,"Pasando tu audio a texto…");
-   var bl=new Blob(chunks,{type:m});if(bl.size<1500)return ui(false,"No te escuché. Probá de nuevo.");
+  var oy=oido(ac,st,function(){if(mr&&mr.state!=="inactive")mr.stop()});
+  mr.onstop=async function(){clearTimeout(tope);if(oy)clearInterval(oy.iv);cerrarAC();st.getTracks().forEach(function(t){t.stop()});var m=mr.mimeType||tipo||"audio/webm";mr=null;ui(false,"Pasando tu audio a texto…");
+   // Si el medidor anduvo y nunca escuchó voz, no se manda el audio (no gasta cupo de IA en silencio).
+   var bl=new Blob(chunks,{type:m});if(bl.size<1500||oy&&oy.ok&&!oy.hablo)return ui(false,"No te escuché. Probá de nuevo.");
    try{var d=await new Promise(function(ok,no){var fr=new FileReader();fr.onload=function(){ok(String(fr.result).split(",")[1]||"")};fr.onerror=no;fr.readAsDataURL(bl)});
     var r=await gemini({audio:d,mime:m});if(!r||!String(r.texto||"").trim())return ui(false,"No entendí el audio. Probá de nuevo, más cerca del micrófono.");
     poner(r.texto);ui(false,"Revisá el texto y tocá \"Entender nota\".")}
    catch(e){ui(false,"No pude pasar el audio a texto: "+(e&&e.message||e))}};
-  mr.start();ui(true,"Grabando… hablá y tocá ⏹ Listo cuando termines (hasta 2 minutos).");
+  if(oy&&ac.state!=="running")try{await Promise.race([ac.resume(),new Promise(function(r){setTimeout(r,300)})])}catch(e){}
+  mr.start();ui(true,oy&&ac.state==="running"?"Grabando… cuando termines de hablar se corta solo (o tocá ⏹ Listo).":"Grabando… hablá y tocá ⏹ Listo cuando termines (hasta 2 minutos).");
   tope=setTimeout(function(){if(mr&&mr.state!=="inactive")mr.stop()},120000)}
  b.onclick=function(){
   if(rec){var r=rec;r.stop();return}
