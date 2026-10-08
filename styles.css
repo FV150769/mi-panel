@@ -186,7 +186,7 @@ img,svg{max-width:100%}
   input,select,textarea{font-size:16px}
   .add{gap:6px}
   .add input,.add select{flex:1 1 100%}
-  .add input[type=date],.add input[type=time],.add input[type=number]{flex:1 1 calc(50% - 3px)}
+  .add input[type=date],.add input[type=time],.add input:is([type=number],[data-num]){flex:1 1 calc(50% - 3px)}
   .add button:not(.lk):not(.x){flex:1 1 auto;min-height:44px}
   .add label{flex:1 1 100%;display:flex;flex-direction:column;gap:4px}
   .mg{gap:3px}
@@ -199,7 +199,7 @@ img,svg{max-width:100%}
 /* Celulares chicos */
 @media (max-width:380px){
   .legend{flex-direction:column;gap:2px}
-  .add input[type=number]{flex-basis:100%}
+  .add input:is([type=number],[data-num]){flex-basis:100%}
   .mg button{min-height:34px;font-size:11px}
 }
 
@@ -280,13 +280,13 @@ body.auth #lm,body.auth #rm{text-align:center}
 .aj h3{font-size:13px;font-weight:600;margin:14px 0 2px}
 #ajf .ajr{flex-wrap:nowrap;margin:6px 0 0;align-items:center}
 #ajf .ajr input{flex:1 1 auto;min-width:0}
-#ajf .ajr input[type=number]{flex:0 0 130px}
+#ajf .ajr input:is([type=number],[data-num]){flex:0 0 130px}
 #ajf .ajr input[readonly]{background:var(--bg);color:var(--mute)}
 #ajf .ajg{flex-wrap:wrap}
 #ajf .ajg input{flex:1 1 100%}
-#ajf .ajg input[type=number]{flex:1 1 calc(50% - 4px)}
+#ajf .ajg input:is([type=number],[data-num]){flex:1 1 calc(50% - 4px)}
 #ajf .lk{margin-top:4px;padding:0 2px}
-@media (max-width:720px){#ajf .ajr input[type=number]{flex-basis:110px}}
+@media (max-width:720px){#ajf .ajr input:is([type=number],[data-num]){flex-basis:110px}}
 
 /* Pasos de Avisos por Telegram */
 .tgp{margin:6px 0 0;padding-left:20px}
@@ -318,7 +318,7 @@ body.arrgrp main>.grupo>:not(.ordbar){display:none}
 /* Plazo del objetivo de ahorro */
 #ajf .ajp{flex-wrap:wrap}
 #ajf .ajp select{flex:1 1 150px;min-width:0}
-#ajf .ajp input[type=number]{flex:0 1 110px}
+#ajf .ajp input:is([type=number],[data-num]){flex:0 1 110px}
 #ajf .ajp input[type=date]{flex:1 1 150px}
 #ajg-h{margin:6px 0 0}
 /* Resumen del mes y consejos */
@@ -429,14 +429,14 @@ body.pre-open{overflow:hidden}
 .prc{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line)}
 .prc label{flex:1;display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer}
 .prc input[type=checkbox]{width:20px;height:20px;min-height:0;flex:none;accent-color:var(--acc)}
-.prc input[type=number]{flex:0 0 130px;min-height:36px;padding:6px 10px}
+.prc input:is([type=number],[data-num]){flex:0 0 130px;min-height:36px;padding:6px 10px}
 .prc input:disabled{opacity:.4}
 .prf label{display:flex;flex-direction:column;gap:5px;margin:12px 0 0;font-weight:600;font-size:14px}
 .prf .add{margin:0}
 .prm{color:var(--warn);font-weight:600;min-height:1em}
 .prb{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
 .prb>span{display:flex;gap:8px;align-items:center}
-@media (max-width:720px){#pre{padding:12px 8px}#pre .pc{padding:16px}.prh img{width:60px}.prc input[type=number]{flex-basis:110px;font-size:16px}}
+@media (max-width:720px){#pre{padding:12px 8px}#pre .pc{padding:16px}.prh img{width:60px}.prc input:is([type=number],[data-num]){flex-basis:110px;font-size:16px}}
 /* Vista previa del ahorro al cargar un ingreso */
 .wp:empty{display:none}
 .wp{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:14px}
@@ -514,3 +514,7 @@ html.huye,html.huye body{overflow-x:hidden}
 .dias button.dia{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;background:var(--panel);color:var(--ink);border:1px solid var(--line);font-weight:700;letter-spacing:0}
 .dias button.dia.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
 .dias button.lk{min-height:32px;font-size:13px}
+
+/* Contale a Petaca: % para ahorro de cada ingreso, a elegir antes de guardar */
+.pctin{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.pctin.falta{outline:2px solid var(--warn);outline-offset:4px;border-radius:8px}
