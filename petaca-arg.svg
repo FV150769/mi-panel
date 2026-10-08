@@ -41,7 +41,10 @@
   <g transform="rotate(-28 90 92)">
     <clipPath id="cuerpo"><ellipse cx="90" cy="92" rx="23" ry="16"/></clipPath>
     <ellipse cx="90" cy="92" rx="23" ry="16" fill="#FFFFFF" stroke="none"/>
-    <path d="M70 74 h6 v36 h-6 Z M82 74 h6 v36 h-6 Z M94 74 h6 v36 h-6 Z M106 74 h6 v36 h-6 Z" fill="#74ACDF" stroke="none" clip-path="url(#cuerpo)"/>
+    <!-- Bastones verticales como la de la Selección: se enderezan contra la inclinación del cuerpo -->
+    <g clip-path="url(#cuerpo)"><g transform="rotate(28 90 92)">
+      <path d="M60 58 h6 v68 h-6 Z M72 58 h6 v68 h-6 Z M84 58 h6 v68 h-6 Z M96 58 h6 v68 h-6 Z M108 58 h6 v68 h-6 Z M120 58 h6 v68 h-6 Z" fill="#74ACDF" stroke="none"/>
+    </g></g>
     <ellipse cx="90" cy="92" rx="23" ry="16" fill="none"/>
   </g>
   <!-- Pañal -->
