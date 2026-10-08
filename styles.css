@@ -557,9 +557,13 @@ body.eq-colon .hero button,body.eq-union .hero button{color:var(--acc2)}
 .eqb.on{border-color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc);background:var(--kpi,#F1F7EE)}
 body.eq-colon .hint,body.eq-union .hint{border-left-color:var(--acc)}
 body.eq-colon .hero .hint,body.eq-union .hero .hint{border-left-color:#fff}
-/* Fondo de arriba con el estadio del equipo (ilustración propia). Se desvanece hacia el fondo y queda detrás de todo. */
-.estadio{display:none;position:absolute;top:0;left:0;right:0;height:240px;z-index:-1;pointer-events:none;background:center bottom/cover no-repeat;opacity:.38;-webkit-mask-image:linear-gradient(to bottom,#000 45%,transparent 100%);mask-image:linear-gradient(to bottom,#000 45%,transparent 100%)}
-body.eq-boca .estadio{display:block;background-image:url(estadio-boca.svg?v=1)}
-body.eq-colon .estadio{display:block;background-image:url(estadio-colon.svg?v=1)}
-body.eq-union .estadio{display:block;background-image:url(estadio-union.svg?v=1)}
-@media (min-width:900px){.estadio{height:300px;opacity:.32}}
+/* Fondo de toda la página con la foto del estadio del equipo (Wikimedia Commons, con crédito al pie).
+   Queda fija detrás de todo, con un velo del color de fondo para que se lea bien. */
+.estadio{display:none;position:fixed;inset:0;z-index:-1;pointer-events:none;background:center/cover no-repeat;filter:blur(1px) saturate(1.1);transform:scale(1.02)}
+.estadio::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:.8}
+body.eq-boca .estadio{display:block;background-image:url(estadio-boca.jpg?v=1)}
+body.eq-colon .estadio{display:block;background-image:url(estadio-colon.jpg?v=1)}
+body.eq-union .estadio{display:block;background-image:url(estadio-union.jpg?v=1)}
+h2.grp{text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.credito{font-size:11px;line-height:1.4;color:var(--mute);text-align:center;margin:18px 0 0;padding:0 8px}
+.credito a{color:inherit}

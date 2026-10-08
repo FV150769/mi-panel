@@ -19,17 +19,24 @@ var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ing
 // Equipo del usuario (se guarda en su cuenta): cambia la camiseta de Petaca y los colores del panel. Sin equipo, Petaca es albiceleste.
 // En la pantalla de entrada siempre es albiceleste, porque todavía no se sabe quién entra. Solo colores de camiseta, sin escudos.
 var EQUIPO="",EQS={"":{n:"Sin equipo (albiceleste)",img:"petaca-arg.svg?v=2",tc:"#12A150",d:"la camiseta albiceleste, en su trono con la bandera argentina"},
- boca:{n:"Boca",img:"petaca-boca.svg?v=1",tc:"#0B4DA2",d:"la camiseta azul con la franja amarilla"},
- colon:{n:"Colón",img:"petaca-colon.svg?v=1",tc:"#C8151B",d:"la camiseta mitad roja y mitad negra"},
- union:{n:"Unión",img:"petaca-union.svg?v=1",tc:"#D8121A",d:"la camiseta a bastones rojos y blancos"}};
+ boca:{n:"Boca",img:"petaca-boca.svg?v=1",tc:"#0B4DA2",d:"la camiseta azul con la franja amarilla",
+  foto:{t:"La Bombonera",a:"Ministerio de Cultura de la Nación",l:"CC BY-SA 2.0",lu:"https://creativecommons.org/licenses/by-sa/2.0/",u:"https://commons.wikimedia.org/wiki/File:Estadio_Alberto_J._Armando_field_view.jpg"}},
+ colon:{n:"Colón",img:"petaca-colon.svg?v=1",tc:"#C8151B",d:"la camiseta mitad roja y mitad negra",
+  foto:{t:"Estadio Brigadier López",a:"HighViewDrone",l:"CC BY-SA 4.0",lu:"https://creativecommons.org/licenses/by-sa/4.0/",u:"https://commons.wikimedia.org/wiki/File:Estadio_Brigadier_General_Estanislao_L%C3%B3pez_-_Col%C3%B3n_de_Santa_Fe.jpg"}},
+ union:{n:"Unión",img:"petaca-union.svg?v=1",tc:"#D8121A",d:"la camiseta a bastones rojos y blancos",
+  foto:{t:"Estadio 15 de Abril",a:"TitiNicola",l:"CC BY-SA 4.0",lu:"https://creativecommons.org/licenses/by-sa/4.0/",u:"https://commons.wikimedia.org/wiki/File:Estadio_15_de_Abril_-_Club_Atl%C3%A9tico_Uni%C3%B3n_de_Santa_Fe.jpg"}}};
 function eqDe(k){return k&&EQS[k]?k:""}
 function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUIPO]||EQS[""];
  Object.keys(EQS).forEach(function(k){if(k)document.body.classList.toggle("eq-"+k,!a&&k===EQUIPO)});
  document.querySelectorAll("img.masc,.charla img").forEach(function(i){if(i.getAttribute("src")!==e.img)i.src=e.img;if(i.classList.contains("masc"))i.alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y "+e.d});
- var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=a?"#12A150":e.tc}
+ var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=a?"#12A150":e.tc;
+ // Crédito de la foto de fondo (la licencia pide autor, fuente y licencia)
+ var cr=document.getElementById("credito");if(cr){var f=!a&&e.foto;cr.innerHTML="";cr.style.display=f?"":"none";
+  if(f){cr.appendChild(document.createTextNode("Foto de fondo: "));var l1=document.createElement("a");l1.href=f.u;l1.target="_blank";l1.rel="noopener";l1.textContent=f.t;cr.appendChild(l1);
+   cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v48";
+var DOC=null,VER="v49";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
