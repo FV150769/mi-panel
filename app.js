@@ -51,7 +51,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v62";
+var DOC=null,VER="v63";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -1143,6 +1143,11 @@ $("calf").onchange=async function(){var inp=this,fs=[].slice.call(inp.files||[])
   calVista(calPlan({evs:evs},"f"),nom||fs[0].name.replace(/\.(ics|zip)$/i,""),null)}
  catch(e){m.textContent=String(e&&e.message)==="zip"?"No pude abrir el .zip. Descomprimilo y subí el archivo .ics que tiene adentro.":"No pude leer el archivo: "+(e&&e.message||e)}
  finally{inp.value=""}};
+// 📋 Pegar: en el celu, mantener apretado el campo para pegar es incómodo. Pega lo copiado y, si es un link, vincula.
+(function(){var b=$("calpg");if(!b||!(navigator.clipboard&&navigator.clipboard.readText))return;b.hidden=false;
+ b.onclick=async function(){var m=$("calm");try{var t=String(await navigator.clipboard.readText()||"").trim();if(!t)return(m.textContent="No hay nada copiado.");$("calu").value=t;
+  if(/^(https|webcals?):\/\//i.test(t))$("calb").click();else m.textContent="Lo que copiaste no parece el link del calendario: tiene que empezar con https:// o webcal://"}
+ catch(e){$("calu").focus();m.textContent="No pude leer lo copiado: mantené apretado el campo y elegí Pegar."}}})();
 $("calir").onclick=function(){var d=$("cald");mostrar(d);d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})};
 // Pretemporada: la primera vez que alguien entra, 3 pasos para armar sus categorías, sus saldos y su objetivo.
 var PRE=null;

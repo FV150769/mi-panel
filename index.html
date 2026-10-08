@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#12A150">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=62">
+<link rel="stylesheet" href="styles.css?v=63">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -240,18 +240,43 @@
 <h3 class="tgh3">Vincular con el link del calendario</h3>
 <p class="sem">Petaca lo lee ahora y, cada vez que abrís la app, suma lo nuevo. El link es privado: no lo compartas con nadie.</p>
 <details class="calcomo"><summary>¿Dónde encuentro el link?</summary>
-<ul class="sem tgp">
-<li><b>Google Calendar</b> (desde la compu, en calendar.google.com): ⚙️ Configuración → en "Configuración de mis calendarios" elegí el tuyo → <b>Integrar el calendario</b> → copiá la <b>Dirección secreta en formato iCal</b>.</li>
-<li><b>iPhone (iCloud)</b>: app Calendario → <b>Calendarios</b> → ⓘ al lado del calendario → activá <b>Calendario público</b> → <b>Compartir enlace</b> → Copiar.</li>
-<li><b>Outlook</b> (en outlook.com): ⚙️ Configuración → Calendario → <b>Calendarios compartidos</b> → Publicar un calendario → elegí el calendario y "Puede ver todos los detalles" → Publicar → copiá el <b>vínculo ICS</b>.</li>
-</ul></details>
-<div class="add"><input id="calu" type="url" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://… o webcal://…" aria-label="Link del calendario"><button id="calb">Vincular</button></div>
-<div id="call"></div>
-<h3 class="tgh3">O subí un archivo, una sola vez</h3>
-<p class="sem">Si exportaste tu calendario, subí el <b>.ics</b> (o el <b>.zip</b> que baja Google en ⚙️ Configuración → Importar y exportar → Exportar).</p>
-<label class="calfile"><input type="file" id="calf" accept=".ics,.zip,text/calendar,application/zip" multiple><span>📂 Elegir archivo</span></label>
+<details class="calprov"><summary>Google Calendar</summary>
+<p class="sem"><b>📱 Desde el celu:</b> la app de Google Calendar no muestra el link, pero se saca en un minuto desde el navegador.</p>
+<ol class="sem tgp">
+<li>Abrí <a href="https://calendar.google.com/calendar/r/settings" target="_blank" rel="noopener">calendar.google.com</a> en Chrome o Safari. Si se abre la app, copiá esa dirección y pegala en el navegador.</li>
+<li>Pedí la versión para computadoras: en Chrome, menú ⋮ → <b>Sitio de escritorio</b>; en Safari, <b>aA</b> → <b>Solicitar sitio web de escritorio</b>.</li>
+<li>⚙️ Configuración → en "Configuración de mis calendarios" tocá el tuyo → <b>Integrar el calendario</b>.</li>
+<li>Copiá la <b>Dirección secreta en formato iCal</b>, volvé a Petaca y tocá <b>📋 Pegar</b>.</li>
+</ol>
+<p class="sem"><b>💻 Desde la compu:</b> lo mismo en calendar.google.com, sin el paso 2.</p>
+</details>
+<details class="calprov"><summary>iPhone (iCloud)</summary>
+<p class="sem"><b>📱 Todo desde el iPhone:</b></p>
+<ol class="sem tgp">
+<li>App Calendario → <b>Calendarios</b> (abajo de todo).</li>
+<li>Tocá ⓘ al lado del calendario y activá <b>Calendario público</b>.</li>
+<li>Tocá <b>Compartir enlace</b> → <b>Copiar</b>, volvé a Petaca y tocá <b>📋 Pegar</b>.</li>
+</ol>
+<p class="sem">Si en el iPhone ves calendarios de Google, esos se vinculan con los pasos de Google Calendar.</p>
+</details>
+<details class="calprov"><summary>Outlook</summary>
+<p class="sem"><b>📱 Desde el celu:</b> la app de Outlook no lo permite, pero se hace desde el navegador: abrí <a href="https://outlook.live.com/calendar/" target="_blank" rel="noopener">outlook.com</a> y pedí la versión para computadoras, como en Google.</p>
+<ol class="sem tgp">
+<li>⚙️ Configuración → Calendario → <b>Calendarios compartidos</b>.</li>
+<li>En "Publicar un calendario", elegí el calendario y <b>Puede ver todos los detalles</b> → <b>Publicar</b>.</li>
+<li>Copiá el <b>vínculo ICS</b>, volvé a Petaca y tocá <b>📋 Pegar</b>.</li>
+</ol>
+<p class="sem"><b>💻 Desde la compu:</b> los mismos pasos en outlook.com.</p>
+</details>
+</details>
+<div class="add"><input id="calu" type="url" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="https://… o webcal://…" aria-label="Link del calendario"><button type="button" id="calpg" hidden>📋 Pegar</button><button id="calb">Vincular</button></div>
 <p class="sem" id="calm"></p>
 <div id="calp"></div>
+<div id="call"></div>
+<h3 class="tgh3">O subí un archivo, una sola vez</h3>
+<p class="sem" style="margin:0">Es más cómodo desde la compu: desde el celu, Google y Outlook no dejan exportar.</p>
+<p class="sem">Si exportaste tu calendario, subí el <b>.ics</b> (o el <b>.zip</b> que baja Google en ⚙️ Configuración → Importar y exportar → Exportar).</p>
+<label class="calfile"><input type="file" id="calf" accept=".ics,.zip,text/calendar,application/zip" multiple><span>📂 Elegir archivo</span></label>
 </details></section>
 <section class="goal" data-c="ia" data-name="IA de Petaca"><details id="iad"><summary>IA de Petaca</summary>
 <p class="sem" style="margin-top:0">"Contale a Petaca" usa Gemini, la IA de Google. Sin clave propia compartís la IA con el resto, con un límite de 15 notas por día. Con tu propia clave, que es gratis, tenés tu propio cupo.</p>
@@ -306,6 +331,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=62"></script>
+<script src="app.js?v=63"></script>
 </body>
 </html>

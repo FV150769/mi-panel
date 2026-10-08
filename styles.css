@@ -125,7 +125,7 @@ button:hover{filter:brightness(1.07)}
 button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 button:disabled{opacity:.5;cursor:default;filter:none;transform:none}
 /* Secundarios: blancos con borde */
-#un,#ar,#mic,#lr,#bi,#tgt{background:var(--panel);color:var(--ink)}
+#un,#ar,#mic,#lr,#bi,#tgt,#calpg{background:var(--panel);color:var(--ink)}
 /* Botones de texto (✎, ×, links) */
 button.x{background:none;border:0;box-shadow:none;color:var(--mute);min-height:0;padding:0 4px;border-radius:8px;font:600 15px/1.3 var(--f-txt);letter-spacing:0;text-transform:none}
 button.x:hover{color:var(--ink);filter:none}
@@ -321,6 +321,9 @@ body.sinhints .hint{display:none}
 /* Tus calendarios */
 .calcomo{margin:8px 0 0}
 .calcomo>summary{font-size:14px;color:var(--acc2)}
+.calprov{margin:6px 0 0 4px;padding:2px 0 2px 12px;border-left:3px solid var(--line)}
+.calprov>summary{font-size:15px}
+.calprov ol{margin-top:4px}
 .calfile{position:relative;display:inline-flex;margin:10px 0 0}
 .calfile input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
 .calfile span{display:inline-flex;align-items:center;min-height:44px;padding:8px 18px;background:var(--panel);color:var(--ink);border:var(--borde);border-radius:999px;box-shadow:0 3px 0 var(--ink);font:700 15px/1 var(--f-cond);letter-spacing:.05em;text-transform:uppercase;pointer-events:none}
