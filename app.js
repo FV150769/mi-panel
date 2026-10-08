@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v40";
+var DOC=null,VER="v41";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -234,88 +234,59 @@ function renderGoal(){
  var cp=el("button","lk",fin?"Cambiar plazo":"Ponerle un plazo");cp.style.padding="0";cp.onclick=function(){$("aj").open=true;setTimeout(function(){var u=$("ajg-u");if(u){u.scrollIntoView({block:"center",behavior:"smooth"});u.focus()}},80)};b.appendChild(cp);
  if(L.saves.length){var u=el("button","x","Deshacer último aporte o retiro");u.onclick=function(){desligar(L.saves.pop());save();render()};b.appendChild(u)}
 }
-// Resumen financiero del mes y consejos según cómo se mueve la plata (reglas fijas, sin IA).
 function sumM(a){var t=0;a.forEach(function(e){t+=e.m});return t}
 function pc(x){return Math.round(x*100)+"%"}
+// Resumen general (desde el primer movimiento cargado, no solo este mes) y pocos consejos claros: qué pasa y qué hacer.
 function renderResumen(){
  var R=$("res"),T=$("tips");if(!R)return;R.innerHTML="";T.innerHTML="";
  function real(e){return e.x!=="Ajuste de saldo"}
- var dia=now.getDate(),resta=dim-dia+1,pym=iso(new Date(now.getFullYear(),now.getMonth()-1,1)).slice(0,7);
- var ex=allExp().filter(real),gm=sumM(ex),by={},pby={};ex.forEach(function(e){by[e.c]=(by[e.c]||0)+e.m});
- var pa=L.expenses.filter(function(e){return real(e)&&e.f.slice(0,7)===pym&&+e.f.slice(8)<=dia}),ph=sumM(pa);
- pa.forEach(function(e){pby[e.c]=(pby[e.c]||0)+e.m});
- var im=0,imE=0;L.ing.forEach(function(e){if(!e.adj&&(e.f||e.k).slice(0,7)===ym){im+=e.v;if(med(e)==="e")imE+=e.v}});
- var gmE=0;L.expenses.forEach(function(e){if(real(e)&&e.f.slice(0,7)===ym&&med(e)==="e")gmE+=e.m});
- var am=0,sepM=0;L.saves.forEach(function(e){if(e.f&&e.f.slice(0,7)===ym){am+=e.m;if(e.ars)sepM+=e.ars}});
- var proy=dia>=5&&gm?gm/dia*dim:null,Q=[];
- // Lo que había para el mes: lo que quedaba en el día a día al arrancar (capital inicial + movimientos anteriores) + lo que entró.
- // Lo separado para ahorro este mes sale del día a día: no cuenta como plata para gastar.
- var saldo=diaVal(),ini=saldo-im+sepM+sumM(L.expenses.filter(function(e){return real(e)&&e.f.slice(0,7)===ym})),disp=ini+im-sepM,hay=disp>0||im>0;
- var mes1=!L.expenses.concat(L.ing).some(function(e){return(e.f||e.k).slice(0,7)<ym});
- function tip(n,t){Q.push([n,t])}
+ var gs=L.expenses.filter(real),ins=L.ing.filter(function(e){return!e.adj}),Q=[];
+ var tG=sumM(gs),tIn=0;ins.forEach(function(e){tIn+=e.v});
+ var desde=primerMov(),dias=desde?Math.max(1,Math.round((new Date(today+"T00:00")-new Date(desde+"T00:00"))/864e5)+1):0,meses=dias/30.44;
+ var saldo=diaVal(),efv=efVal(),trv=saldo-efv;
+ var got=saveTot();USD.forEach(function(a,i){got+=usdVal(i)});var falta=GOAL.target-got;
+ var by={};gs.forEach(function(e){by[e.c]=(by[e.c]||0)+e.m});var cats=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
+ var r30=sumM(gs.filter(function(e){return e.f>plus(today,-30)&&e.f<=today}))/Math.min(30,Math.max(dias,1));
+ function tip(n,t,x){Q.push([n,t,x])}
  function kpi(l,v,sub,c){var k=el("div","kpi"+(c?" "+c:""));k.appendChild(el("small","",l));k.appendChild(el("b","",v));if(sub)k.appendChild(el("span","",sub));R.appendChild(k)}
  function pinta(){var O={mal:0,ojo:1,tip:2,bien:3},N={mal:"Tarjeta roja",ojo:"Amarilla",tip:"Del DT",bien:"¡Golazo!"};
-  Q.sort(function(a,b){return O[a[0]]-O[b[0]]}).slice(0,8).forEach(function(q){var r=el("div","tip "+q[0]);r.appendChild(el("i"));var t=el("span");t.appendChild(el("b","",N[q[0]]+": "));t.appendChild(document.createTextNode(q[1]));r.appendChild(t);T.appendChild(r)})}
- if(capFalta())tip("ojo","Te falta cargar tu capital inicial ("+capTxt()+"). Sin eso, Petaca solo cuenta los ingresos que cargaste. Cargalo en El vestuario → Ajustes.");
- if(!ex.length&&!im){R.style.display="none";tip("tip","Cargá tus gastos e ingresos del mes y acá vas a ver un resumen de cómo se mueve tu plata, con consejos y avisos.");pinta();return}
+  Q.sort(function(a,b){return O[a[0]]-O[b[0]]}).slice(0,5).forEach(function(q){var r=el("div","tip "+q[0]);r.appendChild(el("i"));var t=el("span");t.appendChild(el("small","tipk",N[q[0]]));t.appendChild(el("b","",q[1]+" "));t.appendChild(document.createTextNode(q[2]));r.appendChild(t);T.appendChild(r)})}
+ // Lo que hay que cargar para que los números cierren
+ if(capFalta())tip("ojo","Falta tu capital inicial.","Cargá en El vestuario → Ajustes cuánta plata tenías al empezar. Sin eso, Petaca solo cuenta lo que fuiste cargando.");
+ if(!gs.length&&!tIn){R.style.display="none";tip("tip","Todavía no hay datos.","Cargá tus gastos e ingresos (o contáselos a Petaca) y acá vas a ver cuánta plata tenés, en qué se va y qué conviene hacer.");pinta();return}
  R.style.display="";
- if(ini>0)kpi("Arrancaste el mes con",money(ini),"en "+ACC[0][0]);
- kpi("Entró este mes",money(im),im?(imE?"🏦 "+money(im-imE)+" · 💵 "+money(imE):"todo por transferencia"):"sin ingresos cargados");
- if(sepM)kpi("Separaste para ahorro",money(sepM),(im?pc(sepM/im)+" de lo que entró":"")+(L.fx>0?" · ≈ "+usd(sepM/L.fx):""),"bien");
- kpi("Gastaste",money(gm),(ph?(gm>=ph?"+":"−")+pc(Math.abs(gm-ph)/ph)+" vs. mes pasado":"")+(gmE?(ph?" · ":"")+"💵 "+money(gmE)+" en efectivo":"")||null,ph&&gm>ph*1.15?"mal":ph&&gm<ph*.9?"bien":"");
- if(hay)kpi(disp>=gm?"Te queda":"Te faltan",money(Math.abs(disp-gm)),ini>0||sepM?(disp>=gm?"de los ":"gastaste más de los ")+money(disp)+" que tuviste para gastar este mes":"guardás el "+pc(Math.max(im-gm,0)/im)+" de lo que entró",disp>=gm?"bien":"mal");
- kpi("Por día",money(gm/dia),"promedio en "+dia+" días");
- if(proy)kpi("Fin de mes",money(proy),"si seguís a este ritmo",hay&&proy>disp?"mal":"");
- // Presupuestos por categoría
- Object.keys(BUDGET).forEach(function(k){var B=BUDGET[k],u=by[k]||0;if(!(B>0)||!u)return;
-  if(u>B)tip("mal","Te pasaste del presupuesto de "+k+": llevás "+money(u)+" de "+money(B)+" ("+money(u-B)+" de más).");
-  else if(dia>=5&&u/dia*dim>B*1.05&&u>=B*.5)tip("ojo","A este ritmo "+k+" va a cerrar en ≈ "+money(u/dia*dim)+", arriba de los "+money(B)+" que te pusiste. Te quedan "+money(B-u)+": unos "+money((B-u)/resta)+" por día.");
-  else if(u>=B*.8)tip("ojo","Ya usaste el "+pc(u/B)+" del presupuesto de "+k+".")});
- // Lo que tenías para el mes contra lo que vas gastando (si ya te pasaste, lo avisa el saldo en negativo de abajo)
- var tuv=ini>0||sepM?"lo que tenés para gastar este mes ("+money(disp)+": "+(ini>0?money(ini)+" con los que arrancaste + ":"")+money(im)+" que entró"+(sepM?" − "+money(sepM)+" que separaste para ahorro":"")+")":"lo que entró ("+money(im)+")";
- if(saldo>=0&&hay&&proy&&proy>disp)tip("ojo","Si seguís a este ritmo vas a gastar ≈ "+money(proy)+", más de "+tuv+". Para no pasarte, tratá de gastar hasta "+money((disp-gm)/resta)+" por día lo que queda del mes.");
- else if(saldo>=0&&ini>0&&!mes1&&im&&gm>im)tip("tip","Este mes gastaste "+money(gm-im)+" más de lo que entró: lo estás cubriendo con la plata que ya tenías. Si se repite todos los meses, tu capital va a ir bajando.");
- // Cuánto dura lo que hay en la cuenta del día a día
- var left=saldo,r14=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=plus(today,-13)&&e.f<=today}))/14;
- if(left<0)tip("mal","Tu cuenta "+ACC[0][0]+" está en negativo (−"+money(-left)+"): gastaste más de lo que tenías. Revisá si falta cargar algún ingreso"+(capFalta()?" o tu capital inicial (en El vestuario → Ajustes)":" o corregí el saldo en Cuentas")+".");
- else if(r14>0&&left/r14<resta-1)tip("ojo","Con lo que tenés en "+ACC[0][0]+" ("+money(left)+") y gastando como en las últimas dos semanas ("+money(r14)+" por día), te alcanza para unos "+Math.floor(left/r14)+" días: antes de fin de mes.");
- // Efectivo o transferencia en negativo: casi siempre es un gasto cargado con el medio equivocado o un retiro del cajero sin cargar.
- var efv=efVal(),trv=saldo-efv;
- if(saldo>=0&&efv<0)tip("mal","Tu efectivo da negativo (−"+money(-efv)+"). Fijate si algún gasto fue por transferencia y quedó como efectivo, o si te faltó cargar que sacaste del cajero (en Cuentas). Lo podés corregir con ✎ en Movimientos cargados o en Cuentas.");
- else if(saldo>=0&&trv<0)tip("mal","Lo que tenés por transferencia da negativo (−"+money(-trv)+"). Fijate si algún gasto fue en efectivo y quedó como transferencia, o si depositaste efectivo sin cargarlo. Lo podés corregir con ✎ en Movimientos cargados o en Cuentas.");
- // Comparación con el mes pasado a la misma altura
- if(ph&&dia>=3){var d=(gm-ph)/ph;
-  if(d>=.25)tip("ojo","Vas gastando "+pc(d)+" más que el mes pasado a esta altura ("+money(gm)+" contra "+money(ph)+").");
-  else if(d<=-.15)tip("bien","Vas gastando "+pc(-d)+" menos que el mes pasado a esta altura. ¡Bien!");
-  Object.keys(by).filter(function(k){var p=pby[k]||0;return p>0&&by[k]>p*1.5&&by[k]-p>=gm*.1}).sort(function(a,b){return(by[b]-pby[b])-(by[a]-pby[a])}).slice(0,2)
-   .forEach(function(k){tip("ojo",k+" subió "+pc(by[k]/pby[k]-1)+" respecto al mes pasado ("+money(pby[k])+" → "+money(by[k])+").")})}
- // En qué se concentra el gasto
- var top=Object.keys(by).sort(function(a,b){return by[b]-by[a]})[0];
- if(top&&ex.length>=5&&by[top]>=gm*.4)tip("tip",top+" se lleva el "+pc(by[top]/gm)+" de lo que gastaste este mes. Si querés recortar, empezá por ahí.");
- // Gastos hormiga
- if(ex.length>=10){var ch=ex.filter(function(e){return e.m<gm*.03}),sc=sumM(ch);if(ch.length>=8&&sc>=gm*.15)tip("tip","Tuviste "+ch.length+" gastos chicos que suman "+money(sc)+" ("+pc(sc/gm)+" del mes). Los gastos hormiga se acumulan: fijate cuáles podés evitar.")}
- // Gasto fuera de lo común
- var hs=L.expenses.filter(function(e){return real(e)&&e.f>=plus(today,-90)}).map(function(e){return e.m}).sort(function(a,b){return a-b});
- if(hs.length>=10){var mdn=hs[Math.floor(hs.length/2)],big=ex.slice().sort(function(a,b){return b.m-a.m})[0];
-  if(big&&mdn>0&&big.m>=mdn*5)tip("tip","Tu gasto más grande del mes fue "+(big.x||big.c)+" ("+money(big.m)+", el "+fd(big.f)+"): "+Math.round(big.m/mdn)+" veces tu gasto típico. Si es algo que se repite, conviene separarle plata antes.")}
- // Esta semana contra el promedio de las 4 anteriores
- var wk=mon(),ws=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=wk})),w0=plus(wk,-28);
- if(L.expenses.some(function(e){return e.f<w0})){var wa=sumM(L.expenses.filter(function(e){return real(e)&&e.f>=w0&&e.f<wk}))/4;
-  if(wa>0&&ws>wa*1.4)tip("ojo","Esta semana ya gastaste "+money(ws)+", "+pc(ws/wa-1)+" más que tu promedio semanal ("+money(wa)+").")}
- // Ahorro y objetivo
- var sob=im-gm,lib=sob-sepM,got=saveTot();USD.forEach(function(a,i){got+=usdVal(i)});var falta=GOAL.target-got;
- if(im&&dia>=10&&sob/im>=.2)tip("bien","Estás guardando el "+pc(sob/im)+" de lo que entró este mes. ¡Buen ritmo!");
- var md=metaDias();
- if(falta>0&&md!=null&&md<=0)tip("ojo","Venció el plazo de tu objetivo \""+GOAL.x+"\" y te faltaron "+usd(falta)+". Ponele un plazo nuevo en Ajustes.");
- else if(falta>0&&md>0){var need=falta/Math.max(md/30.44,1);
-  if(am<need)tip("tip","Para llegar a \""+GOAL.x+"\" antes del "+fLarga(metaFin())+" necesitás sumar "+usd(need)+" por mes; este mes llevás "+usd(Math.max(am,0))+"."+(lib>0&&L.fx>0?" Te sobran "+money(lib)+" (≈ "+usd(lib/L.fx)+") que podrías pasar al ahorro.":""));
-  else tip("bien","Este mes ya sumaste lo que necesitás para tu objetivo \""+GOAL.x+"\".")}
- else if(falta>0&&am<=0&&sob>0&&dia>=20)tip("tip","Este mes te sobran "+money(sob)+" y todavía no sumaste nada al ahorro.");
- // Datos que faltan cargar
- var ult=L.expenses.reduce(function(m,e){return e.f>m?e.f:m},"");
- if(L.expenses.length>=5&&ult<plus(today,-5)){var n=Math.round((new Date(today+"T00:00")-new Date(ult+"T00:00"))/864e5);tip("tip","Hace "+n+" días que no cargás gastos. Si gastaste algo, anotalo para que el resumen sea real.")}
- if(!im&&dia>=7&&ex.length)tip("tip","No cargaste ingresos este mes. Cargalos en \"Sumar ingreso\" para ver cuánto te sobra.");
- if(!Q.length)tip("bien","Partido tranquilo: no veo nada raro en cómo se mueve tu plata este mes.");
+ // Números generales
+ kpi("Tenés hoy",money(saldo),usaEf()?"🏦 "+money(trv)+" · 💵 "+money(efv):"en "+ACC[0][0],saldo<0?"mal":"");
+ kpi("Entró en total",money(tIn),desde?"desde el "+fd(desde):null);
+ kpi("Gastaste en total",money(tG),meses>=1.5?"≈ "+money(tG/meses)+" por mes":dias?"≈ "+money(tG/dias)+" por día":null);
+ kpi("Tu ahorro",usd(got),GOAL.target>0?pc(Math.min(got/GOAL.target,1))+" de tu objetivo \""+GOAL.x+"\"":null,falta<=0?"bien":"");
+ if(cats.length&&tG)kpi("Donde más gastás",cats[0],pc(by[cats[0]]/tG)+" de todo lo que gastaste");
+ // Saldos en negativo: casi siempre falta cargar algo o quedó un medio equivocado
+ if(saldo<0)tip("mal","Tu saldo da negativo ("+money(saldo)+").","Seguramente falta cargar un ingreso"+(capFalta()?" o tu capital inicial":"")+". Si el número real es otro, corregilo con ✎ en Cuentas.");
+ else if(efv<0)tip("mal","Tu efectivo da negativo ("+money(efv)+").","Algún gasto quedó como efectivo y fue por transferencia, o falta cargar que sacaste del cajero. Corregilo con ✎ en Movimientos cargados o en Cuentas.");
+ else if(trv<0)tip("mal","Lo que tenés por transferencia da negativo ("+money(trv)+").","Algún gasto quedó como transferencia y fue en efectivo, o falta cargar un depósito. Corregilo con ✎ en Movimientos cargados o en Cuentas.");
+ // Cuánto dura la plata al ritmo del último mes
+ if(saldo>0&&r30>0){var dura=Math.floor(saldo/r30);
+  if(dura<30)tip("ojo","Te alcanza para unos "+cant(dura,"día","días")+".","Gastando como en el último mes ("+money(r30)+" por día), lo que tenés dura hasta el "+fd(plus(today,dura))+". Para que te dure un mes, gastá hasta "+money(saldo/30)+" por día.");
+  else tip("bien","Tenés para rato.","Al ritmo del último mes ("+money(r30)+" por día), lo que tenés te alcanza para "+(dura>=60?"más de dos meses":"más de un mes")+".")}
+ // Entra menos de lo que sale
+ if(dias>=30&&tIn>0&&tG>tIn)tip("ojo","Gastás más de lo que te entra.","Desde el "+fd(desde)+" entraron "+money(tIn)+" y gastaste "+money(tG)+": la diferencia ("+money(tG-tIn)+") salió de la plata que ya tenías.");
+ // Presupuestos: son por mes, así que se miran en el mes actual
+ var bm={};L.expenses.forEach(function(e){if(real(e)&&e.f.slice(0,7)===ym)bm[e.c]=(bm[e.c]||0)+e.m});
+ var pas=Object.keys(BUDGET).filter(function(k){return BUDGET[k]>0&&(bm[k]||0)>BUDGET[k]});
+ if(pas.length)tip("mal","Este mes te pasaste del presupuesto en "+pas.join(", ")+".",pas.map(function(k){return k+": "+money(bm[k])+" de "+money(BUDGET[k])}).join(" · ")+". Si el presupuesto quedó corto, cambialo en Ajustes.");
+ // Objetivo de ahorro
+ var fin=metaFin(),md=metaDias();
+ if(falta<=0&&GOAL.target>0)tip("bien","¡Llegaste a tu objetivo \""+GOAL.x+"\"!","Tenés "+usd(got)+". Podés ponerte uno nuevo en Ajustes.");
+ else if(fin&&md>0)tip("tip","Para llegar a \""+GOAL.x+"\".","Te faltan "+usd(falta)+": ahorrá "+ritmo(falta,md)+" hasta el "+fLarga(fin)+".");
+ else if(fin)tip("ojo","Venció el plazo de \""+GOAL.x+"\".","Te faltan "+usd(falta)+". Ponele una fecha nueva en Ajustes y te digo cuánto ahorrar por mes.");
+ else if(GOAL.target>0)tip("tip","Tu objetivo \""+GOAL.x+"\" no tiene fecha.","Te faltan "+usd(falta)+". Ponele una fecha en Ajustes y te digo cuánto ahorrar por mes para llegar.");
+ // En qué se va la plata
+ if(cats.length>1&&gs.length>=5&&by[cats[0]]>=tG*.4)tip("tip",cats[0]+" se lleva el "+pc(by[cats[0]]/tG)+" de tus gastos.","Si querés gastar menos, es lo primero para mirar.");
+ // Datos al día
+ var ult=gs.reduce(function(m,e){return e.f>m?e.f:m},"");
+ if(gs.length>=5&&ult&&ult<plus(today,-5))tip("tip","Hace "+cant(Math.round((new Date(today+"T00:00")-new Date(ult+"T00:00"))/864e5),"día","días")+" que no cargás gastos.","Si gastaste algo, anotalo así el resumen es real.");
+ if(!Q.length)tip("bien","Todo en orden.","No veo nada raro en cómo se mueve tu plata.");
  pinta()}
 $("ar").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:-m});$("am").value="";save();render()};
 $("ab").onclick=function(){var m=parseFloat($("am").value);if(!(m>0))return;L.saves.push({f:today,m:m});$("am").value="";save();render()};
