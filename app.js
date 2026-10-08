@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v37";
+var DOC=null,VER="v38";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -41,8 +41,10 @@ window.addEventListener("error",function(e){reportar("Error en la página: "+e.m
 window.addEventListener("unhandledrejection",function(e){var r=e.reason;reportar("Error sin manejar: "+(r&&(r.message||r.code)||r),r&&r.stack)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function $(i){return document.getElementById(i)}
-function usd(n){return "US$ "+Math.round(n).toLocaleString("es-AR")}
-function money(n){return "$"+Math.round(n).toLocaleString("es-AR")}
+// Números con coma para los miles y millones (1,500,000) y punto para los decimales, para que no se confundan.
+function num(n,d){return Number(n).toLocaleString("en-US",{maximumFractionDigits:d==null?2:d})}
+function usd(n){return "US$ "+num(Math.round(n),0)}
+function money(n){return "$"+num(Math.round(n),0)}
 var now=new Date(),today=iso(now),ym=today.slice(0,7);
 var dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
 $("fecha").textContent=now.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
@@ -305,7 +307,7 @@ function renderHist(){
  Object.keys(by).forEach(function(k){if(!H.some(function(e){return e[0]===k}))H.push([k,by[k]])});
  H.sort(function(a,b){return b[1]-a[1]});
  var tot=(app?APPTOT:0)+sp,mov=0;H.forEach(function(e){if(e[2])mov+=e[1]});
- cuentas+=ingTot()-sp-sepTot();var rows=[["Tus cuentas en pesos",money(cuentas)],["Tus dólares","US$ "+du.toLocaleString("es-AR")],[app?"Registrado en "+Y+" (app + panel)":"Registrado en el panel","≈ "+money(tot)],["Movido a ahorro e inversión",money(mov)],["Gastos reales (sin ahorro ni inversión)","≈ "+money(tot-mov)]];
+ cuentas+=ingTot()-sp-sepTot();var rows=[["Tus cuentas en pesos",money(cuentas)],["Tus dólares","US$ "+num(du)],[app?"Registrado en "+Y+" (app + panel)":"Registrado en el panel","≈ "+money(tot)],["Movido a ahorro e inversión",money(mov)],["Gastos reales (sin ahorro ni inversión)","≈ "+money(tot-mov)]];
  rows.forEach(function(r){var d=el("div","row");d.appendChild(el("span","",r[0]));d.appendChild(el("b","",r[1]));h.appendChild(d)});
  if(!H.length){h.appendChild(el("p","sem","Todavía no cargaste gastos."));return}
  var t=el("h3","",app?"En qué se fue la plata en "+Y:"En qué se fue la plata");t.style.margin="18px 0 10px";t.style.fontSize="16px";h.appendChild(t);
@@ -336,8 +338,8 @@ function renderExtra(){
   if(d)[["t",v-efVal()],["e",efVal()]].forEach(function(p){var q=el("div","row sub");q.appendChild(el("span","",MED[p[0]==="e"?1:0][1]));var qt=el("span","",(p[1]<0?"−":"")+money(Math.abs(p[1]))),qb=el("button","x","✎");qb.setAttribute("aria-label","Corregir "+medTxt(p[0]));qb.onclick=function(){editMedio(q,p[0],p[1])};qt.appendChild(qb);q.appendChild(qt);c.appendChild(q)})});
  if(ACC.length>1){var r=el("div","row");r.appendChild(el("b","","Total en pesos"));r.appendChild(el("b","",money(t)));c.appendChild(r)}
  var u=el("div","none","Dólares");u.style.marginTop="12px";c.appendChild(u);var tu=0;
- USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+v.toLocaleString("es-AR")),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
- var q=el("div","row");q.appendChild(el("b","","Total en dólares"));q.appendChild(el("b","","US$ "+tu.toLocaleString("es-AR")));c.appendChild(q);
+ USD.forEach(function(a,i){var sv=i===0,v=usdVal(i)+(sv?saveTot():0);tu+=v;var q=el("div","row");q.appendChild(el("span","",a[0]));var rt=el("span","","US$ "+num(v)),b=el("button","x","✎");b.setAttribute("aria-label","Corregir saldo");b.onclick=function(){editBal(q,v,function(nv){setBal("u"+i,sv?nv-saveTot():nv)})};rt.appendChild(b);q.appendChild(rt);c.appendChild(q)});
+ var q=el("div","row");q.appendChild(el("b","","Total en dólares"));q.appendChild(el("b","","US$ "+num(tu)));c.appendChild(q);
  if(L.fx>0){var f1=el("div","row");f1.appendChild(el("span","",L.fxAuto?"Dólar blue (venta"+(L.fxAt?" · "+L.fxAt:"")+")":"Cotización usada (manual)"));f1.appendChild(el("span","",money(L.fx)+" por US$"));c.appendChild(f1);
   var f2=el("div","row");f2.appendChild(el("b","","Patrimonio (pesos + dólares)"));f2.appendChild(el("b","","≈ "+money(t+tu*L.fx)));c.appendChild(f2)}
 }
@@ -420,8 +422,9 @@ function n2(t){return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/
 function pad(x){return String(x).padStart(2,"0")}
 function pMontos(c){
  var t=c.replace(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g," ").replace(/a las? \d{1,2}([:.]\d{2})?\s*(hs|h|am|pm)?/g," ").replace(/\d{1,2}:\d{2}/g," ").replace(/\d{1,2}\s*(am|pm)\b/g," ");
- var re=/(\d{1,3}(?:\.\d{3})+|\d+(?:,\d+)?)\s*(mil\b|k\b|lucas?\b|palos?\b|millon(?:es)?\b)?/g,m,a=[];
- while(m=re.exec(t)){var n=parseFloat(m[1].replace(/\./g,"").replace(",","."));var u=m[2]||"";
+ // "5.000" o "5,000" (grupos de 3 cifras) son miles; "1,5" o "1.5" son decimales.
+ var re=/(\d{1,3}(?:[.,]\d{3})+(?!\d)|\d+(?:[.,]\d{1,2})?)\s*(mil\b|k\b|lucas?\b|palos?\b|millon(?:es)?\b)?/g,m,a=[];
+ while(m=re.exec(t)){var s=m[1],n=parseFloat(/^\d{1,3}([.,]\d{3})+$/.test(s)?s.replace(/[.,]/g,""):s.replace(",","."));var u=m[2]||"";
   if(/^(mil|k|luca)/.test(u))n*=1000;else if(/^(palo|millon)/.test(u))n*=1e6;
   if(n>0)a.push(n)}
  return a}
@@ -527,7 +530,7 @@ function cands(){var o={},t=[];
  return{o:o,list:t.join(" | ")}}
 function drop(a,x){var i=a.indexOf(x);if(i>=0)a.splice(i,1)}
 function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d}
-function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé también \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" si dice hasta qué hora o \"\",\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
+function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000; '5,000' y '5.000' son cinco mil (la coma o el punto separan los miles), '1,5 palos' es 1500000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé también \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" si dice hasta qué hora o \"\",\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
 // Gemini vía la Edge Function "gemini" de Supabase: la clave vive como secreto en Supabase y nunca llega al navegador.
 // Si tarda más de 35 segundos se deja de esperar y la nota se entiende sin IA, así la página nunca queda trabada.
 async function gemini(p){
@@ -865,8 +868,9 @@ function iaUI(){var m=$("iam");$("iak").value="";if(!SB||!UID)return(m.textConte
  m.textContent="Revisando…";SB.from("ia_claves").select("clave").eq("user_id",UID).maybeSingle().then(function(r){if(r.error)return(m.textContent="No pude leer tu clave: "+r.error.message);
   var k=r.data&&r.data.clave;m.textContent=k?"Usás tu propia clave (termina en …"+k.slice(-4)+").":"Usás la IA compartida.";$("iax").style.display=k?"":"none"})}
 $("iad").addEventListener("toggle",function(){if($("iad").open)iaUI()});
-$("ias").onclick=async function(){var m=$("iam"),k=$("iak").value.trim();if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");
- if(!/^[A-Za-z0-9_-]{20,200}$/.test(k))return(m.textContent="Esa clave no parece válida. Copiala completa desde AI Studio.");
+// Claves de AI Studio: las viejas empiezan con "AIza"; desde mayo de 2026 las nuevas empiezan con "AQ." (llevan puntos).
+$("ias").onclick=async function(){var m=$("iam"),k=$("iak").value.replace(/\s+/g,"").replace(/^["'`]+|["'`]+$/g,"");if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");
+ if(!/^[A-Za-z0-9._-]{20,200}$/.test(k))return(m.textContent="Esa clave no parece válida. Copiala completa desde AI Studio (empieza con AIza o con AQ.).");
  m.textContent="Guardando…";var r=await SB.from("ia_claves").upsert({user_id:UID,clave:k,updated_at:new Date().toISOString()});if(r.error)return(m.textContent="No pude guardarla: "+r.error.message);
  $("iak").value="";$("iax").style.display="";m.textContent="Probando…";var p=await SB.functions.invoke("gemini",{body:{probar:true}});
  if(p.error){var t=p.error.message;try{var b=await p.error.context.json();if(b&&b.error)t=b.error}catch(e){}return(m.textContent="La guardé, pero no funcionó: "+t)}
@@ -952,7 +956,7 @@ function capEnd(){if(PRE)return;$("pre").style.display="none";$("pre").innerHTML
 function sepTot(){var t=0;L.saves.forEach(function(e){if(e.ars)t+=e.ars});return t}
 function diaVal(){return accVal(0)+ingTot()-sumM(L.expenses)-sepTot()}
 function pctOk(p){p=parseFloat(String(p).replace(",","."));return p>0?Math.min(p,100):0}
-function pctTxt(p){return String(Math.round(p*10)/10).replace(".",",")+"%"}
+function pctTxt(p){return num(p,1)+"%"}
 function aporteDe(o){return o&&o.id?L.saves.filter(function(s){return s.ing===o.id})[0]||null:null}
 function ligar(o,p){p=pctOk(p);var s=aporteDe(o);
  if(!p){if(s)drop(L.saves,s);delete o.p;return true}

@@ -43,6 +43,9 @@ async function llamar(key: string, prompt: string) {
   const fin = Date.now() + 30000;
   let d: any = {};
   let status = 0;
+  // Claves nuevas "AQ." (desde mayo de 2026): si Google rechaza el encabezado de siempre con 401, se prueba una vez como Bearer.
+  let bearer = false;
+  let probeBearer = key.startsWith("AQ.");
   for (let i = 0; i < intentos.length; i++) {
     const modelo = intentos[i];
     const pv = pensarOk[modelo] ?? 0;
@@ -57,7 +60,9 @@ async function llamar(key: string, prompt: string) {
         `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          headers: bearer
+            ? { "Content-Type": "application/json", "Authorization": "Bearer " + key }
+            : { "Content-Type": "application/json", "x-goog-api-key": key },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: gen }),
           signal: AbortSignal.timeout(Math.min(14000, queda)),
         },
@@ -72,6 +77,12 @@ async function llamar(key: string, prompt: string) {
     if (res.ok) {
       pensarOk[modelo] = pv;
       return { ok: true, d, status };
+    }
+    if (res.status === 401 && probeBearer) {
+      probeBearer = false;
+      bearer = true;
+      i--;
+      continue;
     }
     // Opción de pensamiento no aceptada: mismo modelo con la siguiente forma (no cuenta como intento).
     // Un 400 por la clave inválida no se reintenta.
@@ -88,6 +99,9 @@ async function llamar(key: string, prompt: string) {
 // Traduce los errores de Google a algo entendible cuando la clave es del usuario.
 function errorClavePropia(status: number, msg: string) {
   if (status === 400 && /api key/i.test(msg)) return "Tu clave de Gemini no es válida. Revisala en El vestuario → IA de Petaca.";
+  if (status === 401) {
+    return "Google rechazó tu clave de Gemini (pasa con algunas claves nuevas que empiezan con AQ.). Probá crear la clave en un proyecto nuevo de AI Studio, o quitala y usá la IA compartida.";
+  }
   if (status === 403) return "Tu clave de Gemini no tiene permiso para usar la API. Creá una nueva en aistudio.google.com.";
   if (status === 429) return "Se terminó el cupo gratis de tu clave de Gemini por hoy. Mañana se renueva.";
   return "Tu clave de Gemini: " + (msg || "Gemini no respondió");
