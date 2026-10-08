@@ -50,7 +50,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v59";
+var DOC=null,VER="v61";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -138,13 +138,18 @@ function editEv(row,o){
  var ok=el("button","","Guardar"),no=el("button","x","Cancelar");
  ok.onclick=function(){if(!d.value||!x.value.trim())return;o.f=d.value;o.t=h.value;o.x=x.value.trim();save();render()};no.onclick=function(){render()};
  [d,h,x,ok,no].forEach(function(n){row.appendChild(n)})}
-function renderAlerta(){
- var a=$("alerta"),q=[];
- FECHAS.filter(vis).concat(L.events).forEach(function(e){var n=Math.round((new Date(e.f+"T00:00")-new Date(today+"T00:00"))/864e5);if(n>=0&&n<=7)q.push([n,e])});
- q.sort(function(a,b){return a[0]-b[0]||(a[1].t||"").localeCompare(b[1].t||"")});
- if(!q.length){a.style.display="none";return}
- a.style.display="";a.innerHTML="";a.appendChild(el("b","","En los próximos 7 días"));
- q.forEach(function(p){var r=el("div","row");r.appendChild(el("span","",(p[1].t?p[1].t+" ":"")+p[1].x));r.appendChild(el("span","",fd(p[1].f)+(p[0]===0?" · hoy":p[0]===1?" · mañana":" · en "+p[0]+" días")));a.appendChild(r)})}
+// ¿Qué tenés hoy?: arriba del panel, la rutina y lo que tenés agendado para hoy. Si hoy no hay nada, muestra lo próximo de la semana.
+function renderHoy(){
+ var a=$("hoy");if(!a)return;a.innerHTML="";a.style.display="";var d=new Date(today+"T00:00"),t=el("b","","¿Qué tenés hoy?");
+ t.appendChild(el("small","",DN[d.getDay()]+" "+d.getDate()));a.appendChild(t);
+ function orden(x,y){return(x.t||"").localeCompare(y.t||"")}
+ var list=occs(today).sort(orden);
+ list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.r?e.r.t+(e.r.t2?"–"+e.r.t2:""):e.t||"Todo el día"));r.appendChild(el("span","",e.r?e.r.x:e.x));
+  if(e.r)r.appendChild(el("small","tag","rutina"));a.appendChild(r)});
+ if(list.length)return;
+ a.appendChild(el("div","none","Hoy no tenés nada agendado."));
+ for(var i=1;i<=7;i++){var f=plus(today,i),q=occs(f).sort(orden);if(!q.length)continue;var e=q[0];
+  a.appendChild(el("p","sem hoyprox","Lo próximo: "+(e.r?e.r.x:e.x)+" · "+(i===1?"mañana":DN[new Date(f+"T00:00").getDay()].toLowerCase()+" "+fd(f))+(e.t?" a las "+e.t:"")));break}}
 function renderMes(){
  var g=$("mg");g.innerHTML="";
  var b=MON||new Date(now.getFullYear(),now.getMonth(),1),st=VSTART||today;
@@ -187,7 +192,7 @@ function renderRut(){
  if(!RUT.length)l.appendChild(el("div","none","Todavía no cargaste rutinas."))}
 var RDIAS=null;
 function rdiasUI(){if(!RDIAS){RDIAS=diasUI([]);$("rdw").replaceWith(RDIAS);RDIAS.id="rdw"}return RDIAS}
-function openRut(r){REDIT=r;rdiasUI().set(rds(r));$("rt").value=r.t;$("rt2").value=r.t2||"";$("rx").value=r.x;$("rf").value=r.from||"";$("rto").value=r.to||"";$("rb").textContent="Guardar cambios";$("rc").style.display="";$("rd").open=true;if($("rd").scrollIntoView)$("rd").scrollIntoView()}
+function openRut(r){REDIT=r;rdiasUI().set(rds(r));$("rt").value=r.t;$("rt2").value=r.t2||"";$("rx").value=r.x;$("rf").value=r.from||"";$("rto").value=r.to||"";$("rb").textContent="Guardar cambios";$("rc").style.display="";mostrar($("rd"));$("rd").open=true;if($("rd").scrollIntoView)$("rd").scrollIntoView()}
 function closeRut(){REDIT=null;rdiasUI().set([]);$("rx").value="";$("rt").value="";$("rt2").value="";$("rto").value="";$("rf").value=today;$("rb").textContent="Agregar rutina";$("rc").style.display="none"}
 $("rc").onclick=closeRut;
 $("rb").onclick=function(){var x=$("rx").value.trim(),t=$("rt").value,ds=rdiasUI().val();if(!x||!t){$("rm").textContent="Falta el nombre o la hora de inicio.";return}
@@ -214,7 +219,7 @@ function render(){var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
   list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.t||"Todo el día"));r.appendChild(el("span","",e.x));evBtns(r,e,f);box.appendChild(r)});
   ag.appendChild(box);
  }
- renderMes();renderRut();renderAlerta();
+ renderMes();renderRut();renderHoy();
  var ex=allExp(),tot=0,by={};
  ex.forEach(function(e){tot+=e.m;by[e.c]=(by[e.c]||0)+e.m});
  var bt=0;for(var k in BUDGET)bt+=BUDGET[k];
@@ -265,7 +270,7 @@ function renderGoal(){
  else if(dias<=0)t="El plazo venció el "+fLarga(fin)+" y te faltaron "+usd(left)+". Podés ponerle un plazo nuevo en Ajustes.";
  else t="Te faltan "+usd(left)+" y quedan "+plazoTxt(dias)+" (hasta el "+fLarga(fin)+"): tenés que ahorrar "+ritmo(left,dias)+".";
  b.appendChild(h);b.appendChild(el("div","none",usd(got)+" de "+usd(GOAL.target)+" ("+USD.map(function(a){return a[0].toLowerCase()}).join(" + ")+(extra?" + aportes":"")+")"));b.appendChild(tr);b.appendChild(el("p","info",t));
- var cp=el("button","lk",fin?"Cambiar plazo":"Ponerle un plazo");cp.style.padding="0";cp.onclick=function(){$("aj").open=true;setTimeout(function(){var u=$("ajg-u");if(u){u.scrollIntoView({block:"center",behavior:"smooth"});u.focus()}},80)};b.appendChild(cp);
+ var cp=el("button","lk",fin?"Cambiar plazo":"Ponerle un plazo");cp.style.padding="0";cp.onclick=function(){mostrar($("aj"));$("aj").open=true;setTimeout(function(){var u=$("ajg-u");if(u){u.scrollIntoView({block:"center",behavior:"smooth"});u.focus()}},80)};b.appendChild(cp);
  if(L.saves.length){var u=el("button","x","Deshacer último aporte o retiro");u.onclick=function(){desligar(L.saves.pop());save();render()};b.appendChild(u)}
 }
 function sumM(a){var t=0;a.forEach(function(e){t+=e.m});return t}
@@ -814,7 +819,8 @@ var DEFLAY={g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEa
 function ordenar(par,nodos,ids,antes){var by={};nodos.forEach(function(n){by[n.dataset.g||n.dataset.c]=n});
  ids.filter(function(i){return by[i]}).concat(nodos.map(function(n){return n.dataset.g||n.dataset.c}).filter(function(i){return ids.indexOf(i)<0})).forEach(function(i){par.insertBefore(by[i],antes||null)})}
 function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main"),by={},en={},ya={};
- ordenar(m,grupos(),Y.g||DEFLAY.g,document.querySelector("main>.descanso")||$("est"));
+ // Desde la versión 3 el inicio muestra Tu plata y Fechas importantes: las formaciones guardadas antes toman el orden nuevo de grupos.
+ ordenar(m,grupos(),(Y.v>=3&&Y.g)||DEFLAY.g,document.querySelector("main>.descanso")||$("est"));
  // Las tarjetas pueden haberse pasado a otro grupo: cada una va al primer grupo que la lista, o al suyo de siempre.
  // En formaciones guardadas antes de la versión 2, la configuración y el histórico vuelven a su lugar nuevo.
  var MUD=Y.v>=2||Y===DEFLAY?[]:["ajustes","ia","copia","hist"];
@@ -823,8 +829,9 @@ function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main"),by=
  Object.keys(DEFLAY.c).forEach(function(g){DEFLAY.c[g].forEach(function(i){en[i]=g})});
  grupos().forEach(function(g){ids(g.dataset.g).forEach(function(i){if(!ya[i]){ya[i]=1;en[i]=g.dataset.g}})});
  grupos().forEach(function(g){var c=g.querySelector(":scope>.cols");if(!c)return;var mine=Object.keys(by).filter(function(i){return en[i]===g.dataset.g});
-  ids(g.dataset.g).filter(function(i){return mine.indexOf(i)>=0}).concat(mine.filter(function(i){return ids(g.dataset.g).indexOf(i)<0})).forEach(function(i){c.appendChild(by[i])})})}
-function saveLayout(){LAYOUT={v:2,g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){LAYOUT.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});HAVECFG=true;save()}
+  ids(g.dataset.g).filter(function(i){return mine.indexOf(i)>=0}).concat(mine.filter(function(i){return ids(g.dataset.g).indexOf(i)<0})).forEach(function(i){c.appendChild(by[i])})});
+ marcarMenus()}
+function saveLayout(){marcarMenus();LAYOUT={v:3,g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){LAYOUT.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});HAVECFG=true;save()}
 function mover(n,d){var p=n.parentNode,h=[].filter.call(p.children,function(x){return x.matches(n.matches(".grupo")?"main>.grupo":".cols>section[data-c]")}),i=h.indexOf(n),j=i+d;
  if(j<0||j>=h.length)return;if(d<0)p.insertBefore(n,h[j]);else p.insertBefore(h[j],n);saveLayout();n.scrollIntoView({block:"nearest"})}
 function ordBar(n){var b=el("div","ordbar");b.appendChild(el("span","",n.dataset.name));var s=el("span");
@@ -921,7 +928,7 @@ function ajForm(){
  // El capital inicial se carga una sola vez: después Petaca sigue con el día a día y las diferencias se corrigen con ✎ en Cuentas.
  if(!capFalta()){var dv=diaVal(),ev=efVal(),ct=el("p","sem");
   ct.appendChild(document.createTextNode("Ya lo cargaste ("+money(accVal(0))+") y se carga una sola vez. Desde ahí Petaca sigue con tu día a día: hoy tenés "+money(dv)+(usaEf()?" (🏦 "+money(dv-ev)+" · 💵 "+money(ev)+")":"")+". Si no coincide con tu banco o tu billetera, corregilo con ✎ en "));
-  var ir=el("button","lk","Cuentas");ir.type="button";ir.style.cssText="padding:0;min-height:0;display:inline;vertical-align:baseline;font:inherit;font-weight:700";ir.onclick=function(){var d=document.querySelector('[data-c="cuentas"] details');if(d){d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}};
+  var ir=el("button","lk","Cuentas");ir.type="button";ir.style.cssText="padding:0;min-height:0;display:inline;vertical-align:baseline;font:inherit;font-weight:700";ir.onclick=function(){var d=document.querySelector('[data-c="cuentas"] details');if(d){mostrar(d);d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"})}};
   ct.appendChild(ir);cp.appendChild(ct);f.appendChild(cp)}
  else{
  ci.id="ajcap";ci.type="number";ci.inputMode="decimal";ci.min="0";ci.placeholder="Sin cargar (en pesos)";ci.setAttribute("aria-label","Capital inicial");ci.value=CAP||accVal(0)>0?accVal(0):"";
@@ -970,7 +977,7 @@ $("tgt").onclick=async function(){var m=$("tgm");if(!SB||!UID)return(m.textConte
  m.textContent="Enviando…";try{await push();var r=await SB.functions.invoke("avisos",{body:{prueba:true}});
   if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
   m.textContent="Listo, revisá tu Telegram."}catch(e){m.textContent="No pude enviarlo: "+(e&&e.message||e)}};
-$("tgo").onclick=function(){var d=$("tgd");d.open=true;tgUI();d.scrollIntoView({behavior:"smooth",block:"start"});$("tgc").focus({preventScroll:true})};
+$("tgo").onclick=function(){var d=$("tgd");mostrar(d);d.open=true;tgUI();d.scrollIntoView({behavior:"smooth",block:"start"});$("tgc").focus({preventScroll:true})};
 $("tgas").onclick=function(){var m=$("tgam"),raw=$("tgdd").value.trim(),d=[],ok=true;
  if(raw)raw.split(/[,\s;]+/).forEach(function(x){if(!x)return;var n=+x;if(!(n>=0&&n<=60&&n===Math.floor(n)))ok=false;else if(d.indexOf(n)<0)d.push(n)});
  if(!ok)return(m.textContent="Días antes: números enteros de 0 a 60, separados por coma (0 = el mismo día).");
@@ -1260,14 +1267,23 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   if(mr){if(mr.state!=="inactive")mr.stop();return}
   if(usarSR)dictar();else grabar()};
 })();
+// Para profundizar: Más de tu plata, Agenda y rutinas y Configuración arrancan cerrados y se abren con su botón.
+// Si algo lleva a una tarjeta que está adentro (un link, un aviso), el menú se abre solo.
+function menuAbrir(g,on){if(!g||!g.classList.contains("menu"))return;g.classList.toggle("abierto",on);var b=g.querySelector(".menub");if(b)b.setAttribute("aria-expanded",String(on))}
+function mostrar(x){if(x&&x.closest)menuAbrir(x.closest(".grupo.menu"),true)}
+// El primer menú lleva arriba el título "Para profundizar"
+function marcarMenus(){var p=document.querySelector("main>.grupo.menu");grupos().forEach(function(g){g.classList.toggle("primero",g===p)})}
+document.querySelectorAll(".grupo.menu .menub").forEach(function(b){b.onclick=function(){var g=b.closest(".grupo");menuAbrir(g,!g.classList.contains("abierto"))}});
+document.addEventListener("toggle",function(e){if(e.target.open)mostrar(e.target)},true);
+marcarMenus();
 // Barra de abajo en el celu: salta a cada parte del panel y marca en cuál estás. "Contale" te deja escribiendo la nota.
 (function(){var n=$("tabs");if(!n)return;var bs=[].slice.call(n.querySelectorAll("button[data-g]")),suave=!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
- function ir(g){if(g==="inicio")return scrollTo({top:0,behavior:suave?"smooth":"auto"});var x=document.querySelector('.grupo[data-g="'+g+'"]');if(x)x.scrollIntoView({behavior:suave?"smooth":"auto",block:"start"})}
+ function ir(g){if(g==="inicio")return scrollTo({top:0,behavior:suave?"smooth":"auto"});var x=document.querySelector('.grupo[data-g="'+g+'"]');menuAbrir(x,true);if(x)x.scrollIntoView({behavior:suave?"smooth":"auto",block:"start"})}
  bs.forEach(function(b){b.onclick=function(){var g=b.dataset.g;
   // El foco va en el mismo toque: si no, el iPhone no abre el teclado
   if(g==="nota"){var t=$("nt");if(t)t.focus({preventScroll:true})}ir(g)}});
  var pend=0;function marca(){pend=0;var h=innerHeight*.35,act="inicio";
-  if(scrollY>40)document.querySelectorAll(".grupo").forEach(function(x){if(x.getBoundingClientRect().top<h)act=x.dataset.g});
+  if(scrollY>40)document.querySelectorAll(".grupo").forEach(function(x){if(x.getBoundingClientRect().top<h)act={dinero:"plata",tiempo:"fechas"}[x.dataset.g]||x.dataset.g});
   bs.forEach(function(b){b.setAttribute("aria-current",String(b.dataset.g===act))})}
  addEventListener("scroll",function(){if(!pend)pend=requestAnimationFrame(marca)},{passive:true});marca()})();
 // Guía de uso: se abre sola la primera vez. Cerrada no ocupa lugar en el panel: se vuelve a abrir con "📖 Guía", arriba.

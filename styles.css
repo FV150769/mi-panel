@@ -90,7 +90,7 @@ body.auth .eqsel{display:none}
 #uedit #us{min-height:40px;padding:4px 14px}
 
 /* ===== Tarjetas: figuritas ===== */
-section,.hero,#alerta{background:var(--panel);border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:16px 18px}
+section,.hero,#hoy{background:var(--panel);border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);padding:16px 18px}
 section[style*="margin-bottom:16px"]{margin-bottom:16px!important}
 section h2{display:flex;align-items:center;gap:9px;margin:0 0 10px;font:700 20px/1.15 var(--f-cond);letter-spacing:.03em;text-transform:uppercase;color:var(--ink)}
 section h2 svg{display:none}
@@ -230,11 +230,19 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:var(--acc);box-sh
 .tip.bien .tipk{color:var(--ok)}
 
 /* ===== Próximos 7 días (aviso de arriba) ===== */
-#alerta{background:var(--papel-aviso);padding:12px 16px;margin:0 0 16px}
-#alerta>b{display:flex;align-items:center;gap:8px;font:800 16px/1.2 var(--f-cond);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
-#alerta>b::before{content:"";width:12px;height:16px;border-radius:2px;background:var(--amarilla);box-shadow:0 0 0 1.5px var(--ink);transform:rotate(-8deg);flex:none}
-#alerta .row{border-top-color:var(--linea-aviso)}
-#alerta .row>span:last-child{font-weight:600;color:var(--mute)}
+#hoy{background:var(--papel-aviso);padding:12px 16px;margin:0 0 16px}
+#hoy>b{display:flex;align-items:center;gap:8px;font:800 16px/1.2 var(--f-cond);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+#hoy>b::before{content:"";width:12px;height:16px;border-radius:2px;background:var(--amarilla);box-shadow:0 0 0 1.5px var(--ink);transform:rotate(-8deg);flex:none}
+#hoy .row{border-top-color:var(--linea-aviso)}
+#hoy .row>span:last-child{font-weight:600;color:var(--mute)}
+#hoy>b small{margin-left:auto;font:700 14px/1 var(--f-cond);letter-spacing:.04em;color:var(--mute)}
+#hoy .ev{border-top:1.5px dashed var(--linea-aviso);padding:7px 0}
+#hoy .ev:first-of-type{border-top:0}
+#hoy .ev time{min-width:88px}
+#hoy .ev span{flex:1 1 auto;min-width:0;font-weight:600}
+#hoy .ev small.tag{flex:none;font:700 11px/1 var(--f-cond);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);border:1.5px solid var(--linea-aviso);border-radius:999px;padding:3px 8px}
+#hoy .none{padding:4px 0}
+#hoy .hoyprox{margin:2px 0 0;font-weight:600}
 
 /* ===== El fixture: agenda y calendario ===== */
 .day{padding:8px 0;border-top:1.5px dashed var(--line)}
@@ -326,6 +334,20 @@ body.sinhints .hint{display:none}
 /* ===== Barra de abajo (solo celular): saltar entre grupos ===== */
 .tabs{display:none}
 .grupo{scroll-margin-top:12px}
+/* ===== Para profundizar: menús desplegables (Más de tu plata, Agenda y rutinas, Configuración) ===== */
+.grupo.menu.primero::before{content:"Para profundizar";display:block;margin:32px 0 12px 4px;font:800 14px/1 var(--f-cond);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+h2.menuh{margin:0 0 12px}
+button.menub{display:flex;align-items:center;gap:14px;width:100%;min-height:68px;padding:12px 20px;text-align:left;background:var(--panel);color:var(--ink);border:var(--borde);border-radius:var(--radio);box-shadow:var(--sombra);font:800 20px/1.1 var(--f-cond);letter-spacing:.03em;text-transform:uppercase}
+button.menub:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+button.menub>i{font-style:normal;font-size:26px;line-height:1;flex:none}
+button.menub>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+button.menub small{font:500 14px/1.3 var(--f-txt);letter-spacing:0;text-transform:none;color:var(--mute)}
+button.menub::after{content:"";margin-left:auto;flex:none;width:10px;height:10px;border-right:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(45deg);transition:transform .15s}
+.grupo.menu.abierto button.menub{background:var(--ink);color:#fff}
+.grupo.menu.abierto button.menub small{color:rgba(255,255,255,.75)}
+.grupo.menu.abierto button.menub::after{transform:rotate(-135deg)}
+.grupo.menu.abierto{margin-bottom:24px}
+body:not(.ordenando) .grupo.menu:not(.abierto)>.cols{display:none}
 
 /* ===== Modo "Armar la formación" ===== */
 #ordtop{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--ink);color:#fff;border-radius:14px;padding:8px 12px;margin:0 0 12px;font-size:14px;font-weight:600}
@@ -471,7 +493,7 @@ body.eq-union .estadio{display:block;background-image:url(estadio-union.jpg?v=1)
  main{max-width:1160px;padding:28px 24px 64px}
  .cols{column-gap:20px}
  .cols>section,.cols>section.goal{margin-bottom:20px}
- section,.hero,#alerta{padding:18px 22px}
+ section,.hero,#hoy{padding:18px 22px}
  #frase b{font-size:56px}
 }
 
@@ -481,13 +503,16 @@ body.eq-union .estadio{display:block;background-image:url(estadio-union.jpg?v=1)
  :root{--sombra:3px 3px 0 var(--ink);--radio:16px}
  .cols{columns:1}
  .cols>section,.cols>section.goal{margin-bottom:12px}
- section,.hero,#alerta{padding:14px}
+ section,.hero,#hoy{padding:14px}
  section[style*="margin-bottom:16px"]{margin-bottom:12px!important}
- .hero,#alerta,.guia{margin-bottom:12px}
+ .hero,#hoy,.guia{margin-bottom:12px}
  h1{font-size:30px}
  .masc{width:48px;height:56px}
  .sub{font-size:12px}
  h2.grp{font-size:20px;margin:22px 0 12px 8px}
+ button.menub{min-height:60px;padding:10px 16px;gap:12px;font-size:18px}
+ button.menub small{font-size:13px}
+ .grupo.menu.primero::before{margin-top:26px}
  section h2,section>details:first-child>summary{font-size:19px}
  #frase b{font-size:40px}
  .hero::before{right:90px}
