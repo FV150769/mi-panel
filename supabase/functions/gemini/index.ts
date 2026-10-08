@@ -3,10 +3,12 @@
 // - Si no, se usa la clave compartida (secreto GEMINI_API_KEY) con un límite de notas por día para cada usuario
 //   (secreto opcional IA_LIMITE_DIARIO, por defecto 15), así nadie se come el cupo de todos.
 // - Con {probar:true} solo verifica que la clave propia del usuario funcione.
-// - Con {ping:true} solo despierta la función (el panel la llama al tocar el cuadro de la nota, así no arranca en frío).
+// - Con {ping:true} despierta la función (el panel la llama al tocar el cuadro de la nota, así no arranca en frío)
+//   y deja lista la sesión, la clave propia y el cupo del día, así la nota no espera a la base de datos.
 // Solo responde a usuarios con sesión iniciada: se verifica el usuario (la clave pública sola no alcanza).
-// Para que sea rápido, la sesión, la clave propia y el cupo del día se consultan a la vez, y el cupo se suma
-// después de responder. La respuesta trae _t con los tiempos (preparación, Gemini y modelo) para medir.
+// Para que sea rápido, la sesión, la clave propia y el cupo del día se consultan a la vez (y se recuerdan unos
+// minutos), y el cupo se suma después de responder. La respuesta trae _t con los tiempos (preparación, Gemini,
+// modelo y cada intento) para medir.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
@@ -14,15 +16,55 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
 const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-// Usuario del token, sin ir a la red (después se confirma con Supabase Auth antes de usar la IA).
-function usuarioDe(jwt: string): string {
+// Usuario del token y hasta cuándo vale, sin ir a la red (después se confirma con Supabase Auth antes de usar la IA).
+function usuarioDe(jwt: string): { uid: string; exp: number } {
   try {
     const p = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
     const c = JSON.parse(atob(p + "=".repeat((4 - p.length % 4) % 4)));
-    return c?.role === "authenticated" && typeof c.sub === "string" ? c.sub : "";
+    const uid = c?.role === "authenticated" && typeof c.sub === "string" ? c.sub : "";
+    return { uid, exp: Number(c?.exp) * 1000 || 0 };
   } catch {
-    return "";
+    return { uid: "", exp: 0 };
   }
+}
+
+// Lo que ya se sabe de cada usuario, por unos minutos: la sesión confirmada, su clave propia y cuántas notas usó hoy
+// con la compartida. El ping (cuando la persona toca el cuadro de la nota) lo deja listo, así al mandar la nota no se
+// espera a la base de datos. Con fresco se vuelve a leer (al probar o quitar la clave propia).
+const VIVE = 5 * 60 * 1000;
+const sesiones = new Map<string, { uid: string; hasta: number }>();
+const datos = new Map<string, { clave: string; dia: string; n: number; hasta: number }>();
+function podar(m: Map<string, { hasta: number }>) {
+  if (m.size < 500) return;
+  const ahora = Date.now();
+  for (const [k, v] of m) if (v.hasta <= ahora) m.delete(k);
+}
+async function preparar(jwt: string, u: { uid: string; exp: number }, fresco = false) {
+  const ahora = Date.now();
+  const dia = hoyAR();
+  const s = sesiones.get(jwt);
+  const d = datos.get(u.uid);
+  const okS = !!s && s.uid === u.uid && s.hasta > ahora;
+  const okD = !fresco && !!d && d.hasta > ahora && d.dia === dia;
+  if (okS && okD) return { ok: true, clave: d!.clave, usadas: d!.n };
+  const [ses, cla, uso] = await Promise.all([
+    okS ? null : sb.auth.getUser(jwt),
+    okD ? null : admin.from("ia_claves").select("clave").eq("user_id", u.uid).maybeSingle(),
+    okD ? null : admin.from("ia_uso").select("n").eq("user_id", u.uid).eq("dia", dia).maybeSingle(),
+  ]);
+  if (!okS) {
+    if (ses?.data?.user?.id !== u.uid) return { ok: false, clave: "", usadas: 0 };
+    podar(sesiones);
+    sesiones.set(jwt, { uid: u.uid, hasta: Math.min(ahora + VIVE, u.exp || ahora + VIVE) });
+  }
+  if (okD) return { ok: true, clave: d!.clave, usadas: d!.n };
+  const clave = (cla?.data?.clave as string | undefined) || "";
+  const n = (uso?.data?.n as number | undefined) ?? 0;
+  if (!cla?.error && !uso?.error) {
+    podar(datos);
+    datos.set(u.uid, { clave, dia, n, hasta: ahora + VIVE });
+  }
+  return { ok: true, clave, usadas: n };
 }
 
 const CORS = {
@@ -60,6 +102,8 @@ async function llamar(key: string, prompt: string, audio?: { mime: string; data:
   const fin = Date.now() + 20000;
   let d: any = {};
   let status = 0;
+  // Cada intento queda anotado (modelo:estado:ms) para ver en las medidas por qué una nota tardó.
+  const pasos: string[] = [];
   // Claves nuevas "AQ." (desde mayo de 2026): si Google rechaza el encabezado de siempre con 401, se prueba una vez como Bearer.
   let bearer = false;
   let probeBearer = key.startsWith("AQ.");
@@ -72,6 +116,8 @@ async function llamar(key: string, prompt: string, audio?: { mime: string; data:
     const gen: any = { responseMimeType: "application/json", temperature: 0, maxOutputTokens: 4096 };
     if (PENSAR[pv]) gen.thinkingConfig = PENSAR[pv];
     let res: Response;
+    const ti = Date.now();
+    const corto = modelo.replace(/^gemini-|-latest$/g, "");
     try {
       res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
@@ -90,13 +136,15 @@ async function llamar(key: string, prompt: string, audio?: { mime: string; data:
     } catch {
       status = 504;
       d = { error: { message: "Gemini tardó demasiado en responder" } };
+      pasos.push(corto + ":504:" + (Date.now() - ti));
       continue;
     }
     status = res.status;
     d = await res.json().catch(() => ({}));
+    pasos.push(corto + ":" + status + ":" + (Date.now() - ti));
     if (res.ok) {
       pensarOk[modelo] = pv;
-      return { ok: true, d, status, modelo };
+      return { ok: true, d, status, modelo, pasos };
     }
     if (res.status === 401 && probeBearer) {
       probeBearer = false;
@@ -113,7 +161,7 @@ async function llamar(key: string, prompt: string, audio?: { mime: string; data:
     }
     if (![429, 500, 503].includes(res.status)) break;
   }
-  return { ok: false, d, status, modelo: "" };
+  return { ok: false, d, status, modelo: "", pasos };
 }
 
 // Traduce los errores de Google a algo entendible cuando la clave es del usuario.
@@ -138,20 +186,20 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: "Pedido inválido" }, 400);
   }
-  // Despertar: no toca la base ni la IA.
-  if (body?.ping === true) return json({ ok: true });
-
   const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-  const uid = usuarioDe(jwt);
-  if (!uid) return json({ error: "Iniciá sesión para usar la IA" }, 401);
-  // A la vez: confirmar la sesión, la clave propia y lo usado hoy con la clave compartida.
-  const [ses, cla, uso] = await Promise.all([
-    sb.auth.getUser(jwt),
-    admin.from("ia_claves").select("clave").eq("user_id", uid).maybeSingle(),
-    admin.from("ia_uso").select("n").eq("user_id", uid).eq("dia", hoyAR()).maybeSingle(),
-  ]);
-  if (ses.data?.user?.id !== uid) return json({ error: "Iniciá sesión para usar la IA" }, 401);
-  const propia = (cla.data?.clave as string | undefined) || "";
+  const u = usuarioDe(jwt);
+  // Despertar: no toca la IA; si hay sesión, deja listos la sesión, la clave y el cupo para la nota que viene.
+  if (body?.ping === true) {
+    if (u.uid) await preparar(jwt, u, body?.fresco === true).catch(() => {});
+    return json({ ok: true });
+  }
+
+  if (!u.uid) return json({ error: "Iniciá sesión para usar la IA" }, 401);
+  const uid = u.uid;
+  // A la vez: confirmar la sesión, la clave propia y lo usado hoy con la clave compartida (o lo que dejó listo el ping).
+  const pre = await preparar(jwt, u, body?.probar === true);
+  if (!pre.ok) return json({ error: "Iniciá sesión para usar la IA" }, 401);
+  const propia = pre.clave;
 
   // Botón "Guardar y probar": verifica la clave propia con un pedido mínimo.
   if (body?.probar === true) {
@@ -187,7 +235,7 @@ Deno.serve(async (req) => {
   if (!key) {
     key = Deno.env.get("GEMINI_API_KEY") || "";
     if (!key) return json({ error: "Falta el secreto GEMINI_API_KEY en Supabase" }, 500);
-    usadas = (uso.data?.n as number | undefined) ?? 0;
+    usadas = pre.usadas;
     if (usadas >= LIMITE) {
       return json({
         error: "Llegaste a las " + LIMITE + " notas de hoy con la IA compartida. Cargá tu propia clave gratis en " +
@@ -221,10 +269,12 @@ Deno.serve(async (req) => {
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) EdgeRuntime.waitUntil(suma);
     else await suma;
     usadas += 1;
+    const d = datos.get(uid);
+    if (d && d.dia === hoyAR()) d.n = usadas;
   }
   if (out && typeof out === "object" && !Array.isArray(out)) {
     out._ia = propia ? { propia: true } : { propia: false, quedan: Math.max(0, LIMITE - usadas), limite: LIMITE };
-    out._t = { prep: t1 - t0, ia: t2 - t1, modelo: r.modelo };
+    out._t = { prep: t1 - t0, ia: t2 - t1, modelo: r.modelo, pasos: r.pasos.join(" ") };
   }
   return json(out);
 });
