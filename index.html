@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=41">
+<link rel="stylesheet" href="styles.css?v=42">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -33,7 +33,7 @@
 </section>
 <section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 6)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rpb">Guardar contraseña</button></div><p class="sem" id="rpm"></p></section>
 <div class="cuenta">
-<p class="sem" id="usrp" style="display:none">Usuario: <input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <span id="um"></span></p>
+<p class="sem" id="usrp" style="display:none">Usuario: <span id="uver" style="display:none"><b id="ushow"></b> <button class="x" id="ued" style="text-decoration:underline">Modificar</button></span><span id="uedit"><input id="uname" placeholder="elegí un usuario" maxlength="20" autocapitalize="none" aria-label="Usuario" style="max-width:190px;min-height:34px"> <button id="us" style="min-height:34px">Guardar</button> <button class="x" id="ucan" style="display:none;text-decoration:underline">Cancelar</button></span> <span id="um"></span></p>
 <p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="ord" style="text-decoration:underline">↕ Armar la formación</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
 </div>
 <div id="ordtop" style="display:none"><span>Armá tu formación: arrastrá cada grupo o tarjeta desde su barra ⠿</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">¡Listo!</button></span></div>
@@ -194,6 +194,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=41"></script>
+<script src="app.js?v=42"></script>
 </body>
 </html>

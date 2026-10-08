@@ -18,7 +18,7 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v41";
+var DOC=null,VER="v42";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -750,8 +750,14 @@ $("lo").onclick=async function(){if(SB)await SB.auth.signOut()};
 async function mailOf(v){v=v.trim();if(v.indexOf("@")>0)return v;var r=await SB.rpc("login_email",{u:v.toLowerCase()});return r.data||null}
 $("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var v=$("le").value.trim();if(!v)return authMsg("Escribí arriba tu email o tu usuario y tocá de nuevo.");var em=await mailOf(v);if(em){await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname})}authMsg("Si la cuenta existe, te mandé un mail para crear una contraseña nueva. Revisá también spam.")};
 $("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("rpm").textContent="Mínimo 6 caracteres.");var r=await SB.auth.updateUser({password:pw});if(r.error)return($("rpm").textContent="No pude cambiarla: "+r.error.message);$("rp").value="";$("rpm").textContent="";$("rec").style.display="none";try{history.replaceState(null,"",location.pathname)}catch(e){}stat("Contraseña actualizada")};
-async function loadUser(){try{var r=await SB.from("profiles").select("username").eq("user_id",UID).maybeSingle();$("uname").value=(r.data&&r.data.username)||""}catch(e){}}
-$("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});$("um").textContent=r.error?(r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo."):"Guardado. Ya podés entrar con "+u+".";if(!r.error)$("uname").value=u};
+// Usuario: guardado se muestra el nombre con "Modificar" en chico; el campo y "Guardar" aparecen solo al elegirlo o cambiarlo.
+var UNAME="";
+function userUI(edit){var hay=!!UNAME;edit=edit||!hay;$("uver").style.display=edit?"none":"";$("uedit").style.display=edit?"":"none";$("ucan").style.display=edit&&hay?"":"none";$("ushow").textContent=UNAME;if(edit){$("uname").value=UNAME}}
+async function loadUser(){try{var r=await SB.from("profiles").select("username").eq("user_id",UID).maybeSingle();UNAME=(r.data&&r.data.username)||"";$("um").textContent="";userUI(false)}catch(e){}}
+$("ued").onclick=function(){$("um").textContent="";userUI(true);$("uname").focus()};
+$("ucan").onclick=function(){$("um").textContent="";userUI(false)};
+$("uname").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("us").click()}else if(e.key==="Escape"&&UNAME)$("ucan").click()});
+$("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});if(r.error)return($("um").textContent=r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo.");var nuevo=!UNAME;UNAME=u;userUI(false);$("um").textContent=nuevo?"Listo: ya podés entrar con "+u+".":"Guardado.";setTimeout(function(){$("um").textContent=""},5000)};
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}if(UID)SB.auth.getSession().then(pull).catch(function(){})});
 // Orden personalizado: el usuario arrastra grupos y tarjetas (o usa ↑ ↓); se guarda en su cuenta.
 var LAYOUT=null;
