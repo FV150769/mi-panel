@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PETACA</title>
-<link rel="icon" href="petaca.svg?v=28" type="image/svg+xml">
-<link rel="icon" href="icons/favicon-32.png?v=28" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=28">
-<link rel="manifest" href="manifest.webmanifest?v=28">
+<link rel="icon" href="icons/favicon-32.png?v=29" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=29">
+<link rel="manifest" href="manifest.webmanifest?v=29">
 <meta name="apple-mobile-web-app-title" content="PETACA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=53">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="styles.css?v=56">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -22,7 +22,7 @@
 <main>
 <p id="aviso" class="sem" style="color:var(--warn);font-weight:700">Cargando… Si este mensaje no desaparece, la página no pudo iniciar. Cerrala y abrila de nuevo, o copiame lo que dice acá.</p>
 <header class="top">
-<div class="marca"><img class="masc" src="petaca-arg.svg?v=2" alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta albiceleste, en su trono con la bandera argentina"><div><h1>PETACA</h1>
+<div class="marca"><img class="masc" data-pose="sentado" src="img/petaca-pateando-arg.png?v=2" alt="Petaca, la mascota: un bebé rubio jugador de fútbol con la camiseta de la Selección"><div><h1>PETACA</h1>
 <p class="sub" id="fecha"></p><p class="lema">Tu guita y tu agenda, ordenadas como un 5 de los de antes.</p></div></div>
 <div class="eqsel"><button type="button" class="eqchip" id="eqbtn" aria-haspopup="true" aria-expanded="false" aria-controls="eqpop">⚽ Tu equipo ▾</button>
 <div class="eqpop" id="eqpop" role="dialog" aria-label="Elegí tu equipo" hidden><b>¿De qué cuadro sos?</b><div class="eqbs" id="eqops"></div></div></div>
@@ -43,7 +43,7 @@
 <div id="ordtop" style="display:none"><span>Armá tu formación: arrastrá cada grupo o tarjeta desde su barra ⠿</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">¡Listo!</button></span></div>
 
 <div id="alerta" style="display:none"></div>
-<section class="guia" id="guias"><details id="guia"><summary>📖 Guía de uso: cómo sacarle jugo a Petaca</summary>
+<section class="guia" id="guias" hidden><details id="guia"><summary>📖 Guía de uso: cómo sacarle jugo a Petaca</summary>
 <div class="claves">
 <b>⭐ Las 5 claves</b>
 <ol>
@@ -102,6 +102,7 @@
 </details>
 <details class="gtema"><summary>9. Tu cuenta, el celular y tus datos</summary>
 <p>Todo se guarda en tu cuenta: entrás desde el celu o la compu y ves lo mismo.</p>
+<p>En el celu, la <b>barra de abajo</b> te lleva directo a cada parte del panel, y <b>✍️ Contale</b> te deja escribiendo una nota.</p>
 <p><b>Instalala en el celular:</b> en iPhone, Safari → Compartir → "Agregar a inicio". En Android, Chrome → menú ⋮ → "Instalar app".</p>
 <p>Con <b>↕ Armar la formación</b> (arriba) ordenás las secciones a tu gusto. En <b>Copia de seguridad</b> podés exportar tus datos.</p>
 </details>
@@ -134,7 +135,7 @@
 <section data-c="resumen" data-name="Resumen y consejos">
 <h2>Resumen</h2>
 <div id="res" class="kpis"></div>
-<h3 class="tgh3 charla"><img src="petaca-arg.svg?v=2" alt="">La charla técnica de Petaca</h3>
+<h3 class="tgh3 charla"><img data-pose="enojado" src="img/petaca-enojado-arg.png?v=2" alt="">La charla técnica de Petaca</h3>
 <div id="tips"></div>
 </section>
 <section data-c="gastos" data-name="Gastos del mes">
@@ -264,12 +265,20 @@
 </details></section>
 </div>
 
+<img class="descanso" data-pose="acostado" src="img/petaca-acostado-arg.png?v=2" alt="" loading="lazy">
 <p class="sem" id="est"></p>
 <p class="credito" id="credito" style="display:none"></p>
+<nav class="tabs" id="tabs" aria-label="Ir a una parte del panel">
+<button type="button" data-g="inicio"><i aria-hidden="true">🏟️</i>Inicio</button>
+<button type="button" data-g="dinero"><i aria-hidden="true">💸</i>La guita</button>
+<button type="button" data-g="nota"><i aria-hidden="true">✍️</i>Contale</button>
+<button type="button" data-g="tiempo"><i aria-hidden="true">📅</i>Fixture</button>
+<button type="button" data-g="ajustes"><i aria-hidden="true">🧰</i>Vestuario</button>
+</nav>
 <div id="toast" role="status" aria-live="polite" style="display:none"></div>
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=53"></script>
+<script src="app.js?v=56"></script>
 </body>
 </html>

@@ -18,19 +18,29 @@ var SEED={events:[],expenses:[]};
 var MED=[["t","🏦 Transferencia"],["e","💵 Efectivo"]]; // medio de cada ingreso o gasto (ver efVal)
 // Equipo del usuario (se guarda en su cuenta): cambia la camiseta de Petaca y los colores del panel. Sin equipo, Petaca es albiceleste.
 // En la pantalla de entrada siempre es albiceleste, porque todavía no se sabe quién entra. Solo colores de camiseta, sin escudos.
-var EQUIPO="",EQS={"":{n:"Sin equipo (albiceleste)",img:"petaca-arg.svg?v=2",tc:"#12A150",d:"la camiseta albiceleste, en su trono con la bandera argentina"},
- boca:{n:"Boca",img:"petaca-boca.svg?v=1",tc:"#0B4DA2",es:{lg:"arg.1",id:"5"},d:"la camiseta azul con la franja amarilla",
+// Petaca es un bebé rubio jugador, con 5 poses (img/petaca-POSE-CAMISETA.png): sentado con la pelota (el de siempre),
+// enojado pisando la pelota (charla técnica y berrinche), gateando (pretemporada), pateando (entrada y cuando se va) y acostado (pie de página).
+var EQUIPO="",EQS={"":{n:"Sin equipo (albiceleste)",tc:"#12A150",d:"la camiseta de la Selección"},
+ boca:{n:"Boca",tc:"#0B4DA2",es:{lg:"arg.1",id:"5"},d:"la camiseta azul con la franja amarilla",
   foto:{t:"La Bombonera",a:"Ministerio de Cultura de la Nación",l:"CC BY-SA 2.0",lu:"https://creativecommons.org/licenses/by-sa/2.0/",u:"https://commons.wikimedia.org/wiki/File:Estadio_Alberto_J._Armando_field_view.jpg"}},
- colon:{n:"Colón",img:"petaca-colon.svg?v=1",tc:"#C8151B",es:{lg:"arg.2",id:"7"},d:"la camiseta mitad roja y mitad negra",
+ colon:{n:"Colón",tc:"#C8151B",es:{lg:"arg.2",id:"7"},d:"la camiseta mitad roja y mitad negra",
   foto:{t:"Estadio Brigadier López",a:"HighViewDrone",l:"CC BY-SA 4.0",lu:"https://creativecommons.org/licenses/by-sa/4.0/",u:"https://commons.wikimedia.org/wiki/File:Estadio_Brigadier_General_Estanislao_L%C3%B3pez_-_Col%C3%B3n_de_Santa_Fe.jpg"}},
- union:{n:"Unión",img:"petaca-union.svg?v=1",tc:"#D8121A",es:{lg:"arg.1",id:"20"},d:"la camiseta a bastones rojos y blancos",
+ union:{n:"Unión",tc:"#D8121A",es:{lg:"arg.1",id:"20"},d:"la camiseta a bastones rojos y blancos",
   foto:{t:"Estadio 15 de Abril",a:"TitiNicola",l:"CC BY-SA 4.0",lu:"https://creativecommons.org/licenses/by-sa/4.0/",u:"https://commons.wikimedia.org/wiki/File:Estadio_15_de_Abril_-_Club_Atl%C3%A9tico_Uni%C3%B3n_de_Santa_Fe.jpg"}}};
 // es: liga e id del equipo en ESPN, para el próximo partido y la tabla (ver renderEquipo).
 var LIGAS={"arg.1":"Liga Profesional","arg.2":"Primera Nacional"};
 function eqDe(k){return k&&EQS[k]?k:""}
+function pose(p,k){return"img/petaca-"+p+"-"+(k&&EQS[k]?k:"arg")+".png?v=2"}
+Object.keys(EQS).forEach(function(k){EQS[k].img=pose("sentado",k)});
+var PRECARGA={};
 function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUIPO]||EQS[""];
  Object.keys(EQS).forEach(function(k){if(k)document.body.classList.toggle("eq-"+k,!a&&k===EQUIPO)});
- document.querySelectorAll("img.masc,.charla img").forEach(function(i){if(i.getAttribute("src")!==e.img)i.src=e.img;if(i.classList.contains("masc"))i.alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y "+e.d});
+ // Cada imagen con data-pose se viste con la camiseta del equipo. En la entrada, Petaca aparece pateando.
+ var kit=a?"":EQUIPO;
+ document.querySelectorAll("img[data-pose]").forEach(function(i){if(i.dataset.egg)return;var u=pose(a&&i.classList.contains("masc")?"pateando":i.dataset.pose,kit);if(i.getAttribute("src")!==u)i.src=u;
+  if(i.classList.contains("masc"))i.alt="Petaca, la mascota: un bebé rubio jugador de fútbol con "+e.d});
+ // Las poses del berrinche, listas para que el cambio sea instantáneo
+ ["enojado","pateando"].forEach(function(p){var u=pose(p,kit);if(!PRECARGA[u]){PRECARGA[u]=new Image();PRECARGA[u].src=u}});
  var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=a?"#12A150":e.tc;
  var ek=a?"":EQUIPO;if(ek!==EQLAST){EQLAST=ek;renderEquipo()}
  var eb=document.getElementById("eqbtn");if(eb)eb.textContent="⚽ "+(EQUIPO?EQS[EQUIPO].n:"Tu equipo")+" ▾"
@@ -40,7 +50,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v53";
+var DOC=null,VER="v56";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -212,9 +222,11 @@ function render(){var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
  var left=base-spd,pct=base>0?spd/base*100:(spd>0?100:0);
  $("fill").style.width=Math.min(pct,100)+"%";$("fill").className="fill"+(pct>=80?" over":"");
  $("mark").style.display="none";
- $("frase").textContent=left>=0?ACC[0][0]+": te quedan "+money(left)+".":"Te pasaste "+money(-left)+" de lo que tenías en "+ACC[0][0]+".";
+ // La plata que queda se lee como un tablero: la etiqueta chica arriba y el número grande abajo
+ var fr=$("frase");fr.innerHTML="";fr.appendChild(el("small","",left>=0?ACC[0][0]+" · te quedan":"Te pasaste en "+ACC[0][0]));fr.appendChild(el("b",left<0?"neg":"",money(Math.abs(left))));
  $("gastado").textContent="Gastaste "+money(spd)+" de "+money(base);
- var ev=efVal(),tv=left-ev;$("medios").textContent="🏦 Transferencia: "+(tv<0?"−":"")+money(Math.abs(tv))+"  ·  💵 Efectivo: "+(ev<0?"−":"")+money(Math.abs(ev));
+ var ev=efVal(),tv=left-ev,md=$("medios");md.innerHTML="";
+ [["🏦 Transferencia",tv],["💵 Efectivo",ev]].forEach(function(x){var c=el("span","chip",x[0]+" ");c.appendChild(el("b","",(x[1]<0?"−":"")+money(Math.abs(x[1]))));md.appendChild(c)});
  var cb=$("cats");cb.innerHTML="";
  var mx=0;Object.keys(BUDGET).forEach(function(k){mx=Math.max(mx,by[k]||0)});
  var Z=[];Object.keys(BUDGET).sort(function(a,b){return (by[b]||0)-(by[a]||0)}).forEach(function(k){
@@ -802,7 +814,7 @@ var DEFLAY={g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEa
 function ordenar(par,nodos,ids,antes){var by={};nodos.forEach(function(n){by[n.dataset.g||n.dataset.c]=n});
  ids.filter(function(i){return by[i]}).concat(nodos.map(function(n){return n.dataset.g||n.dataset.c}).filter(function(i){return ids.indexOf(i)<0})).forEach(function(i){par.insertBefore(by[i],antes||null)})}
 function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main"),by={},en={},ya={};
- ordenar(m,grupos(),Y.g||DEFLAY.g,$("est"));
+ ordenar(m,grupos(),Y.g||DEFLAY.g,document.querySelector("main>.descanso")||$("est"));
  // Las tarjetas pueden haberse pasado a otro grupo: cada una va al primer grupo que la lista, o al suyo de siempre.
  function ids(g){return(Y.c||{})[g]||DEFLAY.c[g]||[]}
  grupos().forEach(function(g){tarjetas(g).forEach(function(s){by[s.dataset.c]=s})});
@@ -982,7 +994,7 @@ function preStart(){if(PRE)return;PRE={paso:0,cat:PRECAT.map(function(n){return{
 function preEnd(){$("pre").style.display="none";$("pre").innerHTML="";document.body.classList.remove("pre-open");PRE=null}
 function preCampo(P,k,txt,ph,num){var lb=el("label","",txt),i=el("input");if(num){i.type="number";i.inputMode="decimal";i.min="0"}i.placeholder=ph;i.value=P[k];i.oninput=function(){P[k]=i.value};lb.appendChild(i);return lb}
 function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.appendChild(c);
- var h=el("div","prh"),im=el("img");im.src=(EQS[P.eq]||EQS[""]).img;im.alt="";h.appendChild(im);var ht=el("div");ht.appendChild(el("small","prk","Pretemporada · paso "+(P.paso+1)+" de 3"));
+ var h=el("div","prh"),im=el("img");im.src=pose("gateando",P.eq);im.alt="";h.appendChild(im);var ht=el("div");ht.appendChild(el("small","prk","Pretemporada · paso "+(P.paso+1)+" de 3"));
  var t=el("h2","",["Armá tu plantel de gastos","¿Con cuánto arrancás?","Tu objetivo de ahorro"][P.paso]);t.id="pret";ht.appendChild(t);h.appendChild(ht);c.appendChild(h);
  var ps=el("div","pasos");for(var i=0;i<3;i++)ps.appendChild(el("i",i<=P.paso?"on":""));c.appendChild(ps);
  var msg=el("p","sem prm");
@@ -1040,7 +1052,7 @@ function primerMov(){var f="";L.expenses.concat(L.ing).forEach(function(e){var d
 function capTxt(){var f=primerMov();return f&&f<today?"la plata que tenías en "+ACC[0][0]+" el "+fd(f)+", antes del primer movimiento que cargaste":"la plata que tenés hoy en "+ACC[0][0]}
 function capStart(){if(PRE||CAPLATER||ONB===0||!UID||!capFalta()||$("pre").style.display!=="none")return;
  var w=$("pre"),c=el("div","pc"),h=el("div","prh"),im=el("img"),ht=el("div"),t=el("h2","","¿Con cuánto arrancaste?"),f=el("div","prf"),lb=el("label","","Capital inicial (en pesos)"),i=el("input"),msg=el("p","sem prm"),b=el("div","prb"),izq=el("span"),der=el("span"),no=el("button","x","Más tarde"),ok=el("button","","Guardar");
- im.src=(EQS[EQUIPO]||EQS[""]).img;im.alt="";t.id="pret";ht.appendChild(el("small","prk","Falta un dato"));ht.appendChild(t);h.appendChild(im);h.appendChild(ht);c.appendChild(h);
+ im.src=pose("enojado",EQUIPO);im.alt="";t.id="pret";ht.appendChild(el("small","prk","Falta un dato"));ht.appendChild(t);h.appendChild(im);h.appendChild(ht);c.appendChild(h);
  c.appendChild(el("p","sem","Contale a Petaca "+capTxt()+". Así lo que te queda y los consejos cuentan toda tu plata, no solo los ingresos que cargaste. Si no tenías nada, poné 0."));
  i.type="number";i.inputMode="decimal";i.min="0";i.placeholder="Ej: 100,000";lb.appendChild(i);f.appendChild(lb);c.appendChild(f);c.appendChild(msg);
  no.onclick=function(){CAPLATER=true;capEnd()};
@@ -1129,11 +1141,12 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
  function rnd(a){return a[Math.floor(Math.random()*a.length)]}
  function globo(txt,ms){var r=m.getBoundingClientRect(),g=el("div","globo",txt);g.style.left=Math.min(Math.max(r.left+r.width/2,120),innerWidth-120)+"px";g.style.top=Math.max(r.top-6,60)+"px";document.body.appendChild(g);setTimeout(function(){g.remove()},ms);return g}
  function humo(){var r=m.getBoundingClientRect(),h=el("span","humo","💨");h.style.left=(r.left-10)+"px";h.style.top=(r.top+r.height/2-14)+"px";document.body.appendChild(h);setTimeout(function(){h.remove()},800)}
- function fin(){m.style.visibility="";m.classList.remove("enojado");document.documentElement.classList.remove("huye");on=false}
+ function kit(){return document.body.classList.contains("auth")?"":EQUIPO}
+ function fin(){m.style.visibility="";m.classList.remove("enojado");document.documentElement.classList.remove("huye");on=false;delete m.dataset.egg;vestir()}
  m.addEventListener("click",function(){
-  if(on)return;on=true;m.classList.add("enojado");globo(rnd(ENOJO),1500);
+  if(on)return;on=true;m.dataset.egg="1";m.src=pose("enojado",kit());m.classList.add("enojado");globo(rnd(ENOJO),1500);
   setTimeout(function(){
-   m.classList.remove("enojado");document.documentElement.classList.add("huye");
+   m.classList.remove("enojado");m.src=pose("pateando",kit());document.documentElement.classList.add("huye");
    var r=m.getBoundingClientRect(),dir=r.left+r.width/2<innerWidth/2?-1:1,lejos=dir>0?innerWidth-r.left+40:-(r.right+40);
    if(!quieto)humo();
    var sale=quieto?m.animate([{opacity:1},{opacity:0}],{duration:400,fill:"forwards"}):
@@ -1217,17 +1230,28 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   if(mr){if(mr.state!=="inactive")mr.stop();return}
   if(usarSR)dictar();else grabar()};
 })();
-// Guía de uso: se abre sola la primera vez; cuando la cerrás queda cerrada (se vuelve a abrir con "📖 Guía", arriba).
+// Barra de abajo en el celu: salta a cada parte del panel y marca en cuál estás. "Contale" te deja escribiendo la nota.
+(function(){var n=$("tabs");if(!n)return;var bs=[].slice.call(n.querySelectorAll("button[data-g]")),suave=!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+ function ir(g){if(g==="inicio")return scrollTo({top:0,behavior:suave?"smooth":"auto"});var x=document.querySelector('.grupo[data-g="'+g+'"]');if(x)x.scrollIntoView({behavior:suave?"smooth":"auto",block:"start"})}
+ bs.forEach(function(b){b.onclick=function(){var g=b.dataset.g;
+  // El foco va en el mismo toque: si no, el iPhone no abre el teclado
+  if(g==="nota"){var t=$("nt");if(t)t.focus({preventScroll:true})}ir(g)}});
+ var pend=0;function marca(){pend=0;var h=innerHeight*.35,act="inicio";
+  if(scrollY>40)document.querySelectorAll(".grupo").forEach(function(x){if(x.getBoundingClientRect().top<h){var g=x.dataset.g;act=g==="avisos"?"ajustes":g}});
+  bs.forEach(function(b){b.setAttribute("aria-current",String(b.dataset.g===act))})}
+ addEventListener("scroll",function(){if(!pend)pend=requestAnimationFrame(marca)},{passive:true});marca()})();
+// Guía de uso: se abre sola la primera vez. Cerrada no ocupa lugar en el panel: se vuelve a abrir con "📖 Guía", arriba.
 // Las recomendaciones 💡 de cada sección se pueden ocultar desde la guía (se recuerda en este dispositivo).
 (function(){
  var g=$("guia"),sw=$("hintsw");if(!g)return;
  function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
- if(ls("panel-guia")!=="visto")g.open=true;
- g.addEventListener("toggle",function(){if(!g.open)ls("panel-guia","visto")});
+ function ver(){$("guias").hidden=!g.open}
+ if(ls("panel-guia")!=="visto")g.open=true;ver();
+ g.addEventListener("toggle",function(){if(!g.open)ls("panel-guia","visto");ver()});
  function hints(on){document.body.classList.toggle("sinhints",!on);sw.checked=on}
  hints(ls("panel-hints")!=="0");
  sw.onchange=function(){hints(sw.checked);ls("panel-hints",sw.checked?"1":"0")};
- $("guib").onclick=function(){g.open=true;$("guias").scrollIntoView({behavior:"smooth",block:"start"})};
+ $("guib").onclick=function(){g.open=true;ver();$("guias").scrollIntoView({behavior:"smooth",block:"start"})};
 })();
 // Tu equipo: próximo partido, último resultado y posición en la tabla. Los trae la función "partido" de Supabase
 // desde los datos públicos de ESPN (el navegador no los puede pedir directo). No es una API oficial: si un día no responde,
