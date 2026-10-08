@@ -51,7 +51,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v64";
+var DOC=null,VER="v65";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -77,7 +77,8 @@ window.addEventListener("unhandledrejection",function(e){var r=e.reason;reportar
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function $(i){return document.getElementById(i)}
 // Números con coma para los miles y millones (1,500,000) y punto para los decimales, para que no se confundan.
-function num(n,d){return Number(n).toLocaleString("en-US",{maximumFractionDigits:d==null?2:d})}
+// Números a la argentina: punto para los miles y coma para los decimales (1.500.000,5).
+function num(n,d){return Number(n).toLocaleString("en-US",{maximumFractionDigits:d==null?2:d}).replace(/[,.]/g,function(c){return c===","?".":","})}
 function usd(n){return "US$ "+num(Math.round(n),0)}
 function money(n){return "$"+num(Math.round(n),0)}
 var now=new Date(),today=iso(now),ym=today.slice(0,7);
@@ -104,23 +105,32 @@ function allExp(){
  return a.concat(L.expenses.filter(function(e){return e.f.slice(0,7)===ym}).map(function(e,i){return{f:e.f,m:e.m,c:e.c,x:e.x,li:L.expenses.indexOf(e)}}));
 }
 function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.textContent=h;return e}
-// Campos de números con coma para los miles mientras escribís (1,500,000). Los campos numéricos del navegador no muestran
-// separadores, así que pasan a ser de texto con teclado numérico. Su .value devuelve el número limpio ("1500000.5"),
-// así el resto del código lee igual que antes; al asignarle un valor se muestra con comas.
-// Como las comas de los miles las pone Petaca sola, una coma que escribís vos cuenta como decimal.
+// Campos de números a la argentina mientras escribís: punto para los miles (1.500.000) y coma para los decimales (12,50).
+// Los campos numéricos del navegador no muestran separadores, así que pasan a ser de texto con teclado numérico. Su .value
+// devuelve el número limpio ("1500000.5"), así el resto del código lee igual que antes; al asignarle un valor se muestra con puntos.
+// Un punto o una coma que escribís vos marca los decimales; si después ponés 3 cifras, era de miles ("58,000" y "58.000" son 58 mil).
 var NUMV=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value");
-function numFmt(s){s=String(s==null?"":s);var neg=/^\s*-/.test(s);s=s.replace(/[^\d.]/g,"");var p=s.indexOf(".");
- var ent=p<0?s:s.slice(0,p),dec=p<0?"":s.slice(p+1).replace(/\./g,"");ent=ent.replace(/^0+(?=\d)/,"");
- return(neg?"-":"")+ent.replace(/\B(?=(\d{3})+(?!\d))/g,",")+(p<0?"":"."+dec)}
+// Lee un número escrito a la argentina ("1.500,50") o a la yanqui ("1,500.50"): un separador seguido de 3 cifras es de miles;
+// el último, seguido de 1 o 2 cifras, es el decimal. Se usa al pegar en un campo y en las notas.
+function numLeer(s){s=String(s==null?"":s).replace(/[^\d.,\-]/g,"");var neg=s.charAt(0)==="-",m,dec="";s=s.replace(/-/g,"");
+ if(m=s.match(/[.,](\d{1,2})$/)){dec=m[1];s=s.slice(0,-m[0].length)}
+ var ent=s.replace(/[.,]/g,"");if(!ent&&!dec)return NaN;return(neg?-1:1)*parseFloat((ent||"0")+(dec?"."+dec:""))}
+// Texto del campo: los puntos son de miles; la coma, decimal (si le siguen 3 cifras o más, también era de miles).
+function numPartes(s){s=String(s==null?"":s);var neg=/^\s*-/.test(s);s=s.replace(/[^\d,]/g,"");var p=s.indexOf(","),ent=p<0?s:s.slice(0,p),dec=p<0?null:s.slice(p+1).replace(/,/g,"");
+ if(dec!=null&&dec.length>=3){ent+=dec;dec=null}return{neg:neg,ent:ent.replace(/^0+(?=\d)/,""),dec:dec}}
+function numFmt(s){var q=numPartes(s);return(q.neg?"-":"")+q.ent.replace(/\B(?=(\d{3})+(?!\d))/g,".")+(q.dec!=null?","+q.dec:"")}
+function numLimpio(s){var q=numPartes(s);return!q.ent&&!q.dec?"":(q.neg?"-":"")+(q.ent||"0")+(q.dec?"."+q.dec:"")}
+// Número (o texto con punto decimal, como lo devuelve el código) → como se ve en el campo.
+function numVer(x){var n=typeof x==="number"?x:numLeer(x);return isFinite(n)?numFmt(String(Math.round(n*100)/100).replace(".",",")):""}
 function numIn(i){if(i._num)return;i._num=1;var v=NUMV.get.call(i);i.type="text";i.setAttribute("data-num","");if(!i.inputMode)i.inputMode="decimal";i.autocomplete="off";
- Object.defineProperty(i,"value",{configurable:true,get:function(){return NUMV.get.call(i).replace(/,/g,"")},set:function(x){NUMV.set.call(i,x===""||x==null?"":numFmt(x))}});
+ Object.defineProperty(i,"value",{configurable:true,get:function(){return numLimpio(NUMV.get.call(i))},set:function(x){NUMV.set.call(i,x===""||x==null?"":numVer(x))}});
  i.value=v;
  i.addEventListener("input",function(e){var r=NUMV.get.call(i),c=i.selectionStart==null?r.length:i.selectionStart;
-  // Una coma escrita a mano es la coma decimal (teclados en español); pegado "1,500,000" son miles.
-  if(e.inputType==="insertText"&&e.data===","&&r.indexOf(".")<0)r=r.slice(0,c-1)+"."+r.slice(c);
-  else if(e.inputType==="insertFromPaste"&&!/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(r.trim()))r=r.replace(/,(?=\d{1,2}$)/,".");
-  var n=r.slice(0,c).replace(/[^\d.\-]/g,"").length,f=numFmt(r);NUMV.set.call(i,f);
-  var k=0,j=0;while(j<f.length&&k<n){if(/[\d.\-]/.test(f[j]))k++;j++}try{i.setSelectionRange(j,j)}catch(_){}})}
+  // Punto o coma escritos a mano: marcan los decimales (una sola coma). Lo pegado se lee a la argentina o a la yanqui.
+  if(e.inputType==="insertText"&&(e.data==="."||e.data===",")){var a=r.slice(0,c-1),b=r.slice(c);if(a.indexOf(",")<0&&b.indexOf(",")<0)r=a+","+b;else{r=a+b;c--}}
+  else if(e.inputType==="insertFromPaste"||e.inputType==="insertReplacementText"){r=numVer(r);c=r.length}
+  var n=r.slice(0,c).replace(/[^\d,\-]/g,"").length,f=numFmt(r);NUMV.set.call(i,f);
+  var k=0,j=0;while(j<f.length&&k<n){if(/[\d,\-]/.test(f[j]))k++;j++}try{i.setSelectionRange(j,j)}catch(_){}})}
 document.querySelectorAll("input[type=number]").forEach(numIn);
 new MutationObserver(function(ms){ms.forEach(function(m){
  if(m.type==="attributes"){if(m.target.type==="number")numIn(m.target);return}
@@ -461,9 +471,9 @@ function n2(t){return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/
 function pad(x){return String(x).padStart(2,"0")}
 function pMontos(c){
  var t=c.replace(/\d{1,2}\/\d{1,2}(\/\d{2,4})?/g," ").replace(/a las? \d{1,2}([:.]\d{2})?\s*(hs|h|am|pm)?/g," ").replace(/\d{1,2}:\d{2}/g," ").replace(/\d{1,2}\s*(am|pm)\b/g," ");
- // "5.000" o "5,000" (grupos de 3 cifras) son miles; "1,5" o "1.5" son decimales.
- var re=/(\d{1,3}(?:[.,]\d{3})+(?!\d)|\d+(?:[.,]\d{1,2})?)\s*(mil\b|k\b|lucas?\b|palos?\b|millon(?:es)?\b)?/g,m,a=[];
- while(m=re.exec(t)){var s=m[1],n=parseFloat(/^\d{1,3}([.,]\d{3})+$/.test(s)?s.replace(/[.,]/g,""):s.replace(",","."));var u=m[2]||"";
+ // "5.000" o "5,000" (grupos de 3 cifras) son miles; "1,5" o "1.5" son decimales; "1.500,50" y "1,500.50" también se entienden.
+ var re=/(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?(?!\d)|\d+(?:[.,]\d{1,2})?)\s*(mil\b|k\b|lucas?\b|palos?\b|millon(?:es)?\b)?/g,m,a=[];
+ while(m=re.exec(t)){var n=numLeer(m[1]),u=m[2]||"";
   if(/^(mil|k|luca)/.test(u))n*=1000;else if(/^(palo|millon)/.test(u))n*=1e6;
   if(n>0)a.push(n)}
  return a}
@@ -549,7 +559,8 @@ function localParse(txt,C){
    if(md)ch.medio=md;
    if(it.t==="X")Object.keys(BUDGET).forEach(function(k){var nk=n2(k);if(k!==it.e.c&&cc.indexOf(nk)>=0&&n2(String(it.e.x||"")).indexOf(nk)<0)ch.categoria=k});
    if(Object.keys(ch).length>1){o.corregir.push(ch);return o}}}
- txt.split(/[,;\n]|\.(?!\d)|\s+y\s+/).forEach(function(raw){
+ // Partes de la nota: la coma o el punto pegados a cifras ("58,000", "1,5") son del número, no separan.
+ txt.split(/[;\n]|,(?!\d)|\.(?!\d)|\s+y\s+/).forEach(function(raw){
   raw=raw.trim();if(!raw)return;var c=n2(raw),mo=pMonto(c),f=pFecha(c);
   // Porcentaje para ahorro: "siempre / de cada ingreso" cambia el ajuste; si no, va para el ingreso de la nota.
   var pm=c.match(/(\d+(?:[.,]\d+)?)\s*(%|por ?ciento)/);
@@ -586,7 +597,7 @@ function localParse(txt,C){
 // "saqué 20 mil del cajero") se entiende al instante, sin esperar a la IA. Si hay dudas (varias cosas, correcciones,
 // eventos, ajustes, porcentajes o una categoría que no reconoce), va a la IA como siempre.
 function rapida(txt,C){var c=n2(txt).replace(/[.!?\s]+$/,"");
- if(txt.length>90||/[,;\n]|\.(?!\d)|\s+y\s+|%|por ?ciento|dolar|usd|u\$s/.test(c)||LISTA.test(c)||AJRX.test(c))return null;
+ if(txt.length>90||/[;\n]|,(?!\d)|\.(?!\d)|\s+y\s+|%|por ?ciento|dolar|usd|u\$s/.test(c)||LISTA.test(c)||AJRX.test(c))return null;
  var r=localParse(txt,C),A=r.ajustes;
  if(r.gastos.length+r.ingresos.length+r.movimientos.length!==1||r.eventos.length||r.rutinas.length||r.cancelar.length||r.cancelar_fecha.length||r.sin_clases.length||r.corregir.length||r.ahorro_usd!=null||r.cotizacion!=null||A.categorias.length||A.porcentaje_ahorro!=null||A.objetivo)return null;
  var g=r.gastos[0],i=r.ingresos[0];
@@ -1210,13 +1221,13 @@ function prePaint(){var P=PRE,w=$("pre");w.innerHTML="";var c=el("div","pc");w.a
   ad.appendChild(ai);ad.appendChild(ab);c.appendChild(ad)}
  else if(P.paso===1){
   c.appendChild(el("p","sem","Se carga una sola vez: después Petaca sigue con tu día a día. Si no sabés el número exacto poné uno aproximado: después lo corregís con ✎ en Cuentas."));
-  var f=el("div","prf");f.appendChild(preCampo(P,"pesos","Tu capital inicial: la plata que tenés hoy para el día a día (en pesos)","Ej: 150,000",1));f.appendChild(preCampo(P,"ef","De eso, ¿cuánto tenés en efectivo? (el resto cuenta como transferencia)","Ej: 20,000",1));
-  f.appendChild(montoMon(P,"ah","am","¿Cuánto tenés ahorrado? (opcional)","Ej: 300"));f.appendChild(montoMon(P,"iv","im","¿Y cuánto tenés invertido? Plazo fijo, FCI, acciones, cripto… (opcional)","Ej: 200,000"));
-  f.appendChild(preCampo(P,"ing","¿Cobraste algo esta semana? (opcional, en pesos)","Ej: 400,000",1));c.appendChild(f)}
+  var f=el("div","prf");f.appendChild(preCampo(P,"pesos","Tu capital inicial: la plata que tenés hoy para el día a día (en pesos)","Ej: 150.000",1));f.appendChild(preCampo(P,"ef","De eso, ¿cuánto tenés en efectivo? (el resto cuenta como transferencia)","Ej: 20.000",1));
+  f.appendChild(montoMon(P,"ah","am","¿Cuánto tenés ahorrado? (opcional)","Ej: 300"));f.appendChild(montoMon(P,"iv","im","¿Y cuánto tenés invertido? Plazo fijo, FCI, acciones, cripto… (opcional)","Ej: 200.000"));
+  f.appendChild(preCampo(P,"ing","¿Cobraste algo esta semana? (opcional, en pesos)","Ej: 400.000",1));c.appendChild(f)}
  else{
   c.appendChild(el("p","sem","¿Para qué estás ahorrando? Un viaje, la compu nueva, la entrada para la final… Si todavía no tenés uno, salteá este paso."));
   var f2=el("div","prf"),l3=el("label","","Para cuándo"),rw=el("div","add"),gn=el("input"),gu=el("select");
-  f2.appendChild(preCampo(P,"aho","¿Qué % de cada ingreso querés separar para ahorrar? (lo podés cambiar en cada uno)","Ej: 10",1));f2.appendChild(preCampo(P,"gx","Nombre del objetivo","Ej: Viaje al Mundial"));f2.appendChild(preCampo(P,"gt","Cuánto necesitás (US$)","Ej: 2,000",1));
+  f2.appendChild(preCampo(P,"aho","¿Qué % de cada ingreso querés separar para ahorrar? (lo podés cambiar en cada uno)","Ej: 10",1));f2.appendChild(preCampo(P,"gx","Nombre del objetivo","Ej: Viaje al Mundial"));f2.appendChild(preCampo(P,"gt","Cuánto necesitás (US$)","Ej: 2.000",1));
   gn.type="number";gn.inputMode="numeric";gn.min="1";gn.placeholder="Cuántos";gn.value=P.gn;gn.setAttribute("aria-label","Cantidad");gn.oninput=function(){P.gn=gn.value};
   [["","Sin plazo"],["s","semanas"],["m","meses"],["a","años"]].forEach(function(o){var op=el("option","",o[1]);op.value=o[0];gu.appendChild(op)});gu.value=P.gu;gu.setAttribute("aria-label","Plazo");
   gu.onchange=function(){P.gu=gu.value;gn.style.display=gu.value?"":"none"};gn.style.display=P.gu?"":"none";rw.appendChild(gn);rw.appendChild(gu);l3.appendChild(rw);f2.appendChild(l3);c.appendChild(f2)}
@@ -1271,8 +1282,8 @@ function capStart(){if(PRE||CAPLATER||ONB===0||!UID||$("pre").style.display!=="n
  im.src=pose("enojado",EQUIPO);im.alt="";t.id="pret";ht.appendChild(el("small","prk","Falta un dato"));ht.appendChild(t);h.appendChild(im);h.appendChild(ht);c.appendChild(h);
  c.appendChild(el("p","sem",cap?"Contale a Petaca "+capTxt()+" y, si tenés, cuánto ahorraste e invertiste. Se carga una sola vez: así lo que te queda y los consejos cuentan toda tu plata, no solo los ingresos que cargaste. Si no tenías nada, poné 0."
   :"Se carga una sola vez: así Petaca ve toda tu plata, no solo la del día a día. Si no tenés, dejalo vacío y tocá Guardar."));
- if(cap){i.type="number";i.inputMode="decimal";i.min="0";i.placeholder="Ej: 100,000";lb.appendChild(i);f.appendChild(lb)}
- f.appendChild(montoMon(Q,"ah","am","¿Cuánto tenés ahorrado?","Ej: 300"));f.appendChild(montoMon(Q,"iv","im","¿Y cuánto tenés invertido? Plazo fijo, FCI, acciones, cripto…","Ej: 200,000"));
+ if(cap){i.type="number";i.inputMode="decimal";i.min="0";i.placeholder="Ej: 100.000";lb.appendChild(i);f.appendChild(lb)}
+ f.appendChild(montoMon(Q,"ah","am","¿Cuánto tenés ahorrado?","Ej: 300"));f.appendChild(montoMon(Q,"iv","im","¿Y cuánto tenés invertido? Plazo fijo, FCI, acciones, cripto…","Ej: 200.000"));
  c.appendChild(f);c.appendChild(msg);
  no.onclick=function(){CAPLATER=true;capEnd()};
  ok.onclick=function(){var v=i.value.trim()===""?NaN:parseFloat(i.value.replace(",","."));if(cap&&!(v>=0))return(msg.textContent="Poné tu capital inicial (0 si no tenías nada).");
