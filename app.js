@@ -51,7 +51,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v63";
+var DOC=null,VER="v64";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -582,6 +582,18 @@ function localParse(txt,C){
   if(mo&&(gas||!ev)){var det=limpio(raw).replace(/\b(con|en)?\s*(efectivo|transferencia|debito|tarjeta|mercado ?pago)\b/ig,"").replace(/\s+/g," ").trim();o.gastos.push({monto:mo,categoria:pCat(c),detalle:det.slice(0,40),fecha:f,medio:medDe(c)});return}
   if(ev||/manana|\d{1,2}\/\d{1,2}|lunes|martes|miercoles|jueves|viernes|sabado|domingo/.test(c)){var t=limpio(raw);var im=/importante|avis/.test(c);t=t.replace(/\b(importante|avis[a-záéíóúñ]*)\b/ig,"").replace(/\s+/g," ").trim();if(t)o.eventos.push({fecha:f,hora:pHora(c),titulo:t.charAt(0).toUpperCase()+t.slice(1),imp:im})}});
  return o}
+// Atajo sin IA: una nota corta con una sola cosa de plata ("gasté 8 mil en el super", "me entraron 500 mil",
+// "saqué 20 mil del cajero") se entiende al instante, sin esperar a la IA. Si hay dudas (varias cosas, correcciones,
+// eventos, ajustes, porcentajes o una categoría que no reconoce), va a la IA como siempre.
+function rapida(txt,C){var c=n2(txt).replace(/[.!?\s]+$/,"");
+ if(txt.length>90||/[,;\n]|\.(?!\d)|\s+y\s+|%|por ?ciento|dolar|usd|u\$s/.test(c)||LISTA.test(c)||AJRX.test(c))return null;
+ var r=localParse(txt,C),A=r.ajustes;
+ if(r.gastos.length+r.ingresos.length+r.movimientos.length!==1||r.eventos.length||r.rutinas.length||r.cancelar.length||r.cancelar_fecha.length||r.sin_clases.length||r.corregir.length||r.ahorro_usd!=null||r.cotizacion!=null||A.categorias.length||A.porcentaje_ahorro!=null||A.objetivo)return null;
+ var g=r.gastos[0],i=r.ingresos[0];
+ if(g&&(!(g.monto>0)||!/\b(gaste|gasto|gastamos|pague|pagamos|compre|compramos|me cobraron|salio)\b/.test(c)||g.categoria==="Otros"))return null;
+ if(i&&(!(i.monto>0)||!/(me entr|entraron|entro|cobre|me pagaron|me depositaron|me transfirieron)/.test(c)))return null;
+ if(r.movimientos.length&&!(r.movimientos[0].monto>0))return null;
+ return r}
 function vis(e){return L.hidden.indexOf(e.f+"|"+e.x)<0}
 // Lo que Petaca puede cancelar o corregir desde una nota: eventos, los últimos gastos, ingresos y pasajes entre efectivo y transferencia.
 function descr(it){var e=it.e;
@@ -602,25 +614,48 @@ function cands(){var o={},t=[];
 // Lo que vino de un calendario y se borra queda anotado (L.calno), así el calendario vinculado no lo vuelve a traer.
 function drop(a,x){var i=a.indexOf(x);if(i>=0){a.splice(i,1);if(x&&x.cal&&(a===L.events||a===RUT)&&L.calno.indexOf(x.cal)<0)L.calno.push(x.cal)}}
 function lineEl(t){var d=el("div","row");d.appendChild(el("span","",t));return d}
-function prompt1(txt,C){return "Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Extraé de esta nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, el ingreso de la semana en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON con esta forma: {\"gastos\":[{\"monto\":number,\"categoria\":\"una de: "+Object.keys(BUDGET).join(", ")+"\",\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\" si no lo dice}],\"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM o vacío\",\"titulo\":string,\"imp\":true si pide que le avisen o dice que es importante}],\"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\", \"transferencia\" o \"\"}],\"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}],\"ahorro_usd\":number o null,\"cotizacion\":number o null}. En cada ingreso agregá \"porcentaje_ahorro\":number SOLO si la nota dice cuánto separar de ese ingreso, si no null. Para los gastos usá SIEMPRE una de las categorías actuales (la más parecida por el detalle); si ninguna encaja, Otros. Ajustes actuales del usuario: presupuesto por mes de cada categoría: "+Object.keys(BUDGET).map(function(k){return k+" "+(BUDGET[k]>0?"$"+BUDGET[k]:"sin presupuesto")}).join(", ")+"; separa el "+AHO+"% de cada ingreso para ahorro; objetivo de ahorro \""+GOAL.x+"\" de US$"+GOAL.target+(metaFin()?" hasta el "+metaFin():" sin plazo")+". Si la nota pide CAMBIAR un ajuste (el presupuesto de una categoría, crear, renombrar o quitar una categoría, el % que separa de cada ingreso o el objetivo de ahorro), devolvé \"ajustes\":{\"categorias\":[{\"nombre\":categoría actual o nueva,\"presupuesto\":number nuevo por mes o null si no cambia,\"nuevo_nombre\":string o \"\",\"quitar\":true solo si la quiere borrar}],\"porcentaje_ahorro\":number o null,\"objetivo\":{\"nombre\":string o \"\",\"meta_usd\":number o null,\"fecha_limite\":\"YYYY-MM-DD\" o \"\"} o null}; si no pide cambiar nada, no lo devuelvas. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si un gasto no tiene fecha, usá hoy. 'mil' vale 1000; '5,000' y '5.000' son cinco mil (la coma o el punto separan los miles), '1,5 palos' es 1500000. Si la nota cancela o borra algo, devolvé también \"cancelar\":[ids de la lista de abajo]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé también \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" si dice hasta qué hora o \"\",\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de abajo, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}]. Lista actual (id: lo que está cargado): "+C.list+". Nota: "+txt}
+// Lo que va a la IA: primero las instrucciones fijas (iguales en todas las notas, así Gemini las reutiliza y responde antes);
+// al final los datos del usuario y la nota. La lista de lo ya cargado solo va cuando la nota corrige, cancela o borra algo.
+// Se le pide que devuelva solo lo que encontró: menos texto de respuesta es menos espera.
+var PROMPT_FIJO="Extraé de una nota en español rioplatense los gastos en pesos, los eventos y, si aparecen, ingresos en pesos o un aporte de ahorro en dólares (negativo si retira plata del ahorro). Devolvé SOLO un JSON compacto y SOLO con las claves que tengan algo: no pongas listas vacías, null ni campos vacíos. Claves posibles: \"gastos\":[{\"monto\":number,\"categoria\":una de las categorías del usuario,\"detalle\":string,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\" o \"transferencia\" (solo si lo dice)}], \"eventos\":[{\"fecha\":\"YYYY-MM-DD\",\"hora\":\"HH:MM\" (solo si la dice),\"titulo\":string,\"imp\":true (solo si pide que le avisen o dice que es importante)}], \"ingresos\":[{\"monto\":number,\"fecha\":\"YYYY-MM-DD\",\"medio\":\"efectivo\" o \"transferencia\" (solo si lo dice),\"porcentaje_ahorro\":number (solo si la nota dice cuánto separar de ese ingreso)}], \"movimientos\":[{\"monto\":number,\"a\":\"efectivo\" si sacó plata del cajero o del banco, \"transferencia\" si depositó o cargó efectivo en el banco o la billetera virtual,\"fecha\":\"YYYY-MM-DD\"}], \"ahorro_usd\":number, \"cotizacion\":number. Para los gastos usá SIEMPRE una de las categorías del usuario (la más parecida por el detalle); si ninguna encaja, Otros. Si la nota pide CAMBIAR un ajuste (el presupuesto de una categoría, crear, renombrar o quitar una categoría, el % que separa de cada ingreso o el objetivo de ahorro), devolvé \"ajustes\":{\"categorias\":[{\"nombre\":categoría actual o nueva,\"presupuesto\":number nuevo por mes (solo si cambia),\"nuevo_nombre\":string (solo si la renombra),\"quitar\":true (solo si la quiere borrar)}],\"porcentaje_ahorro\":number,\"objetivo\":{\"nombre\":string,\"meta_usd\":number,\"fecha_limite\":\"YYYY-MM-DD\"}} con solo lo que cambia. Tarjeta de débito, Mercado Pago, billetera virtual, QR o banco cuentan como transferencia; billetes o 'en mano' como efectivo. Sacar plata del cajero no es un gasto: va en movimientos. Si algo no tiene fecha, usá la de hoy. 'mil' vale 1000; '5,000' y '5.000' son cinco mil (la coma o el punto separan los miles), '1,5 palos' es 1500000. Si la nota cancela o borra algo, devolvé \"cancelar\":[ids de la lista de lo cargado]. Las rutinas (ids que empiezan con R) se repiten todas las semanas: si cancela SOLO un día de una rutina (ej: 'este jueves no hay gym', 'mañana no voy a inglés', 'se suspende el fútbol del sábado'), NO pongas su id en cancelar: devolvé \"cancelar_fecha\":[{\"id\":id de la rutina,\"fecha\":\"YYYY-MM-DD\" del día que no va, que tiene que caer en el día de la semana de esa rutina; si no dice cuál, el próximo}]. Poné el id de una rutina en cancelar solo si la deja del todo (ej: 'ya no voy más al gym', 'dejé inglés', 'borrá la rutina de fútbol'). Si dice que no va a NINGUNA clase o actividad algún día (ej: 'mañana no tengo clases'), devolvé \"sin_clases\":[\"YYYY-MM-DD\"]. Si algo se repite todas las semanas o todos los días, devolvé \"rutinas\":[{\"dias\":[números de 0 a 6, 0=domingo, 1=lunes… 6=sábado; 'todos los días' = [0,1,2,3,4,5,6], 'de lunes a viernes' = [1,2,3,4,5]],\"hora\":\"HH:MM\" de inicio,\"hasta\":\"HH:MM\" (solo si dice hasta qué hora),\"titulo\":string}] (no lo pongas también en eventos). Si la nota dice que algo YA cargado está mal (me equivoqué, era, no eran, en realidad, corregí, cambiá, pasalo a), NO lo cargues de nuevo ni lo canceles: devolvé \"corregir\":[{\"id\":id de la lista de lo cargado, y SOLO los campos que cambian entre \"monto\":number, \"categoria\", \"detalle\", \"fecha\":\"YYYY-MM-DD\", \"medio\":\"efectivo\" o \"transferencia\" (en un movimiento es hacia dónde fue la plata), \"titulo\", \"hora\":\"HH:MM\", \"porcentaje_ahorro\":number de 0 a 100}].";
+// Notas que necesitan la lista de lo ya cargado: corrigen, cancelan, borran o mueven algo.
+var LISTA=/(equivoc|correg|en realidad|\b(era|eran|fue|fueron)\b|cambi|pasal|cancel|anul|borr|elimin|\bsaca(me|lo|la|los|las)?\b|quit|suspend|no voy|no tengo|no hay|ya no|deje de|dejo de|reprogram|pospon|\bmove|\bmovi|\bcorre(lo|la)\b|\b(el|la|los|las) (gasto|ingreso|evento|turno|rutina|movimiento)\b)/;
+function prompt1(txt,C,conLista){return PROMPT_FIJO+" DATOS DEL USUARIO. Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Categorías y presupuesto por mes: "+Object.keys(BUDGET).map(function(k){return k+" "+(BUDGET[k]>0?"$"+BUDGET[k]:"sin presupuesto")}).join(", ")+". Separa el "+AHO+"% de cada ingreso para ahorro. Objetivo de ahorro \""+GOAL.x+"\" de US$"+GOAL.target+(metaFin()?" hasta el "+metaFin():" sin plazo")+". Lista de lo cargado (id: qué es): "+(conLista?C.list||"(nada)":"(no hace falta para esta nota)")+". NOTA: "+txt}
 // Gemini vía la Edge Function "gemini" de Supabase: la clave vive como secreto en Supabase y nunca llega al navegador.
-// Si tarda más de 35 segundos se deja de esperar y la nota se entiende sin IA, así la página nunca queda trabada.
+// Si tarda más de 24 segundos se deja de esperar y la nota se entiende sin IA, así la página nunca queda trabada.
 async function gemini(p){
- var to,r=await Promise.race([SB.functions.invoke("gemini",{body:typeof p==="string"?{prompt:p}:p}),new Promise(function(_,no){to=setTimeout(function(){no(new Error("Gemini: tardó demasiado en responder"))},35000)})]).finally(function(){clearTimeout(to)});
+ var to,r=await Promise.race([SB.functions.invoke("gemini",{body:typeof p==="string"?{prompt:p}:p}),new Promise(function(_,no){to=setTimeout(function(){no(new Error("Gemini: tardó demasiado en responder"))},24000)})]).finally(function(){clearTimeout(to)});
  if(r.error){var m=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)m=b.error}catch(e){}throw new Error("Gemini: "+m)}
  return r.data}
+// Despertar la función de la IA cuando la persona toca el cuadro de la nota o el 🎤: así, cuando manda la nota, ya está lista
+// (una función dormida tarda en arrancar). Como mucho una vez cada 4 minutos.
+var CALOR=0;
+function calentar(){if(!SB||!UID||Date.now()-CALOR<240000)return;CALOR=Date.now();try{SB.functions.invoke("gemini",{body:{ping:true}}).catch(function(){})}catch(e){}}
+$("nt").addEventListener("focus",calentar);
+// Tiempos de la última nota (para medir dónde se va la espera). Si tardó mucho, queda anotado en la tabla de errores.
+var NOTAT=null,AUDIO=null;
 $("nb").onclick=async function(){
- var txt=$("nt").value.trim(),out=$("nr");if(!txt||busy)return;
- out.textContent="Entendiendo tu nota…";
+ var au=AUDIO;AUDIO=null;
+ var txt=$("nt").value.trim(),out=$("nr");if(!txt&&!au||busy)return;
+ out.textContent=au?"Escuchando tu audio…":"Entendiendo tu nota…";
  // Mientras espera, avisa que sigue trabajando para que no parezca colgado.
- var esp=[[6000,"Petaca sigue pensando… ⏳"],[15000,"La IA está lenta hoy. Un ratito más…"],[25000,"Casi… si no responde, lo entiendo sin IA."]].map(function(s){return setTimeout(function(){if(busy)out.textContent=s[1]},s[0])});
+ var esp=[[5000,"Petaca sigue pensando… ⏳"],[11000,"La IA está lenta hoy. Un ratito más…"],[18000,"Casi… si no responde, lo entiendo sin IA."]].map(function(s){return setTimeout(function(){if(busy)out.textContent=s[1]},s[0])});
+ var T0=Date.now(),via="ia";
  try{
   busy=true;$("nb").disabled=true;
-  var C=cands(),ok=/^\d{4}-\d{2}-\d{2}$/,r=null,why="",nota="";
-  var gErr="";if(SB&&UID)try{r=await gemini(prompt1(txt,C))}catch(err){gErr=err&&err.message||"error"}
-  if(!r)try{var SM=window.claude?await claude.use("sample"):null;if(SM)r=await SM.json(prompt1(txt,C),{cache:false});else why="modo sin IA"}catch(err){why=err&&err.code==="not_granted"?"no diste permiso a la página para usar Claude":(err&&(err.code||err.message))||"error"}
-  if(!r||typeof r!=="object"){r=localParse(txt,C);nota="Lo entendí sin IA. Revisá bien antes de guardar."+(gErr?" ("+gErr+")":"")}
+  var C=cands(),ok=/^\d{4}-\d{2}-\d{2}$/,r=null,why="",nota="",cl=au||LISTA.test(n2(txt));
+  // Atajo: lo simple se entiende al instante, sin IA.
+  if(!au&&(r=rapida(txt,C)))via="rapida";
+  var gErr="";if(!r&&SB&&UID)try{r=await gemini(au?{audio:au.d,mime:au.m,prompt:prompt1(txt?"(lo escrito) "+txt+" (y lo que dice el audio)":"(la nota está en el audio)",C,true)}:{prompt:prompt1(txt,C,cl),rapido:!cl})}catch(err){gErr=err&&err.message||"error"}
+  // Nota de voz: lo que dijo queda escrito en el cuadro, para que se vea qué entendió.
+  if(au){if(!r||typeof r!=="object"){out.textContent="No pude entender el audio"+(gErr?" ("+gErr+")":"")+". Probá de nuevo o escribí la nota.";return}
+   var dicho=String(r.texto||"").trim();if(!dicho){out.textContent="No entendí el audio. Probá de nuevo, más cerca del micrófono.";return}
+   txt=(txt?txt+" ":"")+dicho;$("nt").value=txt}
+  if(!r&&!au)try{var SM=window.claude?await claude.use("sample"):null;if(SM)r=await SM.json(prompt1(txt,C,true),{cache:false});else why="modo sin IA"}catch(err){why=err&&err.code==="not_granted"?"no diste permiso a la página para usar Claude":(err&&(err.code||err.message))||"error"}
+  if(!r||typeof r!=="object"){r=localParse(txt,C);via="sin IA";nota="Lo entendí sin IA. Revisá bien antes de guardar."+(gErr?" ("+gErr+")":"")}
   else if(r._ia&&!r._ia.propia&&r._ia.quedan<=5)nota=(r._ia.quedan?"Te quedan "+cant(r._ia.quedan,"nota","notas"):"Ya no te quedan notas")+" hoy con la IA compartida. Cargá tu propia clave gratis en Configuración → IA de Petaca.";
+  NOTAT={total:Date.now()-T0,via:via,srv:r._t||null};
+  if(via==="ia"&&NOTAT.total>8000)reportar("Nota lenta ("+Math.round(NOTAT.total/100)/10+" s): "+JSON.stringify(NOTAT));
   // Ajustes pedidos en la nota: categorías (presupuesto, nueva, renombrar, quitar), % de ahorro de cada ingreso y objetivo.
   var aj=r.ajustes&&typeof r.ajustes==="object"?r.ajustes:{},AJC=[],AJP=[],AJO=[];
   function catIgual(nm){nm=n2(String(nm||"")).trim();return Object.keys(BUDGET).filter(function(k){return n2(k)===nm})[0]||null}
@@ -1359,16 +1394,17 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
  marcador();setInterval(function(){if(document.body.classList.contains("auth")&&!document.hidden)marcador()},7000);
  vestir();new MutationObserver(vestir).observe(document.body,{attributes:true,attributeFilter:["class"]});
 })();
-// Nota de voz: 🎤 Hablar dicta la nota en el cuadro de texto, para revisarla antes de tocar "Entender nota".
-// Si el navegador pasa la voz a texto solo (Chrome, Safari), se usa eso: es gratis y no gasta cupo de IA.
-// Si no puede (o falla, como en algunas apps instaladas en iPhone), se graba el audio y Gemini lo transcribe.
+// Nota de voz: 🎤 Hablar dicta la nota en el cuadro de texto y, cuando terminás de hablar, Petaca la entiende sola
+// (igual te muestra lo que entendió antes de guardar).
+// Si el navegador pasa la voz a texto solo (Chrome, Safari), se usa eso: es gratis y al instante.
+// Si no puede (o falla, como en algunas apps instaladas en iPhone), se graba el audio y Gemini lo escucha y entiende en un solo paso.
 (function(){
  var b=$("mic"),nt=$("nt"),out=$("nr");if(!b||!nt)return;
  var SR=window.SpeechRecognition||window.webkitSpeechRecognition,GRAB=!!(window.MediaRecorder&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
  if(!SR&&!GRAB)return;b.style.display="";
  var rec=null,mr=null,chunks=[],tope=null,usarSR=!!SR,base="";
- // Corte solo: cuando dejás de hablar 3 segundos la grabación termina sola. Si no empezás a hablar, espera 8.
- var CALLA=3000,ESPERA=8000,calla=null;
+ // Corte solo: cuando dejás de hablar 1,5 segundos la grabación termina sola. Si no empezás a hablar, espera 8.
+ var CALLA=1500,ESPERA=8000,calla=null;
  function callar(ms){clearTimeout(calla);calla=ms?setTimeout(function(){if(rec)rec.stop()},ms):null}
  // Al grabar audio se mide el volumen del micrófono para saber cuándo hay silencio.
  // Si el navegador no deja medirlo, no se corta solo: se termina con ⏹ Listo como siempre.
@@ -1389,7 +1425,7 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
    if(c==="aborted")return ui(false);
    // El dictado del navegador no anda acá: se pasa a grabar el audio.
    if(GRAB){usarSR=false;ui(false);grabar()}else ui(false,"No pude usar el micrófono ("+c+").")};
-  rec.onend=function(){callar(0);if(rec){rec=null;ui(false,nt.value.trim()?"Revisá el texto y tocá \"Entender nota\".":"No te escuché. Probá de nuevo.")}};
+  rec.onend=function(){callar(0);if(rec){rec=null;var dijo=nt.value.trim();if(dijo&&dijo!==base){ui(false,"");$("nb").click()}else ui(false,"No te escuché. Probá de nuevo.")}};
   try{rec.start();callar(ESPERA);ui(true,"Te escucho… cuando termines de hablar se corta solo (o tocá ⏹ Listo).")}catch(e){rec=null;callar(0);if(GRAB){usarSR=false;grabar()}}}
  async function grabar(){
   if(!SB||!UID)return ui(false,"Para mandar audio a Petaca iniciá sesión.");
@@ -1398,20 +1434,19 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   function cerrarAC(){if(ac&&ac.state!=="closed")ac.close().catch(function(){})}
   var st;try{st=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){cerrarAC();return ui(false,"Petaca necesita permiso para usar el micrófono. Habilitalo en el navegador y probá de nuevo.")}
   var tipo=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"].filter(function(t){return MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)})[0];
-  base=nt.value.trim();chunks=[];mr=tipo?new MediaRecorder(st,{mimeType:tipo}):new MediaRecorder(st);
+  base=nt.value.trim();chunks=[];mr=tipo?new MediaRecorder(st,{mimeType:tipo,audioBitsPerSecond:24000}):new MediaRecorder(st,{audioBitsPerSecond:24000});
   mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};
   var oy=oido(ac,st,function(){if(mr&&mr.state!=="inactive")mr.stop()});
-  mr.onstop=async function(){clearTimeout(tope);if(oy)clearInterval(oy.iv);cerrarAC();st.getTracks().forEach(function(t){t.stop()});var m=mr.mimeType||tipo||"audio/webm";mr=null;ui(false,"Pasando tu audio a texto…");
+  mr.onstop=async function(){clearTimeout(tope);if(oy)clearInterval(oy.iv);cerrarAC();st.getTracks().forEach(function(t){t.stop()});var m=mr.mimeType||tipo||"audio/webm";mr=null;ui(false,"Escuchando tu audio…");
    // Si el medidor anduvo y nunca escuchó voz, no se manda el audio (no gasta cupo de IA en silencio).
    var bl=new Blob(chunks,{type:m});if(bl.size<1500||oy&&oy.ok&&!oy.hablo)return ui(false,"No te escuché. Probá de nuevo.");
    try{var d=await new Promise(function(ok,no){var fr=new FileReader();fr.onload=function(){ok(String(fr.result).split(",")[1]||"")};fr.onerror=no;fr.readAsDataURL(bl)});
-    var r=await gemini({audio:d,mime:m});if(!r||!String(r.texto||"").trim())return ui(false,"No entendí el audio. Probá de nuevo, más cerca del micrófono.");
-    poner(r.texto);ui(false,"Revisá el texto y tocá \"Entender nota\".")}
-   catch(e){ui(false,"No pude pasar el audio a texto: "+(e&&e.message||e))}};
+    ui(false,"");AUDIO={d:d,m:m};$("nb").click()}
+   catch(e){ui(false,"No pude leer el audio: "+(e&&e.message||e))}};
   if(oy&&ac.state!=="running")try{await Promise.race([ac.resume(),new Promise(function(r){setTimeout(r,300)})])}catch(e){}
   mr.start();ui(true,oy&&ac.state==="running"?"Grabando… cuando termines de hablar se corta solo (o tocá ⏹ Listo).":"Grabando… hablá y tocá ⏹ Listo cuando termines (hasta 2 minutos).");
   tope=setTimeout(function(){if(mr&&mr.state!=="inactive")mr.stop()},120000)}
- b.onclick=function(){
+ b.onclick=function(){calentar();
   if(rec){var r=rec;r.stop();return}
   if(mr){if(mr.state!=="inactive")mr.stop();return}
   if(usarSR)dictar();else grabar()};
