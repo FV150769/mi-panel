@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#12A150">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=70">
+<link rel="stylesheet" href="styles.css?v=71">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -65,7 +65,7 @@
 <p>Si lo preferís, cargá todo desde "Contale a Petaca" (ver el punto 3).</p>
 </details>
 <details class="gtema"><summary>3. Contale a Petaca (escribí o hablá)</summary>
-<p>Escribí como le hablarías a un amigo, o tocá <b>🎤 Hablar</b> y decilo: cuando terminás de hablar, Petaca la entiende sola. Podés poner varias cosas juntas, y lo simple (gastos, un ingreso, sacar del cajero, un evento con su día) lo entiende al instante. Además aprende de vos: si le cambiás la categoría a un gasto, la próxima vez ya lo sabe. Algunos ejemplos:</p>
+<p>Escribí como le hablarías a un amigo, o tocá <b>🎤 Hablar</b> y decilo: cuando terminás de hablar, Petaca la entiende sola. Podés poner varias cosas juntas, y lo simple (gastos, un ingreso, sacar del cajero, un evento con su día) lo entiende al instante. Además aprende de vos: tus categorías, cómo pagás, tus montos y horarios de siempre y tus frases. Y entiende "otro igual", "lo mismo que ayer" o "no, eso era en efectivo". Algunos ejemplos:</p>
 <ul>
 <li>"gasté 8 mil en el super en efectivo"</li>
 <li>"me entraron 500 mil por transferencia, separo 20%"</li>
@@ -291,6 +291,9 @@
 <div class="add"><input type="text" id="iak" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Tu clave de Gemini (empieza con AQ. o AIza)" aria-label="Clave de Gemini"><button id="ias">Guardar y probar</button><button class="x" id="iax" style="display:none">Quitar</button></div>
 <p class="sem" id="iam"></p>
 <p class="sem">Tu clave queda guardada en tu cuenta y solo se usa para entender tus notas. Ojo: en el plan gratis de Gemini, Google puede usar lo que le mandás para mejorar sus productos.</p>
+<h3 class="tgh3" style="margin-top:18px">🧠 Lo que aprendí de vos</h3>
+<p class="sem" style="margin:0">Con cada nota que guardás aprendo tus palabras, cómo pagás, tus montos y horarios de siempre y tus frases, así la próxima vez te entiendo al instante. Queda en tu cuenta. Si algo está mal, borralo con la ×.</p>
+<div id="apr"></div>
 </details></section>
 <section class="goal" data-c="tg" data-name="Avisos por Telegram"><details id="tgd"><summary>Avisos por Telegram</summary>
 <p class="sem" style="margin-top:0">Recibí en tu Telegram los eventos marcados con 🔔.</p>
@@ -334,6 +337,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=70"></script>
+<script src="app.js?v=71"></script>
 </body>
 </html>
