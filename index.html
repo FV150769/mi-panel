@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=50">
+<link rel="stylesheet" href="styles.css?v=51">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -24,6 +24,8 @@
 <header class="top">
 <div class="marca"><img class="masc" src="petaca-arg.svg?v=2" alt="Petaca, la mascota: un bebé jefe rubio con corona, pañal y la camiseta albiceleste, en su trono con la bandera argentina"><div><h1>PETACA</h1>
 <p class="sub" id="fecha"></p><p class="lema">Tu guita y tu agenda, ordenadas como un 5 de los de antes.</p></div></div>
+<div class="eqsel"><button type="button" class="eqchip" id="eqbtn" aria-haspopup="true" aria-expanded="false" aria-controls="eqpop">⚽ Tu equipo ▾</button>
+<div class="eqpop" id="eqpop" role="dialog" aria-label="Elegí tu equipo" hidden><b>¿De qué cuadro sos?</b><div class="eqbs" id="eqops"></div></div></div>
 </header>
 <section id="login" style="margin-bottom:16px;display:none">
 <div class="tablero" aria-hidden="true"><span>PETACA</span><b>3</b><em>–</em><b>0</b><span>DEUDAS</span><small>90' + 5</small></div>
@@ -53,7 +55,8 @@
 </div>
 <details class="gtema"><summary>1. Primeros pasos</summary>
 <p>Lo primero es contarle a Petaca <b>con cuánta plata arrancás</b> (tu capital inicial) y cuánto de eso está en efectivo. Lo cargás en <b>El vestuario → Ajustes</b>, o en la pretemporada si recién empezás.</p>
-<p>En Ajustes también elegís tus <b>categorías de gasto</b> con un presupuesto por mes, el <b>% que querés separar</b> de cada ingreso para ahorrar, tu <b>objetivo de ahorro</b> y <b>tu equipo</b>: Petaca se pone su camiseta y el panel toma sus colores.</p>
+<p>En Ajustes también elegís tus <b>categorías de gasto</b> con un presupuesto por mes, el <b>% que querés separar</b> de cada ingreso para ahorrar y tu <b>objetivo de ahorro</b>.</p>
+<p>Arriba a la derecha, en <b>⚽ Tu equipo</b>, elegís tu cuadro: Petaca se pone su camiseta, el panel toma sus colores y ves el próximo partido.</p>
 <p>Arriba de todo podés elegir un <b>usuario</b> para entrar sin escribir el mail.</p>
 </details>
 <details class="gtema"><summary>2. Cargar ingresos y gastos</summary>
@@ -270,6 +273,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=50"></script>
+<script src="app.js?v=51"></script>
 </body>
 </html>

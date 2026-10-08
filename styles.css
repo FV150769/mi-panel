@@ -549,8 +549,6 @@ body.eq-colon .hero{background:linear-gradient(100deg,#C8151B 0 50%,#1C1C1C 50% 
 body.eq-union .hero{background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 28px,transparent 28px 56px),linear-gradient(135deg,var(--h1),var(--h2))}
 body.eq-colon .hero button,body.eq-union .hero button{color:var(--acc2)}
 /* Elegir equipo: en Ajustes y en la pretemporada */
-.eqr{align-items:center}
-.eqr .eqprev{width:56px;height:auto;flex:none}
 .eqbs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 14px}
 .eqb{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--panel);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;padding:6px 4px;font-weight:600;font-size:12px;min-height:0}
 .eqb img{width:100%;max-width:64px;height:auto}
@@ -578,3 +576,11 @@ h2.grp{text-shadow:0 1px 0 rgba(255,255,255,.6)}
 .res.G{background:#16A34A}.res.E{background:#9CA3AF}.res.P{background:#DC2626}
 .eqpie{font-size:11px;color:var(--mute);margin:8px 0 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .eqpie button.x{font-size:11px;text-decoration:underline}
+/* Elegir equipo arriba de todo: botón chico y las opciones en un recuadro */
+.eqsel{position:relative;flex:none;align-self:center}
+.eqchip{min-height:32px;padding:4px 12px;font-size:13px;font-weight:700;background:var(--panel);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 1px 4px rgba(14,26,51,.08)}
+.eqchip:hover{border-color:var(--acc)}
+.eqpop{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(320px,calc(100vw - 32px));background:var(--panel);border-radius:16px;padding:12px;box-shadow:0 12px 30px rgba(14,26,51,.22)}
+.eqpop>b{display:block;font-size:13px;margin:0 0 6px}
+.eqpop .eqbs{margin:0}
+body.auth .eqsel{display:none}
