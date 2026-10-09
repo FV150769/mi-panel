@@ -53,7 +53,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],inv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(!L.inv)L.inv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v75";
+var DOC=null,VER="v76";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -1082,7 +1082,8 @@ if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CL
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
 $("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;var tc=TGCHAT,ta=TGAV;applyCfg(o.cfg);TGCHAT=tc;TG=!!tc;TGAV=ta;HAVECFG=true;L=norm(o.L);save();UNDO.length=0;updUndo();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
 // ===== Supabase =====
-function loginUI(on,email){document.body.classList.toggle("auth",!!on);$("login").style.display=on?"":"none";$("ses").style.display=on?"none":"";$("usrp").style.display=on?"none":"";if(email)$("sem2").textContent="Sesión: "+email}
+function loginUI(on,email){if(on)nuevaVersion(true);// en la pantalla de entrada no hay nada que perder: si hay versión nueva, se actualiza
+ document.body.classList.toggle("auth",!!on);$("login").style.display=on?"":"none";$("ses").style.display=on?"none":"";$("usrp").style.display=on?"none":"";if(email)$("sem2").textContent="Sesión: "+email}
 // La sesión puede vencerse sin aviso (la compu se durmió o no tenía internet cuando tocaba renovarla). Entonces los pedidos
 // salen sin usuario: Supabase rechaza el guardado (42501) y la lectura vuelve vacía, como si la cuenta fuera nueva.
 // Por eso antes de leer o guardar se confirma la sesión (y se renueva si hace falta). Si no se puede, lo cargado queda en
@@ -1176,19 +1177,27 @@ $("uname").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventD
 $("us").onclick=async function(){var u=$("uname").value.trim().toLowerCase();if(!/^[a-z0-9_.]{3,20}$/.test(u))return($("um").textContent="3 a 20 caracteres: letras, números, _ o .");var r=await SB.from("profiles").upsert({user_id:UID,username:u});if(r.error)return($("um").textContent=r.error.code==="23505"?"Ese usuario ya existe.":"No pude guardarlo.");var nuevo=!UNAME;UNAME=u;userUI(false);$("um").textContent=nuevo?"Listo: ya podés entrar con "+u+".":"Guardado.";setTimeout(function(){$("um").textContent=""},5000)};
 document.addEventListener("visibilitychange",function(){if(document.hidden)return;if(iso(new Date())!==today){location.reload();return}nuevaVersion(true);if(UID)pull().catch(function(){})});
 window.addEventListener("online",function(){if(UID)pull().catch(function(){})});
-// Actualización: la app instalada en el celular queda abierta en segundo plano y no vuelve a bajar la página.
-// Al volver a la app (y cada 30 minutos) se fija si hay una versión nueva publicada; si no estás escribiendo nada, se actualiza sola.
+// Actualización: la app guardada en la pantalla de inicio del celular queda abierta en segundo plano y no vuelve a bajar la página.
+// Se fija si hay una versión nueva publicada al abrirla, al volver a ella, al cerrar sesión y cada 30 minutos; si no estás
+// escribiendo nada, se actualiza sola.
 var NVTOT=0;
+// GitHub Pages deja que el navegador guarde la página 10 minutos y recargar puede traer esa copia vieja. Por eso se abre la misma
+// dirección con ?v=N, que el navegador nunca vio. Sola, una vez por versión (si igual no llegara, queda el botón Actualizar).
+function irVersion(v,forzar){try{if(!forzar&&sessionStorage.getItem("panel-nv")===String(v))return false;sessionStorage.setItem("panel-nv",String(v))}catch(e){}
+ location.replace(location.pathname+"?v="+v+location.hash);return true}
 async function nuevaVersion(volviendo){
  try{if(Date.now()-NVTOT<60000)return;NVTOT=Date.now();
   var h=await (await fetch(location.pathname+"?nv="+Date.now(),{cache:"no-store"})).text(),m=h.match(/app\.js\?v=(\d+)/),v=m?+m[1]:0;
   if(!(v>+VER.slice(1)))return;
   var ocupado=$("nt").value.trim()||$("nr").querySelector("button")||document.querySelector("main input:focus,main textarea:focus")||PRE||busy;
-  if(volviendo&&!ocupado){location.reload();return}
+  if(volviendo&&!ocupado&&irVersion(v))return;
   var t=$("toast");if(!t)return;if(TOUT){TOUT.cancel();TOUT=null}t.innerHTML="";t.appendChild(el("span","","Hay una versión nueva de Petaca."));
-  var b=el("button","","Actualizar");b.onclick=function(){location.reload()};t.appendChild(b);
+  var b=el("button","","Actualizar");b.onclick=function(){irVersion(v,true)};t.appendChild(b);
   var x=el("button","x","×");x.setAttribute("aria-label","Cerrar aviso");x.onclick=toastFuera;t.appendChild(x);t.style.display="";clearTimeout(TOT)}catch(e){}}
 setInterval(function(){if(!document.hidden)nuevaVersion(false)},30*60*1000);
+// Si se llegó con ?v=N (ver irVersion), se saca de la dirección para que quede limpia. Y se busca la versión nueva apenas abre.
+try{if(/^\?v=\d+$/.test(location.search))history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
+nuevaVersion(true);
 // Dos columnas en la compu, sin huecos y sin saltos: cada tarjeta va a la columna más corta (en su orden) y se queda ahí.
 // Si después crece (abrís un desplegable), solo se corren las de abajo en esa misma columna. La grilla tiene filas de 2px y
 // cada tarjeta ocupa las que mide (clase "mas"). En el celu (una columna) y al armar la formación es una grilla común.
