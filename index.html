@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#12A150">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=72">
+<link rel="stylesheet" href="styles.css?v=73">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -22,7 +22,7 @@
 <main>
 <p id="aviso" class="sem" style="color:var(--warn);font-weight:700">Cargando… Si este mensaje no desaparece, la página no pudo iniciar. Cerrala y abrila de nuevo, o copiame lo que dice acá.</p>
 <header class="top">
-<div class="marca"><img class="masc" data-pose="sentado" src="img/petaca-pateando-arg.png?v=2" alt="Petaca, la mascota: un bebé rubio jugador de fútbol con la camiseta de la Selección"><div><h1>PETACA</h1>
+<div class="marca"><img class="masc" data-pose="sentado" src="img/petaca-pateando-arg.webp?v=3" width="58" height="66" decoding="async" alt="Petaca, la mascota: un bebé rubio jugador de fútbol con la camiseta de la Selección"><div><h1>PETACA</h1>
 <p class="sub" id="fecha"></p><p class="lema">Pelota al piso y cabeza levantada.</p></div></div>
 <div class="eqsel"><button type="button" class="eqchip" id="eqbtn" aria-haspopup="true" aria-expanded="false" aria-controls="eqpop">⚽ Tu equipo ▾</button>
 <div class="eqpop" id="eqpop" role="dialog" aria-label="Elegí tu equipo" hidden><b>¿De qué cuadro sos?</b><div class="eqbs" id="eqops"></div></div></div>
@@ -88,7 +88,7 @@
 <p>Si le ponés una <b>fecha</b> a tu objetivo (en Ajustes), Petaca calcula cuánto tenés que ahorrar por mes para llegar.</p>
 </details>
 <details class="gtema"><summary>6. Agenda, rutinas y avisos</summary>
-<p>En <b>📅 Fechas importantes</b> cargás turnos, parciales y vencimientos. La semana día por día y el mes completo están en <b>📅 Agenda y rutinas</b>.</p>
+<p>En <b>📅 Fechas importantes</b> cargás turnos, parciales y vencimientos. La semana día por día y el mes completo están en <b>📅 Agenda y rutinas</b>: elegí <b>7 días</b> o <b>Mes</b> (en la compu se ven los dos) y deslizá de costado para moverte. Tocá un día del mes para ver lo que tenés y agendar algo ese día.</p>
 <p>Las <b>rutinas</b> son lo que se repite (gym, clases, fútbol): elegís los días con los botones L M M J V S D. Las de hoy aparecen arriba de todo, en <b>📋 ¿Qué tenés hoy?</b></p>
 <p>Con <b>⚙️ Configuración → Tus calendarios</b> traés tus eventos de Google Calendar, el iPhone u Outlook: vinculando el link del calendario (después se actualiza solo) o subiendo el archivo una vez. Lo que se repite todas las semanas pasa como rutina.</p>
 <p>Con <b>Avisos por Telegram</b> (en ⚙️ Configuración), Petaca te manda un mensaje antes de cada evento marcado con 🔔.</p>
@@ -157,7 +157,7 @@
 <section data-c="resumen" data-name="Resumen y consejos">
 <h2>Resumen</h2>
 <div id="res" class="kpis"></div>
-<h3 class="tgh3 charla"><img data-pose="enojado" src="img/petaca-enojado-arg.png?v=2" alt="">La charla técnica de Petaca</h3>
+<h3 class="tgh3 charla"><img data-pose="enojado" src="img/petaca-enojado-arg.webp?v=3" width="264" height="479" loading="lazy" decoding="async" alt="">La charla técnica de Petaca</h3>
 <div id="tips"></div>
 </section>
 <section data-c="gastos" data-name="Gastos del mes">
@@ -211,11 +211,21 @@
 <div class="grupo menu" data-g="tiempo" data-name="Agenda y rutinas">
 <h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-tiempo"><i aria-hidden="true">📅</i><span>Agenda y rutinas<small>La semana día por día, el mes completo y lo que se repite</small></span></button></h2>
 <div class="cols" id="m-tiempo">
-<section data-c="agenda" data-name="Próximos 7 días">
-<h2 id="agt">Próximos 7 días</h2>
-<div class="add" style="margin:0 0 8px"><button class="lk" id="np">‹ Anterior</button><button class="lk" id="nh">Hoy</button><button class="lk" id="nn">Siguiente ›</button></div>
+<section class="agsec" id="agsec" data-c="agenda" data-name="Agenda" data-v="sem">
+<h2 id="agt">Agenda</h2>
+<div class="agtop"><div class="agvis" role="tablist" aria-label="Qué ver de la agenda"><button type="button" role="tab" id="agv-sem" aria-controls="agsem" aria-selected="true">7 días</button><button type="button" role="tab" id="agv-mes" aria-controls="agmes" aria-selected="false" tabindex="-1">Mes</button></div></div>
+<div class="agpan">
+<div class="agsem" id="agsem" role="tabpanel" aria-labelledby="agv-sem">
+<div class="agnav"><b id="agr" aria-live="polite">Próximos 7 días</b><button type="button" class="aghoy" id="nh" hidden>Hoy</button><button type="button" class="agf ant" id="np" aria-label="Semana anterior"></button><button type="button" class="agf sig" id="nn" aria-label="Semana siguiente"></button></div>
 <div id="agenda"></div>
-<details style="margin-top:10px"><summary>Ver el mes</summary><div class="add" style="justify-content:space-between;align-items:center;margin:0"><button class="lk" id="mp">‹</button><b id="mt"></b><button class="lk" id="mn">›</button></div><div class="mg" id="mg"></div></details>
+</div>
+<div class="agmes" id="agmes" role="tabpanel" aria-labelledby="agv-mes">
+<div class="agnav"><b id="mt" aria-live="polite"></b><button type="button" class="aghoy" id="mh" hidden>Hoy</button><button type="button" class="agf ant" id="mp" aria-label="Mes anterior"></button><button type="button" class="agf sig" id="mn" aria-label="Mes siguiente"></button></div>
+<div class="mg" id="mg"></div>
+<div class="mdia" id="mdia"></div>
+</div>
+</div>
+<p class="hint">💡 Deslizá el dedo de costado para cambiar de semana o de mes. Tocá un día del mes para ver qué tenés y agendar algo ahí mismo.</p>
 </section>
 <section data-c="rutinas" data-name="Rutinas semanales"><details id="rd"><summary>Rutinas semanales</summary>
 <p class="sem" style="margin-top:0">Lo que se repite todas las semanas (clases, gimnasio, etc.). Aparece solo en el calendario.</p>
@@ -323,7 +333,7 @@
 </div>
 </div>
 
-<img class="descanso" data-pose="acostado" src="img/petaca-acostado-arg.png?v=2" alt="" loading="lazy">
+<img class="descanso" data-pose="acostado" src="img/petaca-acostado-arg.webp?v=3" width="533" height="342" alt="" loading="lazy" decoding="async">
 <p class="sem" id="est"></p>
 <p class="credito" id="credito" style="display:none"></p>
 <nav class="tabs" id="tabs" aria-label="Ir a una parte del panel">
@@ -337,6 +347,6 @@
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=72"></script>
+<script src="app.js?v=73"></script>
 </body>
 </html>

@@ -33,7 +33,7 @@ var EQUIPO="",EQS={"":{n:"Sin equipo (albiceleste)",tc:"#12A150",d:"la camiseta 
 // es: liga e id del equipo en ESPN, para el próximo partido y la tabla (ver renderEquipo).
 var LIGAS={"arg.1":"Liga Profesional","arg.2":"Primera Nacional"};
 function eqDe(k){return k&&EQS[k]?k:""}
-function pose(p,k){return"img/petaca-"+p+"-"+(k&&EQS[k]?k:"arg")+".png?v=2"}
+function pose(p,k){return"img/petaca-"+p+"-"+(k&&EQS[k]?k:"arg")+".webp?v=3"}
 Object.keys(EQS).forEach(function(k){EQS[k].img=pose("sentado",k)});
 var PRECARGA={};
 function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUIPO]||EQS[""];
@@ -53,7 +53,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],inv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(!L.inv)L.inv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v72";
+var DOC=null,VER="v73";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -65,8 +65,8 @@ function reportar(msg,det){try{msg=String(msg||"").slice(0,500);if(!msg||REPV[ms
  if(SB){SB.from("errores").insert(row).then(function(){},function(){});return}
  fetch(SUPABASE_URL+"/rest/v1/errores",{method:"POST",headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(row)}).catch(function(){})}catch(e){}}
 function stat(t){var e=document.getElementById("est");if(e)e.textContent=t;if(/^(No pude|Error)/.test(t))reportar(t)}
-function save0(){L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}if(DOC)pend(L.t);
- if(DOC){try{DOC.set(JSON.parse(JSON.stringify({L:L}))).then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){if(e&&e.code==="sesion")sinSes();else stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
+function save0(){OCX=null;L.t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}if(DOC)pend(L.t);
+ if(DOC){try{DOC.set().then(function(){stat("Guardado en tu cuenta · "+VER)}).catch(function(e){if(e&&e.code==="sesion")sinSes();else stat("No pude guardar en tu cuenta ("+(e&&(e.code||e.message)||"error")+"). Quedó guardado en este dispositivo.")})}catch(e){stat("No pude guardar en tu cuenta. Quedó guardado en este dispositivo.")}}}
 // SYNCED: ya se bajó la nube al entrar. Antes de eso no se guarda nada automático (como el dólar), porque subiría
 // la copia vieja de este dispositivo y pisaría los cambios hechos en otro.
 var UNDO=[],PREV=null,HAVECFG=false,SYNCED=false;
@@ -74,10 +74,19 @@ function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
 function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
 function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
 function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],mv:q.mv||[],inv:q.inv||[],bal:q.bal||{},rskip:q.rskip||[],calno:q.calno||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
-window.addEventListener("error",function(e){reportar("Error en la página: "+e.message,(e.error&&e.error.stack)||(e.filename+":"+e.lineno+":"+e.colno));var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message+" (quedó registrado para arreglarlo)"}stat("Error en la página: "+e.message)});
+window.addEventListener("error",function(e){if(/ResizeObserver loop/.test(e.message||""))return;// aviso inofensivo del navegador al acomodar las columnas
+ reportar("Error en la página: "+e.message,(e.error&&e.error.stack)||(e.filename+":"+e.lineno+":"+e.colno));var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message+" (quedó registrado para arreglarlo)"}stat("Error en la página: "+e.message)});
 window.addEventListener("unhandledrejection",function(e){var r=e.reason;reportar("Error sin manejar: "+(r&&(r.message||r.code)||r),r&&r.stack)});
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function $(i){return document.getElementById(i)}
+// Movimientos: solo transform y opacidad (el navegador los anima sin trabarse) y ninguno si pediste menos movimiento.
+var QUIETO=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+// Entrada suave de algo que cambió: dx/dy dicen de qué lado viene.
+function entra(e,dx,dy){if(!e||!e.animate||QUIETO)return;try{e.animate([{opacity:0,transform:"translate("+(dx||0)+"px,"+(dy||0)+"px)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.2,.8,.2,1)"})}catch(_){}}
+// Deslizar el dedo de costado: fn(1) = siguiente, fn(-1) = anterior.
+function deslizar(a,fn){var x0=null,y0=0;if(!a)return;
+ a.addEventListener("touchstart",function(e){var t=e.touches[0];x0=t.clientX;y0=t.clientY},{passive:true});
+ a.addEventListener("touchend",function(e){if(x0==null)return;var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)fn(dx<0?1:-1)},{passive:true})}
 // Números con coma para los miles y millones (1,500,000) y punto para los decimales, para que no se confundan.
 // Números a la argentina: punto para los miles y coma para los decimales (1.500.000,5).
 function num(n,d){return Number(n).toLocaleString("en-US",{maximumFractionDigits:d==null?2:d}).replace(/[,.]/g,function(c){return c===","?".":","})}
@@ -93,15 +102,21 @@ function migrate(){ACC.forEach(function(a){if(a[0]==="DIARIO")a[0]="Día a día"
 var DN=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 function plus(f,n){var d=new Date(f+"T00:00");d.setDate(d.getDate()+n);return iso(d)}
 function fd(f){return f.slice(8)+"/"+f.slice(5,7)}
-function occs(f){
+// Lo que hay en un día: las rutinas, las fechas y los eventos. La agenda, el mes y "¿Qué tenés hoy?" lo piden para muchos días
+// seguidos, así que se arma una vez un índice por fecha (OCX) que vale hasta el próximo cambio (se descarta en render y al guardar).
+var OCX=null;
+function occIdx(){if(OCX)return OCX;var x={d:{},fr:{},sk:{},rs:{},c:{}};
+ FECHAS.forEach(function(e){if(!vis(e))return;(x.d[e.f]=x.d[e.f]||[]).push({f:e.f,t:e.t,x:e.x,o:e,k:"F"});x.fr[e.f+"|"+e.t]=1});
+ L.events.forEach(function(e){(x.d[e.f]=x.d[e.f]||[]).push({f:e.f,t:e.t,x:e.x,o:e,k:"E"})});
+ SKIP.concat(L.skip).forEach(function(f){x.sk[f]=1});L.rskip.forEach(function(k){x.rs[k]=1});
+ return OCX=x}
+function occs(f){var x=occIdx();if(x.c[f])return x.c[f];
  var dw=new Date(f+"T00:00").getDay(),a=[];
- RUT.forEach(function(r){if(rds(r).indexOf(dw)<0)return;if(r.from&&f<r.from)return;if(r.to&&f>r.to)return;
-  if(SKIP.indexOf(f)>=0||L.skip.indexOf(f)>=0||[r.id].concat(r.al||[]).some(function(id){return L.rskip.indexOf(id+"|"+f)>=0}))return;
-  if(FECHAS.some(function(e){return e.f===f&&e.t===r.t&&vis(e)}))return;
+ if(!x.sk[f])RUT.forEach(function(r){if(rds(r).indexOf(dw)<0)return;if(r.from&&f<r.from)return;if(r.to&&f>r.to)return;
+  if(x.rs[r.id+"|"+f]||(r.al||[]).some(function(id){return x.rs[id+"|"+f]}))return;
+  if(x.fr[f+"|"+r.t])return;
   a.push({f:f,t:r.t,x:r.x+(r.t2?" (hasta "+r.t2+")":""),r:r})});
- FECHAS.forEach(function(e){if(e.f===f&&vis(e))a.push({f:f,t:e.t,x:e.x,o:e,k:"F"})});
- L.events.forEach(function(e){if(e.f===f)a.push({f:f,t:e.t,x:e.x,o:e,k:"E"})});
- return a}
+ return x.c[f]=a.concat(x.d[f]||[])}
 function allExp(){
  var a=SEED.expenses.map(function(e){var d=Math.min(e.d,now.getDate());return{f:ym+"-"+String(d).padStart(2,"0"),m:e.m,c:e.c,x:e.x}});
  return a.concat(L.expenses.filter(function(e){return e.f.slice(0,7)===ym}).map(function(e,i){return{f:e.f,m:e.m,c:e.c,x:e.x,li:L.expenses.indexOf(e)}}));
@@ -136,7 +151,8 @@ function numIn(i){if(i._num)return;i._num=1;var v=NUMV.get.call(i);i.type="text"
 document.querySelectorAll("input[type=number]").forEach(numIn);
 new MutationObserver(function(ms){ms.forEach(function(m){
  if(m.type==="attributes"){if(m.target.type==="number")numIn(m.target);return}
- m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;if(n.matches&&n.matches("input[type=number]"))numIn(n);if(n.querySelectorAll)n.querySelectorAll("input[type=number]").forEach(numIn)})})})
+ // Cada render agrega cientos de renglones: solo se buscan campos adentro de lo que tiene hijos.
+ m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;if(n.tagName==="INPUT"){if(n.type==="number")numIn(n);return}if(n.firstElementChild)n.querySelectorAll("input[type=number]").forEach(numIn)})})})
  .observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["type"]});
 
 function evBtns(row,it,f,box){
@@ -167,18 +183,71 @@ function renderHoy(){
  for(var i=1;i<=7;i++){var f=plus(today,i),q=occs(f).sort(orden);if(!q.length)continue;var e=q[0];
   a.appendChild(el("p","sem hoyprox","Lo próximo: "+(e.r?e.r.x:e.x)+" · "+(i===1?"mañana":DN[new Date(f+"T00:00").getDay()].toLowerCase()+" "+fd(f))+(e.t?" a las "+e.t:"")));break}}
 function hoyIr(i){i=Math.max(0,Math.min(2,i));if(i===HOYD)return;var a=$("hoy"),dr=i>HOYD?"izq":"der";HOYD=i;renderHoy();if(a){a.classList.remove("izq","der");void a.offsetWidth;a.classList.add(dr)}}
-(function(){var a=$("hoy"),x0=null,y0=0;if(!a)return;
- a.addEventListener("touchstart",function(e){var t=e.touches[0];x0=t.clientX;y0=t.clientY},{passive:true});
- a.addEventListener("touchend",function(e){if(x0==null)return;var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)hoyIr(HOYD+(dx<0?1:-1))},{passive:true})})();
-function renderMes(){
- var g=$("mg");g.innerHTML="";
- var b=MON||new Date(now.getFullYear(),now.getMonth(),1),st=VSTART||today;
- $("mt").textContent=b.toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+deslizar($("hoy"),function(d){hoyIr(HOYD+d)});
+// ===== Agenda: los próximos 7 días y el mes =====
+// En el celu se elige qué ver (7 días o Mes, queda recordado en este dispositivo); si la tarjeta es ancha (compu), se ven las dos.
+// VSTART: primer día de la semana que se ve (null = hoy). MON: mes que se ve (null = el actual). MSEL: día elegido en el mes.
+// Cambiar de semana, de mes o de día redibuja solo la agenda, no todo el panel.
+var AGV="sem",MSEL=null,MESN=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function porHora(a,b){return(a.t||"").localeCompare(b.t||"")}
+function mins(h){return+h.slice(0,2)*60+ +h.slice(3,5)}
+function minsYa(){var d=new Date();return d.getHours()*60+d.getMinutes()}
+function diaCorto(f){var d=new Date(f+"T00:00");return DN[d.getDay()].slice(0,3).toLowerCase()+" "+d.getDate()}
+function diaLargo(f){var d=new Date(f+"T00:00");return DN[d.getDay()]+" "+d.getDate()+" de "+MESN[d.getMonth()]}
+function rangoTxt(a,b){var ma=MESN[+a.slice(5,7)-1].slice(0,3),mb=MESN[+b.slice(5,7)-1].slice(0,3);return+a.slice(8)+(ma!==mb?" "+ma:"")+" al "+(+b.slice(8))+" "+mb}
+// Un renglón de la agenda: hora (o "Todo el día"), qué es y sus botones. Lo de hoy que ya pasó queda más clarito.
+function agEv(e,f,ya){var h=e.r?e.r.t:e.t,fin=e.r&&e.r.t2,r=el("div","age"+(e.r?" rut":""));
+ if(f===today&&h&&(fin?mins(fin):mins(h)+60)<=ya)r.classList.add("pas");
+ var tm=el("time",h?"":"td",h||"Todo el día");if(fin)tm.appendChild(el("small","",fin));r.appendChild(tm);
+ var tx=el("span","agx",e.r?e.r.x:e.x);if(e.r)tx.appendChild(el("small","","🔁 Rutina"));r.appendChild(tx);
+ var bt=el("span","agb");evBtns(bt,e,f,r);r.appendChild(bt);return r}
+// Los 7 días: cada día con su fecha grande y lo que tenés. Los días seguidos sin nada se juntan en un renglón.
+function renderSemana(){var ag=$("agenda");if(!ag)return;ag.innerHTML="";var st=VSTART||today,man=plus(today,1),ya=minsYa(),vac=[];
+ $("agr").textContent=st===today?"Próximos 7 días":rangoTxt(st,plus(st,6));$("nh").hidden=st===today;
+ function libres(){if(!vac.length)return;var r=el("div","agd libre");r.appendChild(el("b","",vac.length>1?diaCorto(vac[0])+" a "+diaCorto(vac[vac.length-1]):diaCorto(vac[0])));r.appendChild(el("span","","Libre"));ag.appendChild(r);vac=[]}
+ for(var i=0;i<7;i++){var f=plus(st,i),list=occs(f).slice().sort(porHora);
+  if(!list.length&&f!==today){vac.push(f);continue}libres();
+  var d=new Date(f+"T00:00"),box=el("div","agd"+(f===today?" hoy":"")),bd=el("div","agdia"),evs=el("div","agevs");
+  bd.appendChild(el("small","",f===today?"Hoy":f===man?"Mañana":DN[d.getDay()].slice(0,3)));bd.appendChild(el("b","",d.getDate()));
+  if(!list.length)evs.appendChild(el("div","none agnada","Hoy no tenés nada agendado."));
+  list.forEach(function(e){evs.appendChild(agEv(e,f,ya))});box.appendChild(bd);box.appendChild(evs);ag.appendChild(box)}
+ libres()}
+// El mes: cada día con puntitos (llenos: eventos; uno hueco si hay rutina). Tocá un día para ver qué tenés y agendar algo ahí mismo.
+function mesBase(){return MON||new Date(now.getFullYear(),now.getMonth(),1)}
+function mesSel(b){var a=iso(b).slice(0,7);return MSEL&&MSEL.slice(0,7)===a?MSEL:ym===a?today:iso(b)}
+function renderMes(){var g=$("mg");if(!g)return;g.innerHTML="";var b=mesBase(),ym0=iso(b).slice(0,7),st=VSTART||today,fin=plus(st,6),sel=mesSel(b);
+ $("mt").textContent=MESN[b.getMonth()]+" "+b.getFullYear();$("mh").hidden=ym0===ym&&sel===today;
  ["L","M","M","J","V","S","D"].forEach(function(n){g.appendChild(el("b","",n))});
- var lead=(b.getDay()+6)%7,dm=new Date(b.getFullYear(),b.getMonth()+1,0).getDate();
- for(var i=0;i<lead;i++)g.appendChild(el("span"));
- for(var k=1;k<=dm;k++){(function(k){var f=iso(new Date(b.getFullYear(),b.getMonth(),k)),n=occs(f).length,c=el("button",(f===today?"t":"")+(f>=st&&f<=plus(st,6)?" h":""));
-  c.appendChild(document.createTextNode(k));c.appendChild(el("i","",n?"●".repeat(Math.min(n,3)):"\u00a0"));c.onclick=function(){VSTART=f;render()};g.appendChild(c)})(k)}}
+ var lead=(b.getDay()+6)%7,dm=new Date(b.getFullYear(),b.getMonth()+1,0).getDate(),ini=plus(iso(b),-lead),n=Math.ceil((lead+dm)/7)*7;
+ for(var k=0;k<n;k++)(function(f){var q=occs(f),fuera=f.slice(0,7)!==ym0,ne=0,nr=0,c=el("button",[fuera?"o":"",f===today?"t":"",f>=st&&f<=fin?"h":"",f===sel?"s":""].join(" ").trim()),p=el("span","pts");
+  q.forEach(function(e){if(e.r)nr++;else ne++});for(var j=0;j<Math.min(ne,3);j++)p.appendChild(el("i"));if(nr&&ne<3)p.appendChild(el("i","r"));
+  c.type="button";c.appendChild(el("span","",+f.slice(8)));c.appendChild(p);
+  c.setAttribute("aria-label",diaLargo(f)+(q.length?": "+cant(q.length,"cosa","cosas"):": libre"));c.setAttribute("aria-pressed",String(f===sel));if(f===today)c.setAttribute("aria-current","date");
+  c.onclick=function(){if(fuera){var d=new Date(f+"T00:00");MON=new Date(d.getFullYear(),d.getMonth(),1);MSEL=f;renderMes();entra(g,f<ym0?-32:32);return}
+   var v=g.querySelector("button.s");if(v===c)return;MSEL=f;if(v){v.classList.remove("s");v.setAttribute("aria-pressed","false")}
+   c.classList.add("s");c.setAttribute("aria-pressed","true");$("mh").hidden=ym0===ym&&f===today;renderMdia(f);entra($("mdia"),0,8)};
+  g.appendChild(c)})(plus(ini,k));
+ renderMdia(sel)}
+// Lo que tenés el día elegido del mes, con un renglón para agendar algo ese día.
+function renderMdia(f){var w=$("mdia");if(!w)return;w.innerHTML="";var list=occs(f).slice().sort(porHora),t=el("b","",diaLargo(f)),evs=el("div","agevs"),ya=minsYa();
+ var rel=f===today?"hoy":f===plus(today,1)?"mañana":f===plus(today,-1)?"ayer":"";if(rel)t.appendChild(el("small","",rel));w.appendChild(t);
+ list.forEach(function(e){evs.appendChild(agEv(e,f,ya))});
+ if(!list.length)evs.appendChild(el("div","none agnada",f<today?"No tenías nada agendado.":"Libre: no tenés nada agendado."));w.appendChild(evs);
+ if(f<today)return;
+ var fm=el("div","add agadd"),h=el("input"),x=el("input"),ok=el("button","","Agendar");
+ h.type="time";h.setAttribute("aria-label","Hora (opcional)");h.title="Hora (opcional)";x.placeholder="¿Qué tenés ese día?";x.setAttribute("aria-label","Qué tenés el "+diaLargo(f));x.autocomplete="off";ok.type="button";
+ ok.onclick=function(){var tx=x.value.trim();if(!tx)return x.focus();L.events.push({f:f,t:h.value,x:tx});MSEL=f;save();render();toast("Agendé "+tx+" para el "+diaCorto(f)+(h.value?" a las "+h.value:"")+".")};
+ x.onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();ok.click()}};
+ fm.appendChild(h);fm.appendChild(x);fm.appendChild(ok);w.appendChild(fm)}
+function renderAgenda(){renderSemana();renderMes()}
+// Cambiar de semana o de mes (con las flechas o deslizando): lo nuevo entra del lado hacia donde vas.
+function semIr(d){var st=VSTART||today,nv=d?plus(st,7*d):today;if(nv===st)return;VSTART=nv===today?null:nv;renderAgenda();entra($("agenda"),nv>st?32:-32)}
+function mesIr(d){var b=mesBase(),nb=d?new Date(b.getFullYear(),b.getMonth()+d,1):new Date(now.getFullYear(),now.getMonth(),1),dx=iso(nb)>iso(b)?32:iso(nb)<iso(b)?-32:0;
+ MON=iso(nb).slice(0,7)===ym?null:nb;MSEL=null;renderMes();if(dx)entra($("mg"),dx);entra($("mdia"),dx,dx?0:8)}
+// 7 días o Mes: la pastilla se desliza y el panel nuevo entra de su lado.
+function agVer(v,anima){AGV=v==="mes"?"mes":"sem";var s=$("agsec");if(s)s.setAttribute("data-v",AGV);
+ ["sem","mes"].forEach(function(k){var b=$("agv-"+k);if(b){b.setAttribute("aria-selected",String(k===AGV));b.tabIndex=k===AGV?0:-1}});
+ if(!anima)return;try{localStorage.setItem("panel-agvista",AGV)}catch(e){}entra($(AGV==="mes"?"agmes":"agsem"),AGV==="mes"?32:-32)}
 // Las rutinas viejas eran de un solo día: las que son iguales (mismo nombre, horario y fechas) se juntan en una con varios días.
 // Los ids de las que se juntan quedan en r.al, así siguen valiendo los días que ya se habían cancelado.
 function juntarRut(){var out=[],ix={};
@@ -222,24 +291,19 @@ $("rb").onclick=function(){var x=$("rx").value.trim(),t=$("rt").value,ds=rdiasUI
  if(REDIT){var i=RUT.indexOf(REDIT);o.id=REDIT.id;if(REDIT.al)o.al=REDIT.al;if(i>=0)RUT[i]=o;else RUT.push(o)}else{o.id="r"+Date.now().toString(36);RUT.push(o)}
  $("rm").textContent="Rutina guardada: "+x+", "+diasTxt(ds)+".";closeRut();save();render()};
 rdiasUI();
-$("np").onclick=function(){VSTART=plus(VSTART||today,-7);render()};
-$("nn").onclick=function(){VSTART=plus(VSTART||today,7);render()};
-$("nh").onclick=function(){VSTART=null;MON=null;render()};
-$("mp").onclick=function(){var b=MON||new Date(now.getFullYear(),now.getMonth(),1);MON=new Date(b.getFullYear(),b.getMonth()-1,1);renderMes()};
-$("mn").onclick=function(){var b=MON||new Date(now.getFullYear(),now.getMonth(),1);MON=new Date(b.getFullYear(),b.getMonth()+1,1);renderMes()};
-function render(){var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
- var ag=$("agenda");ag.innerHTML="";var st=VSTART||today;
- $("agt").textContent=st===today?"Próximos 7 días":"Del "+fd(st)+" al "+fd(plus(st,6));
- for(var i=0;i<7;i++){
-  var f=plus(st,i),d=new Date(f+"T00:00");
-  var list=occs(f).sort(function(a,b){return(a.t||"").localeCompare(b.t||"")});
-  var box=el("div","day"+(f===today?" today":""));
-  box.appendChild(el("b","",f===today?"Hoy":d.toLocaleDateString("es-AR",st===today?{weekday:"long",day:"numeric"}:{weekday:"long",day:"numeric",month:"short"})));
-  if(!list.length){box.appendChild(el("div","none","Sin nada agendado"))}
-  list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.t||"Todo el día"));r.appendChild(el("span","",e.x));evBtns(r,e,f);box.appendChild(r)});
-  ag.appendChild(box);
- }
- renderMes();renderRut();renderHoy();calUI();
+$("np").onclick=function(){semIr(-1)};
+$("nn").onclick=function(){semIr(1)};
+$("nh").onclick=function(){semIr(0)};
+$("mp").onclick=function(){mesIr(-1)};
+$("mn").onclick=function(){mesIr(1)};
+$("mh").onclick=function(){mesIr(0)};
+deslizar($("agenda"),semIr);deslizar($("mg"),mesIr);
+$("agv-sem").onclick=function(){if(AGV!=="sem")agVer("sem",true)};
+$("agv-mes").onclick=function(){if(AGV!=="mes")agVer("mes",true)};
+$("agv-sem").parentNode.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();var v=AGV==="sem"?"mes":"sem";agVer(v,true);$("agv-"+v).focus()});
+try{agVer(localStorage.getItem("panel-agvista"))}catch(e){agVer("sem")}
+function render(){OCX=null;var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
+ renderAgenda();renderRut();renderHoy();calUI();
  var ex=allExp(),tot=0,by={};
  ex.forEach(function(e){tot+=e.m;by[e.c]=(by[e.c]||0)+e.m});
  var bt=0;for(var k in BUDGET)bt+=BUDGET[k];
@@ -1121,10 +1185,30 @@ async function nuevaVersion(volviendo){
   if(!(v>+VER.slice(1)))return;
   var ocupado=$("nt").value.trim()||$("nr").querySelector("button")||document.querySelector("main input:focus,main textarea:focus")||PRE||busy;
   if(volviendo&&!ocupado){location.reload();return}
-  var t=$("toast");if(!t)return;t.innerHTML="";t.appendChild(el("span","","Hay una versión nueva de Petaca."));
+  var t=$("toast");if(!t)return;if(TOUT){TOUT.cancel();TOUT=null}t.innerHTML="";t.appendChild(el("span","","Hay una versión nueva de Petaca."));
   var b=el("button","","Actualizar");b.onclick=function(){location.reload()};t.appendChild(b);
-  var x=el("button","x","×");x.setAttribute("aria-label","Cerrar aviso");x.onclick=function(){t.style.display="none"};t.appendChild(x);t.style.display="";clearTimeout(TOT)}catch(e){}}
+  var x=el("button","x","×");x.setAttribute("aria-label","Cerrar aviso");x.onclick=toastFuera;t.appendChild(x);t.style.display="";clearTimeout(TOT)}catch(e){}}
 setInterval(function(){if(!document.hidden)nuevaVersion(false)},30*60*1000);
+// Dos columnas en la compu, sin huecos y sin saltos: cada tarjeta va a la columna más corta (en su orden) y se queda ahí.
+// Si después crece (abrís un desplegable), solo se corren las de abajo en esa misma columna. La grilla tiene filas de 2px y
+// cada tarjeta ocupa las que mide (clase "mas"). En el celu (una columna) y al armar la formación es una grilla común.
+var acomodar=function(){};
+(function(){if(!window.ResizeObserver||!window.matchMedia)return;var mq=matchMedia("(min-width:721px)"),F=2;
+ function armar(c,re){var ks=[].filter.call(c.children,function(x){return x.tagName==="SECTION"});
+  if(!mq.matches||document.body.classList.contains("ordenando")||c.offsetParent===null){
+   if(c.classList.contains("mas")){c.classList.remove("mas");ks.forEach(function(x){x.style.gridColumn=x.style.gridRow="";x._col=null})}c._vis=false;return}
+  if(!c._vis)re=true;c._vis=true;
+  // Primero se miden todas y después se ubican: una sola lectura y una sola escritura.
+  var g=parseFloat(getComputedStyle(c).columnGap)||16,hs=ks.map(function(x){return x.offsetHeight}),top=[0,0];
+  ks.forEach(function(x,i){var sp=Math.ceil((hs[i]+g)/F),col=x.dataset.c==="agenda"?"a":re||!x._col?(top[0]<=top[1]?"1":"2"):x._col;
+   var t=col==="a"?Math.max(top[0],top[1]):top[col==="1"?0:1];x._col=col;
+   x.style.gridColumn=col==="a"?"1 / -1":col;x.style.gridRow=(t/F+1)+" / span "+sp;
+   if(col==="a")top[0]=top[1]=t+sp*F;else top[col==="1"?0:1]=t+sp*F});
+  c.classList.add("mas")}
+ var ro=new ResizeObserver(function(es){var cs=[];es.forEach(function(e){var c=e.target.parentNode;if(c&&c.classList.contains("cols")&&cs.indexOf(c)<0)cs.push(c)});cs.forEach(function(c){armar(c,false)})});
+ document.querySelectorAll(".cols>section").forEach(function(s){ro.observe(s)});
+ acomodar=function(){document.querySelectorAll(".cols").forEach(function(c){armar(c,true)})};
+ if(mq.addEventListener)mq.addEventListener("change",acomodar);else if(mq.addListener)mq.addListener(acomodar)})();
 // Orden personalizado: el usuario arrastra grupos y tarjetas (o usa ↑ ↓); se guarda en su cuenta.
 var LAYOUT=null;
 function grupos(){return[].slice.call(document.querySelectorAll("main>.grupo"))}
@@ -1144,8 +1228,8 @@ function applyLayout(){var Y=LAYOUT||DEFLAY,m=document.querySelector("main"),by=
  grupos().forEach(function(g){ids(g.dataset.g).forEach(function(i){if(!ya[i]){ya[i]=1;en[i]=g.dataset.g}})});
  grupos().forEach(function(g){var c=g.querySelector(":scope>.cols");if(!c)return;var mine=Object.keys(by).filter(function(i){return en[i]===g.dataset.g});
   ids(g.dataset.g).filter(function(i){return mine.indexOf(i)>=0}).concat(mine.filter(function(i){return ids(g.dataset.g).indexOf(i)<0})).forEach(function(i){c.appendChild(by[i])})});
- marcarMenus()}
-function saveLayout(){marcarMenus();LAYOUT={v:3,g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){LAYOUT.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});HAVECFG=true;save()}
+ marcarMenus();acomodar()}
+function saveLayout(){marcarMenus();acomodar();LAYOUT={v:3,g:grupos().map(function(g){return g.dataset.g}),c:{}};grupos().forEach(function(g){LAYOUT.c[g.dataset.g]=tarjetas(g).map(function(s){return s.dataset.c})});HAVECFG=true;save()}
 function mover(n,d){var p=n.parentNode,h=[].filter.call(p.children,function(x){return x.matches(n.matches(".grupo")?"main>.grupo":".cols>section[data-c]")}),i=h.indexOf(n),j=i+d;
  if(j<0||j>=h.length)return;if(d<0)p.insertBefore(n,h[j]);else p.insertBefore(h[j],n);saveLayout();n.scrollIntoView({block:"nearest"})}
 function ordBar(n){var b=el("div","ordbar");b.appendChild(el("span","",n.dataset.name));var s=el("span");
@@ -1173,7 +1257,7 @@ function dragEnd(){var d=DRAG;if(!d)return;DRAG=null;clearInterval(d.iv);
 addEventListener("pointermove",dragMove);addEventListener("pointerup",dragEnd);addEventListener("pointercancel",dragEnd);
 function ordUI(on){document.body.classList.toggle("ordenando",on);$("ordtop").style.display=on?"":"none";
  [].forEach.call(document.querySelectorAll(".ordbar"),function(b){b.remove()});
- if(on)grupos().forEach(function(g){ordBar(g);tarjetas(g).forEach(ordBar)})}
+ if(on)grupos().forEach(function(g){ordBar(g);tarjetas(g).forEach(ordBar)});acomodar()}
 $("ord").onclick=function(){ordUI(!document.body.classList.contains("ordenando"));window.scrollTo({top:0,behavior:"smooth"})};
 $("ordok").onclick=function(){ordUI(false)};
 $("ordr").onclick=function(){LAYOUT=null;applyLayout();HAVECFG=true;save();ordUI(true)};
@@ -1208,7 +1292,8 @@ blue();setInterval(blue,30*60*1000);
   var h=s.firstElementChild;if(s.id==="login"||s.id==="rec"||!h||h.tagName!=="H2")return;
   var k=h.id||h.textContent.trim();s.classList.add("plg");h.tabIndex=0;h.setAttribute("role","button");
   function set(c){s.classList.toggle("cerrada",c);h.setAttribute("aria-expanded",String(!c))}
-  function tg(){var c=!s.classList.contains("cerrada");set(c);st[k]=c;try{localStorage.setItem("panel-cerradas",JSON.stringify(st))}catch(e){}}
+  function tg(){var c=!s.classList.contains("cerrada");set(c);st[k]=c;try{localStorage.setItem("panel-cerradas",JSON.stringify(st))}catch(e){}
+   if(!c)[].forEach.call(s.children,function(x){if(x!==h&&!x.classList.contains("ordbar"))entra(x,0,-6)})}
   set(!!st[k]);h.onclick=tg;h.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();tg()}}});
 })();
 // Enter en el formulario de entrada = tocar "Entrar".
@@ -1618,11 +1703,17 @@ function trVal(){return diaVal()-efVal()}
 function usaEf(){return!!(+(L.bal&&L.bal.ef)||L.mv.length||L.ing.some(function(o){return med(o)==="e"})||L.expenses.some(function(e){return med(e)==="e"}))}
 function mvTxt(m){return m.adj?"Corrección: pasé "+(m.a==="e"?"de transferencia a efectivo":"de efectivo a transferencia"):m.a==="e"?"Saqué efectivo (de transferencia)":"Deposité efectivo (a transferencia)"}
 // Aviso abajo de todo después de cargar o borrar algo, con "Deshacer" a mano por si fue sin querer.
-var TOT=null;
-function toast(msg){var t=$("toast");if(!t)return;t.innerHTML="";t.appendChild(el("span","",msg));
- if(UNDO.length){var b=el("button","","Deshacer");b.onclick=function(){$("un").click();t.style.display="none"};t.appendChild(b)}
- var x=el("button","x","×");x.setAttribute("aria-label","Cerrar aviso");x.onclick=function(){t.style.display="none"};t.appendChild(x);
- t.style.display="";clearTimeout(TOT);TOT=setTimeout(function(){t.style.display="none"},8000)}
+var TOT=null,TOUT=null;
+function toast(msg){var t=$("toast");if(!t)return;if(TOUT){TOUT.cancel();TOUT=null}t.innerHTML="";t.appendChild(el("span","",msg));
+ if(UNDO.length){var b=el("button","","Deshacer");b.onclick=function(){$("un").click();toastFuera()};t.appendChild(b)}
+ var x=el("button","x","×");x.setAttribute("aria-label","Cerrar aviso");x.onclick=toastFuera;t.appendChild(x);
+ t.style.display="";clearTimeout(TOT);TOT=setTimeout(toastFuera,8000)}
+// El aviso se va deslizando hacia abajo (si vuelve a aparecer mientras se va, se queda). Se oculta con un temporizador y no
+// al terminar la animación, porque con la app en segundo plano las animaciones se pausan.
+function toastFuera(){var t=$("toast");clearTimeout(TOT);if(!t||t.style.display==="none"||TOUT)return;
+ if(!t.animate||QUIETO){t.style.display="none";return}
+ var a=TOUT=t.animate([{opacity:1,transform:"translateX(-50%)"},{opacity:0,transform:"translate(-50%,14px)"}],{duration:180,easing:"ease-in",fill:"forwards"});
+ setTimeout(function(){if(TOUT!==a)return;TOUT=null;t.style.display="none";a.cancel()},190)}
 // Antes de cargar un monto, avisa si parece un error de tipeo (un cero de más) o si ya está cargado igual el mismo día.
 function dudoso(tipo,m,f,c){
  if(tipo==="g"){
@@ -1700,7 +1791,9 @@ function wpPaint(){var b=$("wp");if(!b)return;b.innerHTML="";var v=parseFloat($(
   var min=Math.floor(Math.random()*90)+1,ex=min>=88&&Math.random()<.6;
   gira(b[0],a);gira(b[1],c);gira(s[1],RIV[ri]);mi.textContent=ex?"90' + "+(Math.floor(Math.random()*7)+1):min+"'"}
  marcador();setInterval(function(){if(document.body.classList.contains("auth")&&!document.hidden)marcador()},7000);
- vestir();new MutationObserver(vestir).observe(document.body,{attributes:true,attributeFilter:["class"]});
+ // Petaca se vuelve a vestir solo cuando se entra o se sale (no con cada clase que cambia en la página).
+ var au=document.body.classList.contains("auth");vestir();
+ new MutationObserver(function(){var a=document.body.classList.contains("auth");if(a!==au){au=a;vestir()}}).observe(document.body,{attributes:true,attributeFilter:["class"]});
 })();
 // Nota de voz: 🎤 Hablar dicta la nota en el cuadro de texto y, cuando terminás de hablar, Petaca la entiende sola
 // (igual te muestra lo que entendió antes de guardar).
@@ -1777,7 +1870,12 @@ marcarMenus();
  var pend=0;function marca(){pend=0;var h=innerHeight*.35,act="inicio";
   if(scrollY>40)document.querySelectorAll(".grupo").forEach(function(x){if(x.getBoundingClientRect().top<h)act={dinero:"plata",tiempo:"fechas"}[x.dataset.g]||x.dataset.g});
   bs.forEach(function(b){b.setAttribute("aria-current",String(b.dataset.g===act))})}
- addEventListener("scroll",function(){if(!pend)pend=requestAnimationFrame(marca)},{passive:true});marca()})();
+ addEventListener("scroll",function(){if(!pend)pend=requestAnimationFrame(marca)},{passive:true});marca();
+ // Mientras escribís, la barra se esconde deslizándose para no tapar el teclado.
+ var CAMPO="input:not([type=checkbox]):not([type=radio]):not([type=file]),textarea,select",R=document.documentElement;
+ function campo(x){return!!(x&&x.matches&&x.matches(CAMPO))}
+ document.addEventListener("focusin",function(e){if(campo(e.target))R.classList.add("escribiendo")});
+ document.addEventListener("focusout",function(e){if(!campo(e.relatedTarget))R.classList.remove("escribiendo")})})();
 // Guía de uso: se abre sola la primera vez. Cerrada no ocupa lugar en el panel: se vuelve a abrir con "📖 Guía", arriba.
 // Las recomendaciones 💡 de cada sección se pueden ocultar desde la guía (se recuerda en este dispositivo).
 (function(){
