@@ -2,19 +2,21 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://jrsjnmutdnzuxqimroaa.supabase.co wss://jrsjnmutdnzuxqimroaa.supabase.co https://dolarapi.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PETACA</title>
 <link rel="icon" href="icons/favicon-32.png?v=29" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=29">
-<link rel="manifest" href="manifest.webmanifest?v=30">
+<link rel="manifest" href="manifest.webmanifest?v=31">
 <meta name="apple-mobile-web-app-title" content="PETACA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#12A150">
+<script src="tema.js?v=77"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="styles.css?v=76">
+<link rel="stylesheet" href="styles.css?v=77">
 </head>
 <body class="auth">
 <div class="cancha" aria-hidden="true"><i class="area ar"></i><i class="chica ar"></i><i class="arco ar"></i><i class="area ab"></i><i class="chica ab"></i><i class="arco ab"></i><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i><i class="bandera b1"></i><i class="bandera b2"></i><span class="pelota">⚽</span></div>
@@ -24,8 +26,19 @@
 <header class="top">
 <div class="marca"><img class="masc" data-pose="sentado" src="img/petaca-pateando-arg.webp?v=3" width="58" height="66" decoding="async" alt="Petaca, la mascota: un bebé rubio jugador de fútbol con la camiseta de la Selección"><div><h1>PETACA</h1>
 <p class="sub" id="fecha"></p><p class="lema">Pelota al piso y cabeza levantada.</p></div></div>
+<div class="acciones">
 <div class="eqsel"><button type="button" class="eqchip" id="eqbtn" aria-haspopup="true" aria-expanded="false" aria-controls="eqpop">⚽ Tu equipo ▾</button>
 <div class="eqpop" id="eqpop" role="dialog" aria-label="Elegí tu equipo" hidden><b>¿De qué cuadro sos?</b><div class="eqbs" id="eqops"></div></div></div>
+<div class="eqsel masel" id="ses" style="display:none"><button type="button" class="eqchip masb" id="masb" aria-haspopup="true" aria-expanded="false" aria-controls="maspop" aria-label="Más opciones">⋯</button>
+<div class="eqpop maspop" id="maspop" role="menu" aria-label="Más opciones" hidden>
+<p class="sem" id="sem2"></p>
+<button type="button" role="menuitem" id="cfgb">⚙️ Configuración</button>
+<button type="button" role="menuitem" id="guib">📖 Guía de uso</button>
+<button type="button" role="menuitem" id="ord">↕ Armar la formación</button>
+<button type="button" role="menuitem" id="lockb" hidden>🔒 Bloquear ahora</button>
+<button type="button" role="menuitem" id="lo">🚪 Cerrar sesión</button>
+</div></div>
+</div>
 </header>
 <details class="eqfix" id="eqfix" hidden><summary id="eqsum">⚽ Tu equipo</summary><div id="eqb"></div></details>
 <section id="login" style="margin-bottom:16px;display:none">
@@ -35,10 +48,7 @@
 <div class="add"><button id="lg">Entrar</button><button id="lr" title="Crear una cuenta nueva">Ficharme</button><button class="lk" id="lf">Me olvidé la contraseña</button></div>
 <p class="sem" id="lm"></p>
 </section>
-<section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 6)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rpb">Guardar contraseña</button></div><p class="sem" id="rpm"></p></section>
-<div class="cuenta">
-<p class="sem" id="ses" style="display:none"><span id="sem2"></span> <button class="x" id="guib" style="text-decoration:underline">📖 Guía</button> <button class="x" id="ord" style="text-decoration:underline">↕ Armar la formación</button> <button class="x" id="lo" style="text-decoration:underline">Cerrar sesión</button></p>
-</div>
+<section id="rec" style="margin-bottom:16px;display:none"><h2>Elegí una contraseña nueva</h2><div class="add"><input type="password" id="rp" placeholder="Contraseña nueva (mínimo 8)" autocomplete="new-password" aria-label="Contraseña nueva"><button id="rpb">Guardar contraseña</button></div><p class="sem" id="rpm"></p></section>
 <div id="ordtop" style="display:none"><span>Armá tu formación: arrastrá cada grupo o tarjeta desde su barra ⠿</span><span><button class="x" id="ordr">Restablecer</button> <button id="ordok">¡Listo!</button></span></div>
 
 <div id="hoy" style="display:none"></div>
@@ -46,22 +56,22 @@
 <div class="claves">
 <b>⭐ Las 5 claves</b>
 <ol>
-<li><b>Cargá todo en el día.</b> Un gasto o un ingreso tarda 5 segundos en "Contale a Petaca" (o dictalo con 🎤). Si lo dejás para después, se olvida.</li>
+<li><b>Cargá todo en el día.</b> Un gasto tarda 5 segundos en <b>💸 Tu plata</b> o en "Contale a Petaca" (o dictalo con 🎤). Si lo dejás para después, se olvida.</li>
 <li><b>Separá el ahorro apenas cobrás,</b> no lo que sobre a fin de mes. Petaca te pregunta cuánto separar de cada ingreso.</li>
 <li><b>Fijate siempre si fue 🏦 transferencia o 💵 efectivo,</b> y cargá cuando sacás del cajero. Así sabés dónde está tu plata.</li>
-<li><b>Si el saldo no coincide con tu banco o tu billetera,</b> corregilo con ✎ en Cuentas: no lo dejes desfasado.</li>
+<li><b>Cargá tus gastos fijos una vez</b> (alquiler, expensas, suscripciones): Petaca te los recuerda cada mes y los cargás con un toque.</li>
 <li><b>Mirá la charla técnica una vez por semana</b> y ponele fecha a tu objetivo: Petaca te dice cuánto ahorrar por mes.</li>
 </ol>
 </div>
 <details class="gtema"><summary>1. Primeros pasos</summary>
 <p>Lo primero es contarle a Petaca <b>con cuánta plata arrancás</b> (tu capital inicial), cuánto de eso está en efectivo y, si tenés, <b>cuánto tenés ahorrado e invertido</b>. Se carga <b>una sola vez</b>, en la pretemporada o cuando Petaca te lo pregunta: después sigue con tu día a día. Si el saldo no coincide con tu banco, corregilo con ✎ en Cuentas.</p>
 <p>En Ajustes también elegís tus <b>categorías de gasto</b> con un presupuesto por mes, el <b>% que querés separar</b> de cada ingreso para ahorrar y tu <b>objetivo de ahorro</b>.</p>
-<p>Arriba a la derecha, en <b>⚽ Tu equipo</b>, elegís tu cuadro: Petaca se pone su camiseta, el panel toma sus colores y ves el próximo partido.</p>
+<p>Arriba a la derecha, en <b>⚽ Tu equipo</b>, elegís tu cuadro: Petaca se pone su camiseta, el panel toma sus colores y ves el próximo partido. Al lado, en <b>⋯</b>, están la Configuración, esta guía y Cerrar sesión.</p>
 <p>En <b>⚙️ Configuración → Tu cuenta</b> podés elegir un <b>usuario</b> para entrar sin escribir el mail.</p>
 </details>
 <details class="gtema"><summary>2. Cargar ingresos y gastos</summary>
-<p><b>Ingresos:</b> en <b>💸 Tu plata</b> escribí el monto, elegí si entró por 🏦 transferencia o en 💵 efectivo y tocá <b>Sumar ingreso</b>. Antes de confirmar elegís qué % separar para ahorro: eso pasa solo a tus dólares, al precio del dólar blue.</p>
-<p><b>Gastos:</b> en <b>📊 Más de tu plata → Gastos del mes</b> cargá monto, categoría, detalle y cómo lo pagaste. Las barras de cada categoría muestran cuánto llevás de tu presupuesto.</p>
+<p>En <b>💸 Tu plata</b> elegí <b>Gasto</b> o <b>Ingreso</b>, escribí el monto, si fue por 🏦 transferencia o en 💵 efectivo, y tocá <b>Sumar</b>. En un ingreso elegís qué % separar para ahorro: eso pasa solo a tus dólares, al precio del dólar blue.</p>
+<p>En <b>📊 Más de tu plata → Gastos del mes</b> ves cuánto llevás de cada categoría, los meses anteriores (con las flechas) y tus <b>📌 gastos fijos</b>.</p>
 <p>Si lo preferís, cargá todo desde "Contale a Petaca" (ver el punto 3).</p>
 </details>
 <details class="gtema"><summary>3. Contale a Petaca (escribí o hablá)</summary>
@@ -83,31 +93,32 @@
 <p>Si <b>sacás del cajero</b> o <b>depositás efectivo</b>, cargalo en <b>📊 Más de tu plata → Cuentas</b> con "Pasar": no es gasto ni ingreso, solo cambia dónde está la plata.</p>
 <p>Si lo que dice Petaca no coincide con lo que tenés de verdad, tocá ✎ al lado del saldo en Cuentas y poné el número real.</p>
 </details>
-<details class="gtema"><summary>5. Ahorro y objetivo</summary>
+<details class="gtema"><summary>5. Ahorro, objetivo y gastos fijos</summary>
 <p>Lo que separás de cada ingreso se suma solo a tu ahorro en dólares. También podés sumar o retirar a mano en <b>Objetivo de ahorro</b>.</p>
 <p>Si le ponés una <b>fecha</b> a tu objetivo (en Ajustes), Petaca calcula cuánto tenés que ahorrar por mes para llegar.</p>
+<p>Los <b>📌 gastos fijos</b> (en Gastos del mes) aparecen en Tu plata cuando se acerca el día: tocá <b>Cargar</b> y listo. Si ya lo pagaste o este mes no va, también lo podés marcar.</p>
 </details>
 <details class="gtema"><summary>6. Agenda, rutinas y avisos</summary>
-<p>En <b>📅 Fechas importantes</b> cargás turnos, parciales y vencimientos. La semana día por día y el mes completo están en <b>📅 Agenda y rutinas</b>: elegí <b>7 días</b> o <b>Mes</b> (en la compu se ven los dos) y deslizá de costado para moverte. Tocá un día del mes para ver lo que tenés y agendar algo ese día.</p>
-<p>Las <b>rutinas</b> son lo que se repite (gym, clases, fútbol): elegís los días con los botones L M M J V S D. Las de hoy aparecen arriba de todo, en <b>📋 ¿Qué tenés hoy?</b></p>
+<p>En <b>📅 Agenda</b> está todo lo de fechas: <b>Próximas</b> (lo que viene, con cuántos días faltan), <b>7 días</b> (la semana día por día) y <b>Mes</b> (tocá un día para ver lo que tenés y agendar algo ahí mismo). En la compu se ven la semana y el mes juntos. Deslizá de costado para moverte.</p>
+<p>Las <b>rutinas</b> son lo que se repite (gym, clases, fútbol): están abajo de la agenda y elegís los días con los botones L M M J V S D. Las de hoy aparecen arriba de todo, en <b>📋 ¿Qué tenés hoy?</b></p>
 <p>Con <b>⚙️ Configuración → Tus calendarios</b> traés tus eventos de Google Calendar, el iPhone u Outlook: vinculando el link del calendario (después se actualiza solo) o subiendo el archivo una vez. Lo que se repite todas las semanas pasa como rutina.</p>
-<p>Con <b>Avisos por Telegram</b> (en ⚙️ Configuración), Petaca te manda un mensaje antes de cada evento marcado con 🔔.</p>
+<p>Con <b>⚙️ Configuración → Avisos</b>, Petaca te avisa antes de cada evento marcado con 🔔 y de tus gastos fijos: en este celular, por Telegram (se vincula con un toque), o los dos.</p>
 </details>
 <details class="gtema"><summary>7. Si te equivocaste</summary>
 <p><b>↶ Deshacer</b> vuelve atrás el último cambio (podés tocarlo varias veces).</p>
-<p>En <b>Movimientos cargados</b> y en las listas, ✎ corrige y × borra. También podés decírselo a Petaca: "me equivoqué, era en efectivo".</p>
+<p>En <b>Movimientos cargados</b> (con buscador) y en las listas, ✎ corrige y × borra. También podés decírselo a Petaca: "me equivoqué, era en efectivo".</p>
 </details>
 <details class="gtema"><summary>8. Resumen y charla técnica</summary>
-<p>El <b>Resumen</b> (en 📊 Más de tu plata) muestra cuánto tenés hoy, cuánto entró y gastaste en total, tu ahorro y dónde más gastás.</p>
+<p>El <b>Resumen</b> (en 📊 Más de tu plata) muestra cuánto tenés hoy, cuánto entró y gastaste en total, tu ahorro y dónde más gastás. En el <b>Histórico</b> ves cuánto gastaste en cada uno de los últimos meses.</p>
 <p>La <b>charla técnica</b> te da consejos: 🟥 <b>Tarjeta roja</b> es urgente, 🟨 <b>Amarilla</b> es para prestar atención, <b>Del DT</b> es una sugerencia y <b>¡Golazo!</b> es que vas bien.</p>
 </details>
 <details class="gtema"><summary>9. Tu cuenta, el celular y tus datos</summary>
-<p>Todo se guarda en tu cuenta: entrás desde el celu o la compu y ves lo mismo.</p>
-<p><b>El inicio</b> muestra solo lo de todos los días: 📋 ¿Qué tenés hoy? (tu rutina y lo que tenés agendado para hoy), ✍️ Contale a Petaca, 💸 Tu plata y 📅 Fechas importantes (y arriba, el partido de tu equipo). Si querés profundizar, abajo están los menús de <b>Para profundizar</b>: 📊 Más de tu plata, 📅 Agenda y rutinas y ⚙️ Configuración.</p>
-<p>En el celu, la <b>barra de abajo</b> te lleva directo a cada parte del panel, y <b>✍️ Contale</b> te deja escribiendo una nota.</p>
+<p>Todo se guarda en tu cuenta: entrás desde el celu o la compu y ves lo mismo. Sin conexión también anda: lo que cargues se sube solo cuando vuelve internet.</p>
+<p><b>El inicio</b> muestra lo de todos los días: 📋 ¿Qué tenés hoy?, ✍️ Contale a Petaca, 💸 Tu plata y 📅 Agenda (y arriba, el partido de tu equipo). Si querés profundizar, abajo están <b>📊 Más de tu plata</b> y <b>⚙️ Configuración</b>.</p>
+<p>En el celu, la <b>barra de abajo</b> te lleva a cada parte: Inicio, Plata, <b>✍️ Contale</b> (en el medio, te deja escribiendo una nota), Agenda y Más.</p>
 <p><b>Instalala en el celular:</b> en iPhone, Safari → Compartir → "Agregar a inicio". En Android, Chrome → menú ⋮ → "Instalar app".</p>
-<p>Con <b>↕ Armar la formación</b> (arriba) ordenás las secciones a tu gusto.</p>
-<p>Todo lo que se configura está junto en <b>⚙️ Configuración</b>: los ajustes, tus calendarios, la IA de Petaca, los avisos por Telegram, tu cuenta y la copia de seguridad para exportar tus datos.</p>
+<p>En <b>⚙️ Configuración → Pantalla y bloqueo</b> elegís el modo oscuro y podés pedir un PIN (o tu huella / Face ID) para abrir Petaca. Con <b>↕ Armar la formación</b> (en ⋯) ordenás las secciones a tu gusto.</p>
+<p>Todo lo que se configura está junto en <b>⚙️ Configuración</b>: los ajustes, tus calendarios, la IA de Petaca, los avisos, la pantalla y el bloqueo, tu cuenta y la copia de seguridad para exportar tus datos.</p>
 </details>
 <label class="sem hintsw"><input type="checkbox" id="hintsw" checked> Mostrar las recomendaciones 💡 en cada sección</label>
 </details></section>
@@ -128,31 +139,56 @@
 <p class="sem medios" id="medios"></p>
 <div class="track"><div class="fill" id="fill"></div><div class="mark" id="mark"></div></div>
 <div class="legend"><span id="gastado"></span><span>La barra se llena a medida que gastás</span></div>
-<div class="add"><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><select id="wme" aria-label="Cómo te entró"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="wb">Sumar ingreso</button></div>
+<div class="hmodo" role="tablist" aria-label="Qué querés cargar"><button type="button" role="tab" id="hm-g" aria-controls="hf-g" aria-selected="true">− Gasto</button><button type="button" role="tab" id="hm-i" aria-controls="hf-i" aria-selected="false" tabindex="-1">＋ Ingreso</button></div>
+<div class="add" id="hf-g" role="tabpanel" aria-labelledby="hm-g"><input type="number" id="hgm" placeholder="Gasto ($)" inputmode="decimal" aria-label="Cuánto gastaste"><select id="hgc" aria-label="Categoría"></select><input id="hgt" placeholder="Detalle (opcional)" aria-label="Detalle" autocomplete="off"><select id="hgme" aria-label="Cómo lo pagaste"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="hgb">Sumar gasto</button></div>
+<div class="add" id="hf-i" role="tabpanel" aria-labelledby="hm-i" hidden><input type="number" id="wi" placeholder="Ingreso ($)" inputmode="decimal" aria-label="Plata que te entró"><select id="wme" aria-label="Cómo te entró"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select><button id="wb">Sumar ingreso</button></div>
 <div id="wp" class="wp"></div>
+<div id="fijp" class="fijp" hidden></div>
 <p class="sem" id="sem"></p>
-<p class="hint">💡 Cargá cada ingreso el día que te entra y elegí si fue por transferencia o en efectivo: así siempre sabés dónde está tu plata.</p>
+<p class="hint">💡 Cargá cada gasto e ingreso el día que pasa y elegí si fue por transferencia o en efectivo: así siempre sabés dónde está tu plata.</p>
 </div>
 </div>
 
-<div class="grupo" data-g="fechas" data-name="Fechas importantes">
-<section style="margin-bottom:16px">
-<h2>Fechas importantes</h2>
+<div class="grupo" data-g="fechas" data-name="Agenda">
+<div class="cols">
+<section class="agsec" id="agsec" data-c="agenda" data-name="Agenda" data-v="sem">
+<h2 id="agt">Agenda</h2>
 <p class="sem" id="calh" style="display:none;margin:0 0 8px">📲 ¿Tenés tus fechas en Google Calendar, el iPhone u Outlook? <button class="lk" id="calir">Traelas a Petaca</button></p>
-<p class="sem" id="tgh" style="display:none;margin:0 0 8px">🔔 ¿Querés que te avise por Telegram? <button class="lk" id="tgo">Activar avisos</button></p>
+<p class="sem" id="tgh" style="display:none;margin:0 0 8px">🔔 ¿Querés que te avise antes de cada cosa? <button class="lk" id="tgo">Activar avisos</button></p>
+<div class="agtop"><div class="agvis" role="tablist" aria-label="Qué ver de la agenda"><button type="button" role="tab" id="agv-prox" aria-controls="agprox" aria-selected="false" tabindex="-1">Próximas</button><button type="button" role="tab" id="agv-sem" aria-controls="agsem" aria-selected="true">7 días</button><button type="button" role="tab" id="agv-mes" aria-controls="agmes" aria-selected="false" tabindex="-1">Mes</button></div></div>
+<div class="agpan">
+<div class="agprox" id="agprox" role="tabpanel" aria-labelledby="agv-prox">
+<div class="agnav"><b>Lo que viene</b></div>
 <div id="prox"></div>
-<div class="add">
-<input type="date" id="ed" aria-label="Fecha">
-<input type="time" id="eh" aria-label="Hora">
-<input id="et" placeholder="Qué tenés que hacer" aria-label="Evento">
-<button id="eb">Agregar evento</button>
 </div>
-<p class="hint">💡 Cargá turnos, parciales y vencimientos apenas te enterás. Lo importante marcalo con 🔔 para que te avise por Telegram.</p>
+<div class="agsem" id="agsem" role="tabpanel" aria-labelledby="agv-sem">
+<div class="agnav"><b id="agr" aria-live="polite">Próximos 7 días</b><button type="button" class="aghoy" id="nh" hidden>Hoy</button><button type="button" class="agf ant" id="np" aria-label="Semana anterior"></button><button type="button" class="agf sig" id="nn" aria-label="Semana siguiente"></button></div>
+<div id="agenda"></div>
+</div>
+<div class="agmes" id="agmes" role="tabpanel" aria-labelledby="agv-mes">
+<div class="agnav"><b id="mt" aria-live="polite"></b><button type="button" class="aghoy" id="mh" hidden>Hoy</button><button type="button" class="agf ant" id="mp" aria-label="Mes anterior"></button><button type="button" class="agf sig" id="mn" aria-label="Mes siguiente"></button></div>
+<div class="mg" id="mg"></div>
+<div class="mdia" id="mdia"></div>
+</div>
+</div>
+<h3 class="tgh3 agnuevo">Agregar a la agenda</h3>
+<div class="add"><input type="date" id="ed" aria-label="Fecha"><input type="time" id="eh" aria-label="Hora (opcional)"><input id="et" placeholder="Qué tenés que hacer" aria-label="Qué tenés que hacer" autocomplete="off"><button id="eb">Agregar</button></div>
+<p class="hint">💡 Cargá turnos, parciales y vencimientos apenas te enterás, y marcá con 🔔 lo importante para que te avise. Deslizá el dedo de costado para cambiar de semana o de mes.</p>
 </section>
+<section data-c="rutinas" data-name="Rutinas semanales"><details id="rd"><summary>Rutinas semanales</summary>
+<p class="sem" style="margin-top:0">Lo que se repite todas las semanas (clases, gimnasio, etc.). Aparece solo en la agenda.</p>
+<div id="rl"></div>
+<div class="add"><select id="rdw" aria-label="Día"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select><input type="time" id="rt" aria-label="Desde"><input type="time" id="rt2" aria-label="Hasta"><input id="rx" placeholder="Nombre (ej: Clase de Marketing)" aria-label="Nombre"></div>
+<div class="add"><label class="sem" style="margin:0">Desde <input type="date" id="rf"></label><label class="sem" style="margin:0">Hasta (opcional) <input type="date" id="rto"></label></div>
+<div class="add"><button id="rb">Agregar rutina</button><button id="rc" class="x" style="display:none">Cancelar edición</button></div>
+<p class="sem" id="rm"></p>
+<p class="hint">💡 También se lo podés decir a Petaca: "gym de lunes a viernes a las 19" o "este jueves no hay gym".</p>
+</details></section>
+</div>
 </div>
 
 <div class="grupo menu" data-g="dinero" data-name="Más de tu plata">
-<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-dinero"><i aria-hidden="true">📊</i><span>Más de tu plata<small>Resumen y consejos, gastos del mes, objetivo de ahorro, cuentas, movimientos e histórico</small></span></button></h2>
+<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-dinero"><i aria-hidden="true">📊</i><span>Más de tu plata<small>Resumen y consejos, gastos del mes y fijos, objetivo de ahorro, cuentas, movimientos e histórico</small></span></button></h2>
 <div class="cols" id="m-dinero">
 <section data-c="resumen" data-name="Resumen y consejos">
 <h2>Resumen</h2>
@@ -162,6 +198,7 @@
 </section>
 <section data-c="gastos" data-name="Gastos del mes">
 <h2>Gastos del mes</h2>
+<div class="agnav gmnav"><b id="gmt" aria-live="polite"></b><button type="button" class="aghoy" id="gmh" hidden>Este mes</button><button type="button" class="agf ant" id="gmp" aria-label="Mes anterior"></button><button type="button" class="agf sig" id="gmn" aria-label="Mes siguiente"></button></div>
 <div id="cats"></div>
 <div id="gastos"></div>
 <div class="add">
@@ -171,6 +208,13 @@
 <select id="gme" aria-label="Cómo lo pagaste"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select>
 <button id="gb">Agregar gasto</button>
 </div>
+<details class="fijos" id="fijd"><summary>📌 Gastos fijos</summary>
+<p class="sem" style="margin-top:0">Lo que pagás todos los meses: alquiler, expensas, suscripciones, cuotas. Cerca del día aparecen en Tu plata para cargarlos con un toque, y si tenés los avisos activados, también te avisa.</p>
+<div id="fijl"></div>
+<div class="add"><input id="fjx" placeholder="Qué es (ej: Alquiler)" aria-label="Qué es" autocomplete="off"><input type="number" id="fjm" placeholder="Monto ($)" inputmode="decimal" aria-label="Monto por mes"><input type="number" id="fjd" placeholder="Día del mes" inputmode="numeric" aria-label="Día del mes en que vence"><select id="fjc" aria-label="Categoría"></select><select id="fjme" aria-label="Cómo lo pagás"><option value="t">🏦 Transferencia</option><option value="e">💵 Efectivo</option></select></div>
+<div class="add"><button id="fjb">Agregar gasto fijo</button><button class="x" id="fjcan" hidden>Cancelar edición</button></div>
+<p class="sem" id="fjmsg"></p>
+</details>
 <p class="hint">💡 Anotá también los gastos chicos (un café, el kiosco): son los que más se escapan sin que te des cuenta.</p>
 </section>
 <section class="goal" data-c="objetivo" data-name="Objetivo de ahorro">
@@ -195,6 +239,7 @@
 </section>
 <section class="goal" data-c="movs" data-name="Movimientos cargados">
 <details><summary>Movimientos cargados</summary>
+<input type="search" id="movq" class="buscar" placeholder="Buscar: super, 8000, efectivo, octubre…" aria-label="Buscar en los movimientos" autocomplete="off">
 <div id="mov"></div>
 <p class="hint">💡 Si algo quedó mal, tocá ✎ para corregirlo o × para borrarlo. ↶ Deshacer (en "Contale a Petaca") vuelve atrás el último cambio.</p>
 </details>
@@ -202,45 +247,15 @@
 <section data-c="hist" data-name="Histórico">
 <details>
 <summary>Histórico</summary>
+<div id="hchart" class="hchart"></div>
 <div id="hist"></div>
 </details>
 </section>
 </div>
 </div>
 
-<div class="grupo menu" data-g="tiempo" data-name="Agenda y rutinas">
-<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-tiempo"><i aria-hidden="true">📅</i><span>Agenda y rutinas<small>La semana día por día, el mes completo y lo que se repite</small></span></button></h2>
-<div class="cols" id="m-tiempo">
-<section class="agsec" id="agsec" data-c="agenda" data-name="Agenda" data-v="sem">
-<h2 id="agt">Agenda</h2>
-<div class="agtop"><div class="agvis" role="tablist" aria-label="Qué ver de la agenda"><button type="button" role="tab" id="agv-sem" aria-controls="agsem" aria-selected="true">7 días</button><button type="button" role="tab" id="agv-mes" aria-controls="agmes" aria-selected="false" tabindex="-1">Mes</button></div></div>
-<div class="agpan">
-<div class="agsem" id="agsem" role="tabpanel" aria-labelledby="agv-sem">
-<div class="agnav"><b id="agr" aria-live="polite">Próximos 7 días</b><button type="button" class="aghoy" id="nh" hidden>Hoy</button><button type="button" class="agf ant" id="np" aria-label="Semana anterior"></button><button type="button" class="agf sig" id="nn" aria-label="Semana siguiente"></button></div>
-<div id="agenda"></div>
-</div>
-<div class="agmes" id="agmes" role="tabpanel" aria-labelledby="agv-mes">
-<div class="agnav"><b id="mt" aria-live="polite"></b><button type="button" class="aghoy" id="mh" hidden>Hoy</button><button type="button" class="agf ant" id="mp" aria-label="Mes anterior"></button><button type="button" class="agf sig" id="mn" aria-label="Mes siguiente"></button></div>
-<div class="mg" id="mg"></div>
-<div class="mdia" id="mdia"></div>
-</div>
-</div>
-<p class="hint">💡 Deslizá el dedo de costado para cambiar de semana o de mes. Tocá un día del mes para ver qué tenés y agendar algo ahí mismo.</p>
-</section>
-<section data-c="rutinas" data-name="Rutinas semanales"><details id="rd"><summary>Rutinas semanales</summary>
-<p class="sem" style="margin-top:0">Lo que se repite todas las semanas (clases, gimnasio, etc.). Aparece solo en el calendario.</p>
-<div id="rl"></div>
-<div class="add"><select id="rdw" aria-label="Día"><option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option><option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option></select><input type="time" id="rt" aria-label="Desde"><input type="time" id="rt2" aria-label="Hasta"><input id="rx" placeholder="Nombre (ej: Clase de Marketing)" aria-label="Nombre"></div>
-<div class="add"><label class="sem" style="margin:0">Desde <input type="date" id="rf"></label><label class="sem" style="margin:0">Hasta (opcional) <input type="date" id="rto"></label></div>
-<div class="add"><button id="rb">Agregar rutina</button><button id="rc" class="x" style="display:none">Cancelar edición</button></div>
-<p class="sem" id="rm"></p>
-<p class="hint">💡 También se lo podés decir a Petaca: "gym de lunes a viernes a las 19" o "este jueves no hay gym".</p>
-</details></section>
-</div>
-</div>
-
 <div class="grupo menu" data-g="ajustes" data-name="Configuración">
-<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-ajustes"><i aria-hidden="true">⚙️</i><span>Configuración<small>Ajustes, tus calendarios, IA de Petaca, avisos por Telegram, tu cuenta y copia de seguridad</small></span></button></h2>
+<h2 class="menuh"><button type="button" class="menub" aria-expanded="false" aria-controls="m-ajustes"><i aria-hidden="true">⚙️</i><span>Configuración<small>Ajustes, tus calendarios, IA de Petaca, avisos, pantalla y bloqueo, tu cuenta y copia de seguridad</small></span></button></h2>
 <div class="cols" id="m-ajustes">
 <section class="goal" data-c="ajustes" data-name="Ajustes"><details id="aj"><summary>Ajustes</summary>
 <p class="sem" style="margin-top:0">Configurá tus categorías de gasto, tu objetivo de ahorro y tus cuentas. Se guarda en tu cuenta.</p>
@@ -300,25 +315,34 @@
 </ol>
 <div class="add"><input type="text" id="iak" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Tu clave de Gemini (empieza con AQ. o AIza)" aria-label="Clave de Gemini"><button id="ias">Guardar y probar</button><button class="x" id="iax" style="display:none">Quitar</button></div>
 <p class="sem" id="iam"></p>
-<p class="sem">Tu clave queda guardada en tu cuenta y solo se usa para entender tus notas. Ojo: en el plan gratis de Gemini, Google puede usar lo que le mandás para mejorar sus productos.</p>
+<p class="sem">Tu clave queda guardada en tu cuenta, solo se usa para entender tus notas y, una vez guardada, la página ya no la puede volver a leer (solo ve los últimos 4 caracteres). Ojo: en el plan gratis de Gemini, Google puede usar lo que le mandás para mejorar sus productos.</p>
 <h3 class="tgh3" style="margin-top:18px">🧠 Lo que aprendí de vos</h3>
 <p class="sem" style="margin:0">Con cada nota que guardás aprendo tus palabras, cómo pagás, tus montos y horarios de siempre y tus frases, así la próxima vez te entiendo al instante. Queda en tu cuenta. Si algo está mal, borralo con la ×.</p>
 <div id="apr"></div>
 </details></section>
-<section class="goal" data-c="tg" data-name="Avisos por Telegram"><details id="tgd"><summary>Avisos por Telegram</summary>
-<p class="sem" style="margin-top:0">Recibí en tu Telegram los eventos marcados con 🔔.</p>
-<ol class="sem tgp">
-<li>En Telegram, abrí el bot del panel<span id="tgbot"></span> y tocá <b>Iniciar</b>.</li>
-<li>Copiá tu chat ID: el bot te lo manda en su respuesta (puede tardar un rato), o al instante desde <b>@userinfobot</b> (tocá <b>Iniciar</b> y copiá el número que dice <b>Id</b>).</li>
-<li>Pegalo acá abajo, tocá <b>Guardar</b> y después <b>Enviar prueba</b>.</li>
-</ol>
-<div class="add"><input id="tgc" inputmode="numeric" autocomplete="off" placeholder="Tu chat ID (ej: 123456789)" aria-label="Chat ID de Telegram"><button id="tgs">Guardar</button><button id="tgt">Enviar prueba</button><button class="x" id="tgx">Quitar</button></div>
+<section class="goal" data-c="tg" data-name="Avisos"><details id="tgd"><summary>Avisos</summary>
+<p class="sem" style="margin-top:0">Petaca te avisa antes de cada cosa marcada con 🔔 y de tus gastos fijos: en este celular, por Telegram, o los dos.</p>
+<h3 class="tgh3">📱 En este celular</h3>
+<p class="sem" id="pshm"></p>
+<div class="add"><button id="psh">Activar avisos en este celular</button><button class="x" id="pshx" hidden>Desactivar en este celular</button></div>
+<h3 class="tgh3">✈️ Telegram</h3>
 <p class="sem" id="tgm"></p>
+<div class="add"><button id="tgv">Vincular Telegram</button><button class="x" id="tgx" hidden>Desvincular</button></div>
+<div class="add"><button id="tgt">Mandarme un aviso de prueba</button></div>
+<p class="sem" id="tgpm"></p>
 <h3 class="tgh3">Cuándo avisarte</h3>
 <div class="add tgav"><label class="sem">Días antes<input id="tgdd" placeholder="7, 1" aria-label="Días antes" autocomplete="off"></label><label class="sem">A qué hora<input type="time" id="tgdh" aria-label="Hora de los avisos por día"></label><label class="sem">Horas antes del evento<input type="number" id="tghs" min="0" max="48" step="0.5" inputmode="decimal" placeholder="0 = no" aria-label="Horas antes del evento"></label></div>
 <p class="sem" style="margin-top:6px">Ej: días "7, 1" a las 09:00, y además 2 horas antes de que empiece (solo eventos con hora). Dejá días vacío si solo querés el aviso por horas.</p>
 <div class="add"><button id="tgas">Guardar horarios</button></div>
 <p class="sem" id="tgam"></p>
+</details></section>
+<section class="goal" data-c="priv" data-name="Pantalla y bloqueo"><details id="prd"><summary>Pantalla y bloqueo</summary>
+<h3 class="tgh3" style="margin-top:0">Tema</h3>
+<div class="agvis temas" id="temas" role="radiogroup" aria-label="Tema de la pantalla"><button type="button" role="radio" data-t="auto" aria-checked="true">Automático</button><button type="button" role="radio" data-t="claro" aria-checked="false">Claro</button><button type="button" role="radio" data-t="oscuro" aria-checked="false">Oscuro</button></div>
+<p class="sem">Automático sigue lo que tengas elegido en el celular o la compu. Se recuerda en este dispositivo.</p>
+<h3 class="tgh3">Bloqueo</h3>
+<p class="sem" style="margin:0">Pedí un PIN (o tu huella / Face ID) para abrir Petaca en este dispositivo. Es una traba para que nadie vea tus números si prestás el celu; tus datos siguen protegidos por tu contraseña.</p>
+<div id="lockf"></div>
 </details></section>
 <section class="goal" data-c="perfil" data-name="Tu cuenta"><details id="cud"><summary>Tu cuenta</summary>
 <p class="sem" style="margin-top:0">Con un usuario entrás sin escribir el mail.</p>
@@ -339,14 +363,15 @@
 <nav class="tabs" id="tabs" aria-label="Ir a una parte del panel">
 <button type="button" data-g="inicio"><i aria-hidden="true">🏟️</i>Inicio</button>
 <button type="button" data-g="plata"><i aria-hidden="true">💸</i>Plata</button>
-<button type="button" data-g="nota"><i aria-hidden="true">✍️</i>Contale</button>
-<button type="button" data-g="fechas"><i aria-hidden="true">📅</i>Fechas</button>
-<button type="button" data-g="ajustes"><i aria-hidden="true">⚙️</i>Ajustes</button>
+<button type="button" data-g="nota" class="tabnota"><i aria-hidden="true">✍️</i>Contale</button>
+<button type="button" data-g="fechas"><i aria-hidden="true">📅</i>Agenda</button>
+<button type="button" data-g="mas"><i aria-hidden="true">☰</i>Más</button>
 </nav>
 <div id="toast" role="status" aria-live="polite" style="display:none"></div>
 <div id="pre" role="dialog" aria-modal="true" aria-labelledby="pret" style="display:none"></div>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=76"></script>
+<div id="lock" class="lock" role="dialog" aria-modal="true" aria-labelledby="lockt" hidden></div>
+<script src="vendor/supabase-2.117.1.js"></script>
+<script src="app.js?v=77"></script>
 </body>
 </html>

@@ -1,8 +1,9 @@
 // Edge Function "calendario": lee un calendario desde su link privado (.ics o webcal://) para "Tus calendarios" del panel.
 // El navegador no lo puede pedir directo porque Google, iCloud y Outlook no lo permiten desde otras páginas (CORS),
 // así que lo pide esta función y le devuelve el texto al panel, que es el que lo interpreta.
-// Cuidados: solo para cuentas con sesión iniciada; solo https a nombres públicos (sin IPs, localhost ni puertos raros);
-// cada redirección se vuelve a revisar (hasta 3); como mucho 5 MB y 10 segundos; tiene que ser un calendario de verdad.
+// Cuidados: solo para cuentas con sesión iniciada; solo https a nombres públicos (sin IPs, localhost ni puertos raros,
+// ni nombres que apunten a direcciones internas); cada redirección se vuelve a revisar (hasta 3); como mucho 5 MB y
+// 10 segundos; tiene que ser un calendario de verdad.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const sb = createClient(
@@ -30,6 +31,32 @@ function permitido(u: URL) {
   if (!h.includes(".") || h === "localhost" || /\.(localhost|local|internal|lan|home|corp)$/.test(h)) return false;
   if (/^[\d.]+$/.test(h) || h.includes(":") || h.startsWith("[")) return false; // IPs (v4 y v6)
   return true;
+}
+
+// Direcciones internas (de la red privada, del propio servidor o de la nube): un nombre público que apunte a una
+// de estas (como los de *.nip.io) tampoco se lee.
+function interna(ip: string) {
+  const v4 = ip.match(/^(?:::ffff:)?(\d+)\.(\d+)\.(\d+)\.(\d+)$/i);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224;
+  }
+  const x = ip.toLowerCase();
+  return x === "::" || x === "::1" || /^f[cd]/.test(x) || /^fe[89ab]/.test(x);
+}
+async function apuntaAdentro(host: string) {
+  const resolver = (Deno as any).resolveDns;
+  if (typeof resolver !== "function") return false;
+  const ips: string[] = [];
+  for (const tipo of ["A", "AAAA"]) {
+    try {
+      ips.push(...await resolver(host, tipo));
+    } catch {
+      // sin registros de ese tipo
+    }
+  }
+  return ips.some(interna);
 }
 
 async function leer(r: Response) {
@@ -64,6 +91,7 @@ async function bajar(link: string) {
   }
   for (let i = 0; i < 4; i++) {
     if (!permitido(u)) throw new Aviso("Ese link no es válido: tiene que empezar con https:// o webcal://");
+    if (await apuntaAdentro(u.hostname)) throw new Aviso("Ese link no es válido: tiene que ser de un calendario público en internet.");
     const r = await fetch(u, {
       redirect: "manual",
       headers: { "User-Agent": "Petaca/1.0 (+https://fv150769.github.io/petaca/)", "Accept": "text/calendar, */*" },

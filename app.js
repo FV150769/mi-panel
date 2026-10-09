@@ -13,6 +13,8 @@ var TG_BOT="mipanel_fv_bot"; // usuario del bot de Telegram sin @ (ej: "MiPanelB
 var RUT=[],VSTART=null,MON=null,REDIT=null;
 var ONB=1; // 0 = cuenta nueva que todavía no terminó la pretemporada (la bienvenida de 3 pasos)
 var CALS=[]; // calendarios vinculados por link: {id,u,n,t,err} (ver "Tus calendarios")
+var FIJOS=[]; // gastos fijos de cada mes: {id,x,m,c,d: día del mes,me} (ver renderFijos)
+var PUSH=0; // 1 si en algún celular se activaron los avisos (así se ven las campanitas 🔔 aunque no haya Telegram)
 var PAL={}; // palabras que Petaca aprendió de tus gastos: {"farmacia":"Salud"} (ver aprender)
 var PALM={},EVH={},MONH={},FRA={}; // también aprende cómo pagás, tus horarios, tus montos de siempre y tus frases (ver aprenderNota)
 var CAP=0,CAPLATER=false,PAT=0; // CAP=1: ya cargó su capital inicial. PAT=1: ya contó cuánto tiene ahorrado e invertido. CAPLATER: tocó "Más tarde" en esta visita
@@ -44,7 +46,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
   if(i.classList.contains("masc"))i.alt="Petaca, la mascota: un bebé rubio jugador de fútbol con "+e.d});
  // Las poses del berrinche, listas para que el cambio sea instantáneo
  ["enojado","pateando"].forEach(function(p){var u=pose(p,kit);if(!PRECARGA[u]){PRECARGA[u]=new Image();PRECARGA[u].src=u}});
- var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=a?"#12A150":e.tc;
+ var tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=a?"#12A150":document.documentElement.classList.contains("oscuro")?"#0B1322":e.tc;
  var ek=a?"":EQUIPO;if(ek!==EQLAST){EQLAST=ek;renderEquipo()}
  var eb=document.getElementById("eqbtn");if(eb)eb.textContent="⚽ "+(EQUIPO?EQS[EQUIPO].n:"Tu equipo")+" ▾"
  // Crédito de la foto de fondo (la licencia pide autor, fuente y licencia)
@@ -52,8 +54,8 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
   if(f){cr.appendChild(document.createTextNode("Foto de fondo: "));var l1=document.createElement("a");l1.href=f.u;l1.target="_blank";l1.rel="noopener";l1.textContent=f.t;cr.appendChild(l1);
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],inv:[],bal:{},fxAuto:true};
-try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(!L.inv)L.inv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v76";
+try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(!L.inv)L.inv=[];if(!L.fijos)L.fijos=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
+var DOC=null,VER="v77";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -73,7 +75,7 @@ var UNDO=[],PREV=null,HAVECFG=false,SYNCED=false;
 function snap(){return JSON.stringify({L:L,cfg:cfgObj()})}
 function updUndo(){var b=document.getElementById("un");if(b){b.disabled=!UNDO.length;b.textContent="↶ Deshacer"+(UNDO.length?" ("+UNDO.length+")":"")}}
 function save(){if(PREV!==null){var c=snap();if(c!==PREV){UNDO.push(PREV);if(UNDO.length>30)UNDO.shift()}}save0();PREV=snap();updUndo()}
-function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],mv:q.mv||[],inv:q.inv||[],bal:q.bal||{},rskip:q.rskip||[],calno:q.calno||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
+function norm(q){q=JSON.parse(JSON.stringify(q));return{events:q.events||[],expenses:q.expenses||[],saves:q.saves||[],hidden:q.hidden||[],skip:q.skip||[],ing:q.ing||[],mv:q.mv||[],inv:q.inv||[],bal:q.bal||{},rskip:q.rskip||[],calno:q.calno||[],fijos:q.fijos||[],fx:q.fx,fxAuto:q.fxAuto!==false,fxAt:q.fxAt||"",week:q.week,t:q.t}}
 window.addEventListener("error",function(e){if(/ResizeObserver loop/.test(e.message||""))return;// aviso inofensivo del navegador al acomodar las columnas
  reportar("Error en la página: "+e.message,(e.error&&e.error.stack)||(e.filename+":"+e.lineno+":"+e.colno));var a=document.getElementById("aviso");if(a){a.style.display="";a.textContent="Error en la página: "+e.message+" (quedó registrado para arreglarlo)"}stat("Error en la página: "+e.message)});
 window.addEventListener("unhandledrejection",function(e){var r=e.reason;reportar("Error sin manejar: "+(r&&(r.message||r.code)||r),r&&r.stack)});
@@ -96,7 +98,9 @@ var now=new Date(),today=iso(now),ym=today.slice(0,7);
 var dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
 $("fecha").textContent=now.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"});
 $("ed").value=today;
-var cs=$("gc");Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
+// Las listas de categorías (Tu plata, Gastos del mes y gastos fijos), conservando lo que tenía elegido cada una.
+function catOpts(){["gc","hgc","fjc"].forEach(function(id){var x=$(id);if(!x)return;var v=x.value;x.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;x.appendChild(o)});if(v&&BUDGET[v]!=null)x.value=v})}
+catOpts();
 
 function migrate(){ACC.forEach(function(a){if(a[0]==="DIARIO")a[0]="Día a día"});USD.forEach(function(a){if(a[0]==="En caja")a[0]="Colchón"});if(RUT.length){juntarRut();return}Object.keys(CLASES||{}).forEach(function(k){(CLASES[k]||[]).forEach(function(c){RUT.push({id:"r"+k+"-"+c[0].replace(":",""),d:+k,t:c[0],t2:c[1],x:c[2],from:"",to:FIN})})});CLASES={}}
 var DN=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
@@ -105,7 +109,7 @@ function fd(f){return f.slice(8)+"/"+f.slice(5,7)}
 // Lo que hay en un día: las rutinas, las fechas y los eventos. La agenda, el mes y "¿Qué tenés hoy?" lo piden para muchos días
 // seguidos, así que se arma una vez un índice por fecha (OCX) que vale hasta el próximo cambio (se descarta en render y al guardar).
 var OCX=null;
-function occIdx(){if(OCX)return OCX;var x={d:{},fr:{},sk:{},rs:{},c:{}};
+function occIdx(){if(OCX)return OCX;var x={d:{},fr:{},sk:{},rs:{},c:{},fh:{}};
  FECHAS.forEach(function(e){if(!vis(e))return;(x.d[e.f]=x.d[e.f]||[]).push({f:e.f,t:e.t,x:e.x,o:e,k:"F"});x.fr[e.f+"|"+e.t]=1});
  L.events.forEach(function(e){(x.d[e.f]=x.d[e.f]||[]).push({f:e.f,t:e.t,x:e.x,o:e,k:"E"})});
  SKIP.concat(L.skip).forEach(function(f){x.sk[f]=1});L.rskip.forEach(function(k){x.rs[k]=1});
@@ -116,10 +120,12 @@ function occs(f){var x=occIdx();if(x.c[f])return x.c[f];
   if(x.rs[r.id+"|"+f]||(r.al||[]).some(function(id){return x.rs[id+"|"+f]}))return;
   if(x.fr[f+"|"+r.t])return;
   a.push({f:f,t:r.t,x:r.x+(r.t2?" (hasta "+r.t2+")":""),r:r})});
+ var m0=f.slice(0,7);FIJOS.forEach(function(fj){if(fijoDia(fj,m0)!==f)return;var k=fj.id+"|"+m0;if(!(k in x.fh))x.fh[k]=fijoHecho(fj,m0);
+  if(!x.fh[k])a.push({f:f,t:"",x:"💸 Vence "+fj.x+" ("+money(fj.m)+")",fj:fj})});
  return x.c[f]=a.concat(x.d[f]||[])}
-function allExp(){
- var a=SEED.expenses.map(function(e){var d=Math.min(e.d,now.getDate());return{f:ym+"-"+String(d).padStart(2,"0"),m:e.m,c:e.c,x:e.x}});
- return a.concat(L.expenses.filter(function(e){return e.f.slice(0,7)===ym}).map(function(e,i){return{f:e.f,m:e.m,c:e.c,x:e.x,li:L.expenses.indexOf(e)}}));
+function allExp(mes){mes=mes||ym;
+ var a=mes!==ym?[]:SEED.expenses.map(function(e){var d=Math.min(e.d,now.getDate());return{f:ym+"-"+String(d).padStart(2,"0"),m:e.m,c:e.c,x:e.x}});
+ return a.concat(L.expenses.filter(function(e){return e.f.slice(0,7)===mes}).map(function(e){return{f:e.f,m:e.m,c:e.c,x:e.x,li:L.expenses.indexOf(e)}}));
 }
 function el(t,c,h){var e=document.createElement(t);if(c)e.className=c;if(h!=null)e.textContent=h;return e}
 // Campos de números a la argentina mientras escribís: punto para los miles (1.500.000) y coma para los decimales (12,50).
@@ -155,11 +161,13 @@ new MutationObserver(function(ms){ms.forEach(function(m){
  m.addedNodes.forEach(function(n){if(n.nodeType!==1)return;if(n.tagName==="INPUT"){if(n.type==="number")numIn(n);return}if(n.firstElementChild)n.querySelectorAll("input[type=number]").forEach(numIn)})})})
  .observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["type"]});
 
+function avisosOn(){return TG||!!PUSH}
 function evBtns(row,it,f,box){
+ if(it.fj){var ok=el("button","x","✓");ok.title="Ya lo pagué: cargarlo como gasto";ok.setAttribute("aria-label","Cargar "+it.fj.x+" como gasto");ok.onclick=function(){cargarFijo(it.fj,f.slice(0,7))};row.appendChild(ok);return}
  var b=el("button","x","✎");b.setAttribute("aria-label","Editar");b.onclick=function(){if(it.r)openRut(it.r);else editEv(box||row,it.o)};
  var c=el("button","x","×");c.setAttribute("aria-label","Borrar");c.onclick=function(){if(it.r)L.rskip.push(it.r.id+"|"+f);else if(it.k==="E")drop(L.events,it.o);else drop(FECHAS,it.o);save();render()};
  row.appendChild(b);
- if(TG&&!it.r&&it.o){var on=it.k==="F"?it.o.imp!==false:it.o.imp===true;var n=el("button","x",on?"🔔":"🔕");n.title=on?"Te aviso por Telegram (tocá para desactivar)":"Sin aviso (tocá para activar)";n.setAttribute("aria-label","Aviso");n.onclick=function(){it.o.imp=!on;save();render()};row.appendChild(n)}else if(TG)row.appendChild(el("span","x-sp"))
+ if(avisosOn()&&!it.r&&it.o){var on=it.k==="F"?it.o.imp!==false:it.o.imp===true;var n=el("button","x",on?"🔔":"🔕");n.title=on?"Te aviso antes (tocá para desactivar)":"Sin aviso (tocá para activar)";n.setAttribute("aria-label","Aviso");n.onclick=function(){it.o.imp=!on;save();render()};row.appendChild(n)}else if(avisosOn())row.appendChild(el("span","x-sp"))
  row.appendChild(c)}
 function editEv(row,o){
  row.innerHTML="";row.style.flexWrap="wrap";
@@ -177,7 +185,7 @@ function renderHoy(){
  function orden(x,y){return(x.t||"").localeCompare(y.t||"")}
  var list=occs(dia).sort(orden);
  list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.r?e.r.t+(e.r.t2?"–"+e.r.t2:""):e.t||"Todo el día"));r.appendChild(el("span","",e.r?e.r.x:e.x));
-  if(e.r)r.appendChild(el("small","tag","rutina"));a.appendChild(r)});
+  if(e.r)r.appendChild(el("small","tag","rutina"));else if(e.fj)r.appendChild(el("small","tag","fijo"));a.appendChild(r)});
  if(list.length)return;
  a.appendChild(el("div","none",HOYD?"Ese día no tenés nada agendado.":"Hoy no tenés nada agendado."));if(HOYD)return;
  for(var i=1;i<=7;i++){var f=plus(today,i),q=occs(f).sort(orden);if(!q.length)continue;var e=q[0];
@@ -196,10 +204,10 @@ function diaCorto(f){var d=new Date(f+"T00:00");return DN[d.getDay()].slice(0,3)
 function diaLargo(f){var d=new Date(f+"T00:00");return DN[d.getDay()]+" "+d.getDate()+" de "+MESN[d.getMonth()]}
 function rangoTxt(a,b){var ma=MESN[+a.slice(5,7)-1].slice(0,3),mb=MESN[+b.slice(5,7)-1].slice(0,3);return+a.slice(8)+(ma!==mb?" "+ma:"")+" al "+(+b.slice(8))+" "+mb}
 // Un renglón de la agenda: hora (o "Todo el día"), qué es y sus botones. Lo de hoy que ya pasó queda más clarito.
-function agEv(e,f,ya){var h=e.r?e.r.t:e.t,fin=e.r&&e.r.t2,r=el("div","age"+(e.r?" rut":""));
+function agEv(e,f,ya){var h=e.r?e.r.t:e.t,fin=e.r&&e.r.t2,r=el("div","age"+(e.r?" rut":e.fj?" fijo":""));
  if(f===today&&h&&(fin?mins(fin):mins(h)+60)<=ya)r.classList.add("pas");
  var tm=el("time",h?"":"td",h||"Todo el día");if(fin)tm.appendChild(el("small","",fin));r.appendChild(tm);
- var tx=el("span","agx",e.r?e.r.x:e.x);if(e.r)tx.appendChild(el("small","","🔁 Rutina"));r.appendChild(tx);
+ var tx=el("span","agx",e.r?e.r.x:e.x);if(e.r)tx.appendChild(el("small","","🔁 Rutina"));else if(e.fj)tx.appendChild(el("small","","📌 Gasto fijo"));r.appendChild(tx);
  var bt=el("span","agb");evBtns(bt,e,f,r);r.appendChild(bt);return r}
 // Los 7 días: cada día con su fecha grande y lo que tenés. Los días seguidos sin nada se juntan en un renglón.
 function renderSemana(){var ag=$("agenda");if(!ag)return;ag.innerHTML="";var st=VSTART||today,man=plus(today,1),ya=minsYa(),vac=[];
@@ -244,10 +252,12 @@ function renderAgenda(){renderSemana();renderMes()}
 function semIr(d){var st=VSTART||today,nv=d?plus(st,7*d):today;if(nv===st)return;VSTART=nv===today?null:nv;renderAgenda();entra($("agenda"),nv>st?32:-32)}
 function mesIr(d){var b=mesBase(),nb=d?new Date(b.getFullYear(),b.getMonth()+d,1):new Date(now.getFullYear(),now.getMonth(),1),dx=iso(nb)>iso(b)?32:iso(nb)<iso(b)?-32:0;
  MON=iso(nb).slice(0,7)===ym?null:nb;MSEL=null;renderMes();if(dx)entra($("mg"),dx);entra($("mdia"),dx,dx?0:8)}
-// 7 días o Mes: la pastilla se desliza y el panel nuevo entra de su lado.
-function agVer(v,anima){AGV=v==="mes"?"mes":"sem";var s=$("agsec");if(s)s.setAttribute("data-v",AGV);
- ["sem","mes"].forEach(function(k){var b=$("agv-"+k);if(b){b.setAttribute("aria-selected",String(k===AGV));b.tabIndex=k===AGV?0:-1}});
- if(!anima)return;try{localStorage.setItem("panel-agvista",AGV)}catch(e){}entra($(AGV==="mes"?"agmes":"agsem"),AGV==="mes"?32:-32)}
+// Próximas, 7 días o Mes: la pastilla se desliza y el panel nuevo entra de su lado. En la compu (tarjeta ancha) el mes
+// está siempre a la derecha, así que se elige entre Próximas y 7 días.
+var AGVS=["prox","sem","mes"];
+function agVer(v,anima){var antes=AGVS.indexOf(AGV);AGV=AGVS.indexOf(v)>=0?v:"sem";var s=$("agsec");if(s)s.setAttribute("data-v",AGV);
+ AGVS.forEach(function(k){var b=$("agv-"+k);if(b){b.setAttribute("aria-selected",String(k===AGV));b.tabIndex=k===AGV?0:-1}});
+ if(!anima)return;try{localStorage.setItem("panel-agvista",AGV)}catch(e){}entra($("ag"+AGV),AGVS.indexOf(AGV)>antes?32:-32)}
 // Las rutinas viejas eran de un solo día: las que son iguales (mismo nombre, horario y fechas) se juntan en una con varios días.
 // Los ids de las que se juntan quedan en r.al, así siguen valiendo los días que ya se habían cancelado.
 function juntarRut(){var out=[],ix={};
@@ -298,13 +308,15 @@ $("mp").onclick=function(){mesIr(-1)};
 $("mn").onclick=function(){mesIr(1)};
 $("mh").onclick=function(){mesIr(0)};
 deslizar($("agenda"),semIr);deslizar($("mg"),mesIr);
-$("agv-sem").onclick=function(){if(AGV!=="sem")agVer("sem",true)};
-$("agv-mes").onclick=function(){if(AGV!=="mes")agVer("mes",true)};
-$("agv-sem").parentNode.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();var v=AGV==="sem"?"mes":"sem";agVer(v,true);$("agv-"+v).focus()});
+AGVS.forEach(function(k){$("agv-"+k).onclick=function(){if(AGV!==k)agVer(k,true)}});
+$("agv-sem").parentNode.addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();
+ var vs=AGVS.filter(function(k){return $("agv-"+k).offsetParent!==null}),i=vs.indexOf(AGV),v=vs[(i+(e.key==="ArrowRight"?1:vs.length-1))%vs.length]||"sem";agVer(v,true);$("agv-"+v).focus()});
 try{agVer(localStorage.getItem("panel-agvista"))}catch(e){agVer("sem")}
-function render(){OCX=null;var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"none":"";
- renderAgenda();renderRut();renderHoy();calUI();
- var ex=allExp(),tot=0,by={};
+function render(){OCX=null;var th=$("tgh");if(th)th.style.display=avisosOn()||!UID?"none":"";
+ renderAgenda();renderRut();renderHoy();calUI();renderFijos();
+ // Gastos del mes: el actual o el que elegiste con las flechas
+ var gmes=GMES||ym,gp=gmes.split("-");$("gmt").textContent=MESN[+gp[1]-1]+" "+gp[0]+(gmes===ym?" · este mes":"");$("gmh").hidden=gmes===ym;$("gmn").disabled=gmes>=ym;
+ var ex=allExp(gmes),tot=0,by={};
  ex.forEach(function(e){tot+=e.m;by[e.c]=(by[e.c]||0)+e.m});
  var bt=0;for(var k in BUDGET)bt+=BUDGET[k];
  var base=accVal(0)+ingTot()-sepTot()-invTot(),spd=0;L.expenses.forEach(function(e){spd+=e.m});
@@ -324,16 +336,24 @@ function render(){OCX=null;var th=$("tgh");if(th)th.style.display=TGCHAT||!UID?"
   t.appendChild(el("span","",k));t.appendChild(el("span","",money(u)));
   var tr=el("div","track"),fl=el("div","fill");fl.style.width=Math.min(p,100)+"%";tr.appendChild(fl);
   c.appendChild(t);c.appendChild(tr);cb.appendChild(c)});
- if(Z.length){var zl=el("div","","Sin gastos: "+Z.join(", "));zl.style.cssText="font-size:13px;color:var(--mute,#8a7f78);margin:6px 0 4px";cb.appendChild(zl)}
+ if(Z.length&&tot){var zl=el("div","","Sin gastos: "+Z.join(", "));zl.style.cssText="font-size:13px;color:var(--mute,#8a7f78);margin:6px 0 4px";cb.appendChild(zl)}
+ if(!tot)cb.appendChild(el("div","none",gmes===ym?"Todavía no cargaste gastos este mes.":"No cargaste gastos en "+MESN[+gp[1]-1]+"."));
+ else{var tt=el("div","row gmtot");tt.appendChild(el("b","","Total del mes"));tt.appendChild(el("b","",money(tot)));cb.appendChild(tt)}
  renderGoal();renderExtra();renderResumen();
  var gl=$("gastos");gl.innerHTML="";
- ex.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,8).forEach(function(e){
+ ex.sort(function(a,b){return b.f.localeCompare(a.f)});(GTODOS?ex:ex.slice(0,8)).forEach(function(e){
   var r=el("div","row"),l=el("span"),o=e.li!=null?L.expenses[e.li]:null;l.appendChild(document.createTextNode(e.x||e.c+" "));l.appendChild(el("small","",e.f.slice(8)+"/"+e.f.slice(5,7)+" · "+e.c+(o&&med(o)==="e"?" · 💵":"")));
   var rt=el("span","",money(e.m));
   if(o){var a=el("button","x","✎");a.setAttribute("aria-label","Corregir gasto");a.onclick=function(){editMov(r,{t:"g",e:o,f:o.f,v:o.m})};rt.appendChild(a);
    var b=el("button","x","×");b.setAttribute("aria-label","Borrar gasto");b.onclick=function(){drop(L.expenses,o);save();render();toast("Borré el gasto de "+money(o.m)+" en "+o.c+".")};rt.appendChild(b)}
   r.appendChild(l);r.appendChild(rt);gl.appendChild(r)});
+ if(ex.length>8){var vt=el("button","lk",GTODOS?"Ver menos":"Ver todos los gastos del mes ("+ex.length+")");vt.style.padding="0";vt.onclick=function(){GTODOS=!GTODOS;render()};gl.appendChild(vt)}
 }
+// Gastos del mes: ver los meses anteriores con las flechas (o deslizando). No se puede ir más allá de este mes.
+var GMES=null,GTODOS=false;
+function gmIr(d){var b=GMES||ym,p=b.split("-"),v=d?iso(new Date(+p[0],+p[1]-1+d,1)).slice(0,7):ym;if(v>ym||v===b)return;GMES=v===ym?null:v;GTODOS=false;render();entra($("cats"),v>b?24:-24)}
+$("gmp").onclick=function(){gmIr(-1)};$("gmn").onclick=function(){gmIr(1)};$("gmh").onclick=function(){gmIr(0)};
+deslizar($("cats"),gmIr);
 // Plazo del objetivo: una fecha fija (GOAL.hasta), elegida en semanas, meses, años o como fecha exacta.
 function sumaPlazo(f,n,u){var d=new Date(f+"T00:00");if(u==="s")d.setDate(d.getDate()+7*n);else if(u==="m")d.setMonth(d.getMonth()+n);else if(u==="a")d.setFullYear(d.getFullYear()+n);return iso(d)}
 function metaFin(){return GOAL.hasta||(GOAL.months>0?sumaPlazo(today,GOAL.months,"m"):null)}
@@ -422,6 +442,7 @@ $("dab").onclick=function(){var m=parseFloat($("dam").value);if(!(m>0))return;
 var APPTOT=1;
 var HIST=[["Sin datos",1]];
 function renderHist(){
+ renderChart();
  var h=$("hist");h.innerHTML="";
  var cuentas=0;ACC.forEach(function(a,i){cuentas+=accVal(i)});
  var du=0;USD.forEach(function(a,i){du+=usdVal(i)});du+=saveTot();
@@ -450,7 +471,9 @@ function renderExtra(){
  renderHist();renderMov();
  var pr=$("prox");pr.innerHTML="";
  // Las 8 más cercanas; con calendarios traídos pueden ser muchas, así que el resto queda en "Ver todas".
- var PL=FECHAS.filter(function(e){return e.f>=today&&vis(e)}).map(function(e){return{o:e,k:"F"}}).concat(L.events.filter(function(e){return e.f>=today}).map(function(e){return{o:e,k:"E"}})).sort(function(a,b){return(a.o.f+a.o.t).localeCompare(b.o.f+b.o.t)});
+ var PL=FECHAS.filter(function(e){return e.f>=today&&vis(e)}).map(function(e){return{o:e,k:"F"}}).concat(L.events.filter(function(e){return e.f>=today}).map(function(e){return{o:e,k:"E"}}),
+  FIJOS.map(function(fj){var m0=fijoDia(fj,ym)>=today&&!fijoHecho(fj,ym)?ym:mesSig(ym);return{o:{f:fijoDia(fj,m0),t:"",x:"💸 Vence "+fj.x+" ("+money(fj.m)+")"},fj:fj}})).sort(function(a,b){return(a.o.f+a.o.t).localeCompare(b.o.f+b.o.t)});
+ if(!PL.length)pr.appendChild(el("div","none","No tenés nada agendado de acá en adelante."));
  (PROXALL?PL:PL.slice(0,8)).forEach(function(it){var e=it.o;
   var n=Math.round((new Date(e.f+"T00:00")-new Date(today+"T00:00"))/864e5),r=el("div","row");
   r.appendChild(el("span","",(e.t?e.t+" ":"")+e.x));
@@ -478,15 +501,18 @@ $("wb").onclick=function(){var v=parseFloat($("wi").value);if(!(v>0))return;if(!
  if(pctOk(p)&&!o.p)$("sem").textContent="Sumé el ingreso, pero no pude separar el ahorro: falta la cotización del dólar (cargala en Cuentas)."};
 // Recuerda en este dispositivo el último medio elegido para ingresos y gastos.
 function recMed(){try{localStorage.setItem("panel-medio",JSON.stringify({i:$("wme").value,g:$("gme").value}))}catch(e){}}
-try{var rm0=JSON.parse(localStorage.getItem("panel-medio")||"{}");if(rm0.i)$("wme").value=rm0.i;if(rm0.g)$("gme").value=rm0.g}catch(e){}
+try{var rm0=JSON.parse(localStorage.getItem("panel-medio")||"{}");if(rm0.i)$("wme").value=rm0.i;if(rm0.g){$("gme").value=rm0.g;$("hgme").value=rm0.g}}catch(e){}
 $("mvb").onclick=function(){var m=parseFloat(String($("mvm").value).replace(",","."));if(!(m>0))return;var a=$("mva").value;
  L.mv.push({f:today,m:m,a:a});$("mvm").value="";save();render();toast((a==="e"?"Pasé "+money(m)+" de transferencia a efectivo.":"Pasé "+money(m)+" de efectivo a transferencia."))};
 $("wi").addEventListener("input",function(){wpPaint()});
+// Movimientos cargados: buscar mientras escribís
+$("movq").addEventListener("input",function(){MOVQ=n2(this.value.trim());renderMov()});
 $("wi").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("wb").click()}});
-$("eb").onclick=function(){var t=$("et").value.trim();if(!t||!$("ed").value)return;
- L.events.push({f:$("ed").value,t:$("eh").value,x:t});$("et").value="";save();render()};
-$("gb").onclick=function(){var m=parseFloat($("gm").value);if(!(m>0))return;var c=$("gc").value,me=$("gme").value;if(!seguro(dudoso("g",m,today,c)))return;
- aprender($("gt").value,c);L.expenses.push({f:today,m:m,c:c,x:$("gt").value.trim(),me:me});$("gm").value="";$("gt").value="";recMed();save();render();toast("Cargué un gasto de "+money(m)+" en "+c+" ("+medTxt(me)+").")};
+$("eb").onclick=function(){var t=$("et").value.trim(),f=$("ed").value,h=$("eh").value;if(!t){$("et").focus();return}if(!f)return;
+ L.events.push({f:f,t:h,x:t});$("et").value="";$("eh").value="";save();render();toast("Agendé "+t+" para el "+diaCorto(f)+(h?" a las "+h:"")+".")};
+$("et").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("eb").click()}});
+$("gb").onclick=function(){var m=parseFloat($("gm").value),c=$("gc").value,me=$("gme").value;if(!cargarGasto(m,c,$("gt").value,me))return;
+ $("gm").value="";$("gt").value="";$("hgme").value=me;recMed();save();render();toast("Cargué un gasto de "+money(m)+" en "+c+" ("+medTxt(me)+").")};
 closeRut();render();
 
 var busy=false;
@@ -494,6 +520,7 @@ function monOf(f){var d=new Date(f+"T00:00");d.setDate(d.getDate()-((d.getDay()+
 function setWeek(v){L.ing.push({f:today,k:mon(),v:v})}
 function ingTot(){var t=0;L.ing.forEach(function(e){t+=e.v});return t}
 function saveTot(){var t=0;L.saves.forEach(function(e){t+=e.m});return t}
+var MOVQ="";
 function renderMov(){
  var h=$("mov");h.innerHTML="";var all=[];
  L.expenses.forEach(function(e){all.push({t:"g",e:e,f:e.f,l:"Gasto · "+e.c+(e.x?" · "+e.x:"")+" · "+medTxt(med(e)),v:e.m})});
@@ -502,7 +529,11 @@ function renderMov(){
  (L.inv||[]).forEach(function(e){all.push({t:"v",e:e,f:e.f,l:(e.ars<0?"Rescate de Inversiones":"Inversión · a Inversiones")+" · "+medTxt(e.me),v:Math.abs(e.ars)})});
  L.saves.forEach(function(e){all.push({t:"a",e:e,f:e.f,l:e.m<0?"Retiro del ahorro":"Aporte al ahorro"+(e.ing?" · de un ingreso ("+money(e.ars)+")":e.ars?" · de tu plata ("+money(e.ars)+")":""),v:e.m})});
  if(!all.length){h.appendChild(el("div","none","Todavía no cargaste movimientos desde el panel."));return}
- all.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,30).forEach(function(m){
+ // Buscar: todas las palabras tienen que aparecer (en el detalle, la categoría, el medio, el monto o el mes)
+ var qs=MOVQ?MOVQ.split(/\s+/):[];
+ if(qs.length)all=all.filter(function(m){var t=n2(m.l+" "+MESN[+m.f.slice(5,7)-1]+" "+fd(m.f)+" "+Math.round(m.v)+" "+(m.t==="a"?usd(m.v):money(m.v)));return qs.every(function(q){return t.indexOf(q)>=0})});
+ if(!all.length){h.appendChild(el("div","none","No encontré movimientos con “"+$("movq").value.trim()+"”."));return}
+ all.sort(function(a,b){return b.f.localeCompare(a.f)}).slice(0,qs.length?60:30).forEach(function(m){
   var r=el("div","row"),l=el("span");l.appendChild(document.createTextNode(m.l+" "));l.appendChild(el("small","",m.f.slice(8)+"/"+m.f.slice(5,7)));
   var rt=el("span","",m.t==="a"?usd(m.v):money(m.v)),ed=el("button","x","✎"),dl=el("button","x","×");
   ed.setAttribute("aria-label","Editar monto");dl.setAttribute("aria-label","Borrar");
@@ -874,6 +905,10 @@ var PROMPT_FIJO="Extraé de una nota en español rioplatense los gastos en pesos
 // Notas que necesitan la lista de lo ya cargado: corrigen, cancelan, borran o mueven algo.
 var LISTA=/(equivoc|correg|en realidad|\b(era|eran|fue|fueron)\b|cambi|pasal|cancel|anul|borr|elimin|\bsaca(me|lo|la|los|las)?\b|quit|suspend|no voy|no tengo|no hay|ya no|deje de|dejo de|reprogram|pospon|\bmove|\bmovi|\bcorre(lo|la)\b|\b(el|la|los|las) (gasto|ingreso|evento|turno|rutina|movimiento)\b)/;
 function prompt1(txt,C,conLista){return PROMPT_FIJO+" DATOS DEL USUARIO. Hoy es "+today+" ("+now.toLocaleDateString("es-AR",{weekday:"long"})+"). Categorías y presupuesto por mes: "+Object.keys(BUDGET).map(function(k){return k+" "+(BUDGET[k]>0?"$"+BUDGET[k]:"sin presupuesto")}).join(", ")+". Separa el "+AHO+"% de cada ingreso para ahorro. Objetivo de ahorro \""+GOAL.x+"\" de US$"+GOAL.target+(metaFin()?" hasta el "+metaFin():" sin plazo")+"."+aprendidoTxt()+" Lista de lo cargado (id: qué es): "+(conLista?C.list||"(nada)":"(no hace falta para esta nota)")+"."+(conLista?ultimoTxt(C):"")+" NOTA: "+txt}
+// Lo que la función "gemini" necesita para entender la nota: hoy, las categorías, el ahorro, lo aprendido y, si la nota
+// corrige o cancela algo, la lista de lo cargado. Las instrucciones para la IA están en la función (no en la página).
+function ctxIA(C,conLista){return{hoy:today,cats:Object.keys(BUDGET).map(function(k){return[k,BUDGET[k]]}),aho:AHO,obj:{x:GOAL.x,target:GOAL.target,hasta:metaFin()||""},
+ apr:aprendidoTxt(),conLista:!!conLista,lista:conLista?C.list:"",ult:conLista?ultimoTxt(C):""}}
 // Para la IA: lo último que guardó, así entiende "eso" o "lo último".
 function ultimoTxt(C){if(!ULT||Date.now()-ULT.t>72e5)return"";var a=[].concat(ULT.G,ULT.IN,ULT.MV,ULT.E),ids=Object.keys(C.o).filter(function(q){return a.indexOf(C.o[q].e)>=0});
  return ids.length?" Lo último que guardó (si dice 'eso' o 'lo último' se refiere a esto): "+ids.join(", ")+".":""}
@@ -908,7 +943,7 @@ $("nb").onclick=async function(){
   var C=cands(),ok=/^\d{4}-\d{2}-\d{2}$/,r=null,why="",nota="",cl=au||LISTA.test(n2(txt));
   // Atajo: lo simple se entiende al instante, sin IA.
   if(!au&&(r=charla(txt,C)))via="memoria";else if(!au&&(r=rapida(txt,C)))via="rapida";else if(!au&&(r=deFrase(txt)))via="frase";
-  var gErr="";if(!r&&SB&&UID)try{r=await gemini(au?{audio:au.d,mime:au.m,prompt:prompt1(txt?"(lo escrito) "+txt+" (y lo que dice el audio)":"(la nota está en el audio)",C,true)}:{prompt:prompt1(txt,C,cl),rapido:!cl})}catch(err){gErr=err&&err.message||"error"}
+  var gErr="";if(!r&&SB&&UID)try{r=await gemini(au?{audio:au.d,mime:au.m,nota:txt?"(lo escrito) "+txt+" (y lo que dice el audio)":"(la nota está en el audio)",ctx:ctxIA(C,true)}:{nota:txt,ctx:ctxIA(C,cl),rapido:!cl})}catch(err){gErr=err&&err.message||"error"}
   // Nota de voz: lo que dijo queda escrito en el cuadro, para que se vea qué entendió.
   if(au){if(!r||typeof r!=="object"){out.textContent="No pude entender el audio"+(gErr?" ("+gErr+")":"")+". Probá de nuevo o escribí la nota.";return}
    var dicho=String(r.texto||"").trim();if(!dicho){out.textContent="No entendí el audio. Probá de nuevo, más cerca del micrófono.";return}
@@ -1072,17 +1107,17 @@ function aplicarAjustes(AJC,AJP,AJO){if(!AJC.length&&!AJP.length&&!AJO.length)re
  L.expenses.forEach(function(e){if(ren[e.c])e.c=ren[e.c];else if(fuera[e.c]||NB[e.c]==null)e.c="Otros"});palRen(ren,NB);BUDGET=NB;
  AJP.forEach(function(o){AHO=Math.min(Math.max(+o.p||0,0),100)});
  AJO.forEach(function(o){GOAL={x:o.x,target:o.t,saved:GOAL.saved||0,pl:o.h?{u:"f"}:null,hasta:o.h||null}});
- cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var op=document.createElement("option");op.textContent=k;cs.appendChild(op)});
+ catOpts();
  HAVECFG=true;if($("aj")&&$("aj").open)ajForm()}
 function obj0(x){return x&&typeof x==="object"&&!Array.isArray(x)?x:{}}
-function cfgObj(){return{EQUIPO:EQUIPO,ONB:ONB,CAP:CAP,PAT:PAT,CALS:CALS,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT,PAL:PAL,PALM:PALM,EVH:EVH,MONH:MONH,FRA:FRA}}
-function applyCfg(c){if(!c)return;EQUIPO=eqDe(c.EQUIPO);vestir();ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;PAT=c.PAT?1:0;CALS=c.CALS||[];PAL=obj0(c.PAL);PALM=obj0(c.PALM);EVH=obj0(c.EVH);MONH=obj0(c.MONH);FRA=obj0(c.FRA);AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};// campanas y avisos solo si la cuenta guardó su chat ID
+function cfgObj(){return{EQUIPO:EQUIPO,ONB:ONB,CAP:CAP,PAT:PAT,CALS:CALS,AHO:AHO,LAYOUT:LAYOUT,TG:TG,TGCHAT:TGCHAT,TGAV:TGAV,ACC:ACC,USD:USD,BUDGET:BUDGET,CLASES:CLASES,RUT:RUT,FIN:FIN,SKIP:SKIP,FECHAS:FECHAS,GOAL:GOAL,HIST:HIST,APPTOT:APPTOT,PAL:PAL,PALM:PALM,EVH:EVH,MONH:MONH,FRA:FRA,FIJOS:FIJOS,PUSH:PUSH}}
+function applyCfg(c){if(!c)return;EQUIPO=eqDe(c.EQUIPO);vestir();ONB=c.ONB===0?0:1;CAP=c.CAP?1:0;PAT=c.PAT?1:0;CALS=c.CALS||[];PAL=obj0(c.PAL);PALM=obj0(c.PALM);EVH=obj0(c.EVH);MONH=obj0(c.MONH);FRA=obj0(c.FRA);AHO=c.AHO>=0?c.AHO:10;LAYOUT=c.LAYOUT||null;applyLayout();TGCHAT=c.TGCHAT||"";TG=!!TGCHAT;TGAV=c.TGAV||{d:[7,1],h:"09:00",hs:0};FIJOS=Array.isArray(c.FIJOS)?c.FIJOS:[];PUSH=c.PUSH?1:0;// campanas y avisos solo si la cuenta tiene Telegram o un celular con avisos
 if(c.ACC)ACC=c.ACC;if(c.USD)USD=c.USD;if(c.BUDGET)BUDGET=c.BUDGET;if(c.CLASES)CLASES=c.CLASES;if(c.RUT)RUT=c.RUT;if(c.FIN)FIN=c.FIN;if(c.SKIP)SKIP=c.SKIP;if(c.FECHAS)FECHAS=c.FECHAS;if(c.GOAL)GOAL=c.GOAL;if(c.HIST)HIST=c.HIST;if(c.APPTOT)APPTOT=c.APPTOT;migrate();
- cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)})}
+ catOpts()}
 $("bx").onclick=function(){$("bk").value=JSON.stringify({v:1,L:L,cfg:cfgObj()});$("bm").textContent="Copiá todo el texto y guardalo en un lugar seguro."};
 $("bi").onclick=function(){try{var o=JSON.parse($("bk").value);if(!o||!o.L)throw 0;var tc=TGCHAT,ta=TGAV;applyCfg(o.cfg);TGCHAT=tc;TG=!!tc;TGAV=ta;HAVECFG=true;L=norm(o.L);save();UNDO.length=0;updUndo();render();$("bm").textContent="Datos importados."}catch(e){$("bm").textContent="El texto no es una copia válida."}};
 // ===== Supabase =====
-function loginUI(on,email){if(on)nuevaVersion(true);// en la pantalla de entrada no hay nada que perder: si hay versión nueva, se actualiza
+function loginUI(on,email){if(on){nuevaVersion(true);lockAbrir()}// en la pantalla de entrada no hay nada que perder: si hay versión nueva, se actualiza
  document.body.classList.toggle("auth",!!on);$("login").style.display=on?"":"none";$("ses").style.display=on?"none":"";$("usrp").style.display=on?"none":"";if(email)$("sem2").textContent="Sesión: "+email}
 // La sesión puede vencerse sin aviso (la compu se durmió o no tenía internet cuando tocaba renovarla). Entonces los pedidos
 // salen sin usuario: Supabase rechaza el guardado (42501) y la lectura vuelve vacía, como si la cuenta fuera nueva.
@@ -1113,7 +1148,7 @@ function juntar(b,lo,nu){function k(x){return JSON.stringify(x===undefined?null:
  function obj(B,Lo,N,col){B=B||{};Lo=Lo||{};N=N||{};var o={};Object.keys(N).concat(Object.keys(Lo),Object.keys(B)).forEach(function(x){if(x in o)return;
   var v=k(Lo[x])!==k(B[x])?Lo[x]:N[x];if(col&&col[x]&&(Array.isArray(Lo[x])||Array.isArray(N[x])))v=lista(B[x],Lo[x],N[x]);
   else if(col&&col[x]==="o")v=obj(B[x],Lo[x],N[x]);if(v!==undefined)o[x]=v});return o}
- var CL={events:1,expenses:1,saves:1,hidden:1,skip:1,ing:1,mv:1,inv:1,rskip:1,calno:1,bal:"o"},CC={RUT:1,FECHAS:1,CALS:1,PAL:"o",PALM:"o",EVH:"o",MONH:"o",FRA:"o",BUDGET:"o"};
+ var CL={events:1,expenses:1,saves:1,hidden:1,skip:1,ing:1,mv:1,inv:1,rskip:1,calno:1,fijos:1,bal:"o"},CC={RUT:1,FECHAS:1,CALS:1,FIJOS:1,PAL:"o",PALM:"o",EVH:"o",MONH:"o",FRA:"o",BUDGET:"o"};
  return{L:obj(b.L,lo.L,nu.L,CL),cfg:obj(b.cfg,lo.cfg,nu.cfg||lo.cfg,CC)}}
 function adopt(q){setTimeout(blue,0);if(q.cfg){applyCfg(q.cfg);HAVECFG=true}L=norm(q.L);PREV=snap();try{localStorage.setItem(KEY,JSON.stringify(L));if(HAVECFG)localStorage.setItem(KEY+"-cfg",JSON.stringify(cfgObj()))}catch(e){}sincro(q);render()}
 async function pull(){
@@ -1132,9 +1167,10 @@ async function pull(){
   if(ONB===0)preStart();else capStart();calSync()}
  else{HAVECFG=true;ONB=0;await push();SYNCED=true;stat("Nube inicializada · "+VER);preStart()}
 }
-async function enter(session){
+async function enter(session,restaurada){
  UID=session.user.id;var ow=DUENO;try{ow=ow||localStorage.getItem("panel-owner")}catch(e){}if(ow&&ow!==UID){apartar(ow);resetLocal()}DUENO=UID;recuperar(UID);try{localStorage.setItem("panel-owner",UID)}catch(e){}DOC={set:function(){return push()}};loginUI(false,session.user.email);
- loadUser();
+ if(restaurada&&lockCfg())lockMostrar();else lockAbrir();
+ loadUser();pushSync();
  try{await pull()}catch(e){stat("No pude sincronizar: "+(e&&e.message||e))}
  SB.channel("ps-"+UID).on("postgres_changes",{event:"*",schema:"public",table:"panel_state",filter:"user_id=eq."+UID},function(p){var q=p.new&&p.new.data;if(q&&q.L&&(q.L.t||0)>(L.t||0)){if(pendiente())pull().catch(function(){});else adopt(q)}}).subscribe()}
 // La sesión dura una hora y se renueva sola, pero al volver de segundo plano (celular dormido) puede salir un pedido con la vieja
@@ -1151,7 +1187,7 @@ async function startSB(){
  if(!window.supabase||SUPABASE_URL.indexOf("http")!==0){document.body.classList.remove("auth");stat("Falta configurar Supabase: completá la URL y la clave al principio del script. Mientras tanto se guarda solo en este dispositivo · "+VER);return}
  SB=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{global:{fetch:sbFetch}});
  var r=await SB.auth.getSession();
- if(r.data&&r.data.session)await enter(r.data.session);else{loginUI(true);stat("Iniciá sesión para sincronizar · "+VER)}
+ if(r.data&&r.data.session)await enter(r.data.session,true);else{loginUI(true);stat("Iniciá sesión para sincronizar · "+VER)}
  SB.auth.onAuthStateChange(function(ev,s){if(ev==="SIGNED_IN"&&s&&!UID)enter(s);if(ev==="PASSWORD_RECOVERY"){$("rec").style.display="";$("login").style.display="none"}if(ev==="SIGNED_OUT"){UID=null;DOC=null;SYNCED=false;if(PRE)preEnd();else capEnd();try{SB.removeAllChannels()}catch(e){}
   if(SALIR){apartar(DUENO);resetLocal();DUENO=null;try{localStorage.removeItem("panel-owner")}catch(e){}}else authMsg("Tu sesión se cerró. Volvé a entrar: lo que cargaste quedó en este dispositivo y se sube al entrar.");
   SALIR=false;loginUI(true)}})}
@@ -1159,14 +1195,28 @@ async function startSB(){
 var SALIR=false,DUENO=null;
 document.getElementById("un").onclick=function(){if(!UNDO.length)return;var q=JSON.parse(UNDO.pop());applyCfg(q.cfg);L=norm(q.L);save0();PREV=snap();render();updUndo();var o=document.getElementById("nr");if(o)o.textContent="Deshice el último cambio."};
 function authMsg(t){$("lm").textContent=t}
-$("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em)return authMsg("Escribí tu email o tu usuario.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");em=await mailOf(em);if(!em)return authMsg("No encontré ese usuario.");var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+r.error.message:"")};
-$("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");var r=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
+// Con email se entra directo. Con usuario lo hace la función "entrar" en el servidor: el email de nadie llega a la página.
+function authError(m){m=String(m||"");return/invalid login credentials/i.test(m)?"Email o contraseña incorrectos.":/email not confirmed/i.test(m)?"Confirmá tu email: te mandamos un mail cuando te fichaste. Revisá también spam.":/rate limit|too many/i.test(m)?"Demasiados intentos. Probá de nuevo en unos minutos.":m}
+$("lg").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em)return authMsg("Escribí tu email o tu usuario.");if(pw.length<6)return authMsg("La contraseña tiene que tener al menos 6 caracteres.");
+ var b=$("lg");b.disabled=true;authMsg("Entrando…");
+ try{if(em.indexOf("@")>0){var r=await SB.auth.signInWithPassword({email:em,password:pw});authMsg(r.error?"No pude entrar: "+authError(r.error.message):"");return}
+  var q=await SB.functions.invoke("entrar",{body:{accion:"entrar",usuario:em.toLowerCase(),clave:pw}});
+  if(q.error){var t=q.error.message;try{var j=await q.error.context.json();if(j&&j.error)t=j.error}catch(e){}return authMsg(t)}
+  var s2=await SB.auth.setSession({access_token:q.data.access_token,refresh_token:q.data.refresh_token});authMsg(s2.error?"No pude entrar: "+authError(s2.error.message):"")}
+ catch(e){authMsg("No pude entrar: "+(e&&e.message||e))}finally{b.disabled=false}};
+$("lr").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var em=$("le").value.trim(),pw=$("lp").value;if(!em||em.indexOf("@")<1)return authMsg("Escribí tu email en el campo Email.");if(pw.length<8)return authMsg("Para ficharte, la contraseña tiene que tener al menos 8 caracteres.");var r=await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
  if(r.error)return authMsg(/rate limit/i.test(r.error.message)?"Hay muchos fichajes en este momento y no pude mandarte el mail. Probá de nuevo en un rato.":/already registered/i.test(r.error.message)?"Ese email ya tiene cuenta: tocá Entrar.":"No pude crear la cuenta: "+r.error.message);
  authMsg(r.data&&r.data.session?"¡Fichaje confirmado! Entrando a la cancha…":"¡Fichaje confirmado! Te mandamos un mail para confirmar tu cuenta: abrilo y después tocá Entrar. Revisá también spam.")};
-$("lo").onclick=async function(){if(!SB)return;SALIR=true;var r=await SB.auth.signOut();if(r&&r.error)SALIR=false};
-async function mailOf(v){v=v.trim();if(v.indexOf("@")>0)return v;var r=await SB.rpc("login_email",{u:v.toLowerCase()});return r.data||null}
-$("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var v=$("le").value.trim();if(!v)return authMsg("Escribí arriba tu email o tu usuario y tocá de nuevo.");var em=await mailOf(v);if(em){await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname})}authMsg("Si la cuenta existe, te mandé un mail para crear una contraseña nueva. Revisá también spam.")};
-$("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<6)return($("rpm").textContent="Mínimo 6 caracteres.");var r=await SB.auth.updateUser({password:pw});if(r.error)return($("rpm").textContent="No pude cambiarla: "+r.error.message);$("rp").value="";$("rpm").textContent="";$("rec").style.display="none";try{history.replaceState(null,"",location.pathname)}catch(e){}stat("Contraseña actualizada")};
+// Cerrar sesión: primero se intenta subir lo pendiente; si no se puede (sin conexión), se avisa antes de salir.
+// Los avisos de este dispositivo y el PIN se apagan (el próximo que entre acá puede ser otra persona).
+$("lo").onclick=async function(){if(!SB)return;
+ if(UID&&pendiente()){stat("Subiendo lo que cargaste…");try{await push()}catch(e){}}
+ if(UID&&pendiente()&&!confirm("Hay cambios que todavía no se subieron a tu cuenta (¿estás sin conexión?). Si salís ahora, quedan guardados solo en este dispositivo y se suben la próxima vez que entres acá. ¿Salir igual?"))return;
+ await pushApagar();lockGuardar(null);lockAbrir();SALIR=true;var r=await SB.auth.signOut();if(r&&r.error)SALIR=false};
+$("lf").onclick=async function(){if(!SB)return authMsg("Falta configurar Supabase.");var v=$("le").value.trim();if(!v)return authMsg("Escribí arriba tu email o tu usuario y tocá de nuevo.");
+ try{if(v.indexOf("@")>0)await SB.auth.resetPasswordForEmail(v,{redirectTo:location.origin+location.pathname});else await SB.functions.invoke("entrar",{body:{accion:"olvido",usuario:v.toLowerCase()}})}catch(e){}
+ authMsg("Si la cuenta existe, te mandé un mail para crear una contraseña nueva. Revisá también spam.")};
+$("rpb").onclick=async function(){var pw=$("rp").value;if(pw.length<8)return($("rpm").textContent="Mínimo 8 caracteres.");var r=await SB.auth.updateUser({password:pw});if(r.error)return($("rpm").textContent="No pude cambiarla: "+r.error.message);$("rp").value="";$("rpm").textContent="";$("rec").style.display="none";try{history.replaceState(null,"",location.pathname)}catch(e){}stat("Contraseña actualizada")};
 // Usuario: guardado se muestra el nombre con "Modificar" en chico; el campo y "Guardar" aparecen solo al elegirlo o cambiarlo.
 var UNAME="";
 function userUI(edit){var hay=!!UNAME;edit=edit||!hay;$("uver").style.display=edit?"none":"";$("uedit").style.display=edit?"":"none";$("ucan").style.display=edit&&hay?"":"none";$("ushow").textContent=UNAME;if(edit){$("uname").value=UNAME}}
@@ -1375,22 +1425,13 @@ function ajSave(){
   var na=R.map(function(r,j){if(r.o!=null&&L.bal[p+r.o]!=null)nb[p+j]=L.bal[p+r.o];return[r.n,r.o!=null?old[r.o][1]:0]});L.bal=nb;return na}
  ACC=remap(A,ACC,"a");USD=remap(U,USD,"u");if(cap!=null){L.bal.a0=cap;CAP=1}if(efi){if(ef)L.bal.ef=ef;else delete L.bal.ef}
  GOAL={x:gx,target:gt,saved:GOAL.saved||0,pl:gp.pl,hasta:gp.hasta};AHO=ah;
- HAVECFG=true;cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
+ HAVECFG=true;catOpts();
  save();render();ajForm();$("ajm").textContent="Ajustes guardados."}
 $("aj").addEventListener("toggle",function(){if($("aj").open)ajForm()});
 $("ajs").onclick=ajSave;$("ajc").onclick=ajForm;
 function vacio(x){return!x||!((x.events||[]).length||(x.expenses||[]).length||(x.ing||[]).length||(x.saves||[]).length||(x.mv||[]).length||(x.inv||[]).length)}
 // Avisos por Telegram: cada cuenta guarda su chat ID; los mensajes salen del bot del panel (token como secreto en Supabase).
-function tgUI(){$("tgc").value=TGCHAT;$("tgdd").value=(TGAV.d||[]).join(", ");$("tgdh").value=TGAV.h||"09:00";$("tghs").value=TGAV.hs||"";$("tgam").textContent="";$("tgm").textContent=TGCHAT?"Avisos activados para el chat "+TGCHAT+".":"Todavía no cargaste tu chat ID.";
- var b=$("tgbot");b.innerHTML="";if(TG_BOT){b.appendChild(document.createTextNode(" ("));var a=el("a","","@"+TG_BOT);a.href="https://t.me/"+TG_BOT;a.target="_blank";a.rel="noopener";b.appendChild(a);b.appendChild(document.createTextNode(")"))}}
-$("tgd").addEventListener("toggle",function(){if($("tgd").open)tgUI()});
-$("tgs").onclick=function(){var v=$("tgc").value.trim();if(!/^-?\d{5,15}$/.test(v))return($("tgm").textContent="El chat ID son solo números (ej: 123456789).");TGCHAT=v;TG=true;HAVECFG=true;save();render();tgUI()};
-$("tgx").onclick=function(){TGCHAT="";TG=false;HAVECFG=true;save();render();tgUI()};
-$("tgt").onclick=async function(){var m=$("tgm");if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");if(!TGCHAT)return(m.textContent="Primero guardá tu chat ID.");
- m.textContent="Enviando…";try{await push();var r=await SB.functions.invoke("avisos",{body:{prueba:true}});
-  if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}
-  m.textContent="Listo, revisá tu Telegram."}catch(e){m.textContent="No pude enviarlo: "+(e&&e.message||e)}};
-$("tgo").onclick=function(){var d=$("tgd");mostrar(d);d.open=true;tgUI();d.scrollIntoView({behavior:"smooth",block:"start"});$("tgc").focus({preventScroll:true})};
+// Avisos (Telegram y este celular): ver más abajo, en "Avisos: Telegram y notificaciones en este celular".
 $("tgas").onclick=function(){var m=$("tgam"),raw=$("tgdd").value.trim(),d=[],ok=true;
  if(raw)raw.split(/[,\s;]+/).forEach(function(x){if(!x)return;var n=+x;if(!(n>=0&&n<=60&&n===Math.floor(n)))ok=false;else if(d.indexOf(n)<0)d.push(n)});
  if(!ok)return(m.textContent="Días antes: números enteros de 0 a 60, separados por coma (0 = el mismo día).");
@@ -1401,8 +1442,8 @@ $("tgas").onclick=function(){var m=$("tgam"),raw=$("tgdd").value.trim(),d=[],ok=
  m.textContent="Guardado. Te aviso "+[d.length?(d.map(function(n){return n===0?"el mismo día":n===1?"1 día antes":n+" días antes"}).join(", ")+" a las "+h):"",hs?hs+" h antes de que empiece":""].filter(Boolean).join(" y ")+"."};
 // IA de Petaca: clave de Gemini propia (tabla ia_claves). Si está, la función "gemini" la usa en lugar de la compartida.
 function iaUI(){var m=$("iam");$("iak").value="";if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");
- m.textContent="Revisando…";SB.from("ia_claves").select("clave").eq("user_id",UID).maybeSingle().then(function(r){if(r.error)return(m.textContent="No pude leer tu clave: "+r.error.message);
-  var k=r.data&&r.data.clave;m.textContent=k?"Usás tu propia clave (termina en …"+k.slice(-4)+").":"Usás la IA compartida.";$("iax").style.display=k?"":"none"})}
+ m.textContent="Revisando…";SB.rpc("ia_clave_fin").then(function(r){if(r.error)return(m.textContent="No pude leer tu clave: "+r.error.message);
+  var k=r.data;m.textContent=k?"Usás tu propia clave (termina en …"+k+").":"Usás la IA compartida.";$("iax").style.display=k?"":"none"})}
 $("iad").addEventListener("toggle",function(){if($("iad").open){iaUI();aprUI()}});
 // Lo que aprendí de vos: todo lo aprendido, con × para olvidar cada cosa y "Olvidar todo".
 function fraTxt(v){var q=[];(v.g||[]).forEach(function(g){q.push("gasto en "+g.c+(g.me==="e"?" (efectivo)":""))});(v.i||[]).forEach(function(){q.push("ingreso")});
@@ -1626,7 +1667,7 @@ function preCheck(){var P=PRE;
 function preFin(todo){var P=PRE,NB={};
  if(todo)Object.keys(BUDGET).forEach(function(k){NB[k]=0});else P.cat.forEach(function(k){if(k.on)NB[k.n]=preNum(k.v)});
  delete NB.Otros;NB.Otros=0;L.expenses.forEach(function(e){if(NB[e.c]==null)e.c="Otros"});BUDGET=NB;
- cs.innerHTML="";Object.keys(BUDGET).forEach(function(k){var o=document.createElement("option");o.textContent=k;cs.appendChild(o)});
+ catOpts();
  if(!todo){ACC=[["Día a día",preNum(P.pesos)]];CAP=1;USD=[["Ahorro en dólares",0]];Object.keys(L.bal).forEach(function(k){if(/^[au]\d+$/.test(k))delete L.bal[k]});if(preNum(P.ef))L.bal.ef=preNum(P.ef);else delete L.bal.ef;
   patSet(preNum(P.ah),P.am,preNum(P.iv),P.im);
   AHO=Math.min(preNum(P.aho),100);var iv=preNum(P.ing);if(iv)sumarIng(today,iv,AHO);
@@ -1870,18 +1911,21 @@ function marcarMenus(){var p=document.querySelector("main>.grupo.menu");grupos()
 document.querySelectorAll(".grupo.menu .menub").forEach(function(b){b.onclick=function(){var g=b.closest(".grupo");menuAbrir(g,!g.classList.contains("abierto"))}});
 document.addEventListener("toggle",function(e){if(e.target.open)mostrar(e.target)},true);
 marcarMenus();
-// Barra de abajo en el celu: salta a cada parte del panel y marca en cuál estás con una pastilla que se desliza.
+// Barra de abajo en el celu: Inicio · Plata · Contale (al medio) · Agenda · Más. Salta a cada parte del panel y marca en
+// cuál estás con una pastilla que se desliza.
 // Al tocar una pestaña, la marca se queda en esa hasta que te muevas vos (con el dedo, la rueda o el teclado): no pasa por
 // las del medio ni cambia sola mientras la página termina de moverse o se abre el teclado.
 // "Contale" te deja escribiendo la nota. Que se esconda mientras escribís lo resuelve el CSS (ver .tabs en styles.css).
-(function(){var n=$("tabs");if(!n)return;var bs=[].slice.call(n.querySelectorAll("button[data-g]")),TAB={dinero:"plata",tiempo:"fechas"},fijo=null,pend=0;
- function pinta(g){bs.forEach(function(b,i){var on=b.dataset.g===g;b.setAttribute("aria-current",String(on));if(on)n.style.setProperty("--i",i)})}
+(function(){var n=$("tabs");if(!n)return;var bs=[].slice.call(n.querySelectorAll("button[data-g]")),TAB={dinero:"mas",ajustes:"mas"},fijo=null,pend=0;
+ function pinta(g){n.setAttribute("data-cur",g);bs.forEach(function(b,i){var on=b.dataset.g===g;b.setAttribute("aria-current",String(on));if(on)n.style.setProperty("--i",i)})}
  function soltar(e){if(fijo&&!n.contains(e.target)){fijo=null;marca()}}
  ["touchstart","wheel","keydown"].forEach(function(t){addEventListener(t,soltar,{passive:true})});
  function ir(g){fijo=g;pinta(g);
   // Lo que tenía el foco se suelta: si no, el iPhone vuelve a mostrar ese campo
   var a=document.activeElement;if(a&&a!==document.body&&a.blur&&!n.contains(a))a.blur();
   if(g==="inicio")return scrollTo({top:0,behavior:QUIETO?"auto":"smooth"});
+  // Más: lleva a "Para profundizar" (Más de tu plata y Configuración), sin abrir nada
+  if(g==="mas"){var y=document.querySelector("main>.grupo.menu");if(y)y.scrollIntoView({behavior:QUIETO?"auto":"smooth",block:"start"});return}
   var x=document.querySelector('.grupo[data-g="'+g+'"]');if(!x)return;menuAbrir(x,true);
   // Contale: salto directo y el foco en el mismo toque (si no, el iPhone no abre el teclado, y un desplazamiento suave pelea con él)
   if(g==="nota"){x.scrollIntoView({block:"start"});var t=$("nt");if(t)t.focus({preventScroll:true});return}
@@ -1963,3 +2007,219 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden)rend
  document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target))cerrar()});
  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!pop.hidden){cerrar();b.focus()}});
 })();
+// ===== Tu plata: cargar un gasto o un ingreso desde el inicio =====
+// Arranca en Gasto (es lo que más se carga); la pestaña elegida se recuerda en este dispositivo.
+var HMODO="g";try{if(localStorage.getItem("panel-hmodo")==="i")HMODO="i"}catch(e){}
+function hModo(m,foco){HMODO=m==="i"?"i":"g";["g","i"].forEach(function(k){var b=$("hm-"+k);b.setAttribute("aria-selected",String(k===HMODO));b.tabIndex=k===HMODO?0:-1;$("hf-"+k).hidden=k!==HMODO});
+ $("wp").hidden=HMODO!=="i";var w=document.querySelector(".hmodo");if(w)w.setAttribute("data-m",HMODO);
+ try{localStorage.setItem("panel-hmodo",HMODO)}catch(e){}if(foco){var i=$(HMODO==="i"?"wi":"hgm");if(i)i.focus({preventScroll:true})}}
+$("hm-g").onclick=function(){if(HMODO!=="g"){hModo("g",true);entra($("hf-g"),-24)}};
+$("hm-i").onclick=function(){if(HMODO!=="i"){hModo("i",true);entra($("hf-i"),24)}};
+document.querySelector(".hmodo").addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();hModo(HMODO==="g"?"i":"g");$("hm-"+HMODO).focus()});
+hModo(HMODO);
+// Un gasto de hoy (desde Tu plata, Gastos del mes o un gasto fijo): avisa si parece un error de tipeo, aprende la palabra y lo suma.
+function cargarGasto(m,c,x,me,sinPreguntar){if(!(m>0))return false;if(!sinPreguntar&&!seguro(dudoso("g",m,today,c)))return false;
+ x=String(x||"").trim();aprender(x,c);L.expenses.push({f:today,m:m,c:c,x:x,me:me==="e"?"e":"t"});return true}
+$("hgb").onclick=function(){var m=parseFloat($("hgm").value),c=$("hgc").value,me=$("hgme").value;if(!(m>0)){$("hgm").focus();return}
+ if(!cargarGasto(m,c,$("hgt").value,me))return;$("hgm").value="";$("hgt").value="";$("gme").value=me;recMed();save();render();
+ toast("Cargué un gasto de "+money(m)+" en "+c+" ("+medTxt(me)+").")};
+["hgm","hgt"].forEach(function(i){$(i).addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("hgb").click()}})});
+
+// ===== Gastos fijos =====
+// Lo que se paga todos los meses ({id, x, m, c, d: día del mes, me}). Cerca del día aparecen en Tu plata para cargarlos con
+// un toque (o marcar que ya están o que ese mes no van), y en la agenda el día que vencen. Uno está "hecho" ese mes si lo
+// marcaste (L.fijos: "id|AAAA-MM|ok" o "|no") o si ya cargaste un gasto que coincide (misma categoría y monto, o el nombre
+// en el detalle). Los avisos (Telegram y celular) también los recuerdan.
+var FEDIT=null;
+function mesSig(m){var p=m.split("-");return iso(new Date(+p[0],+p[1],1)).slice(0,7)}
+function diasMes(m){var p=m.split("-");return new Date(+p[0],+p[1],0).getDate()}
+function fijoDia(fj,m){return m+"-"+pad(Math.min(Math.max(1,fj.d|0),diasMes(m)))}
+function fijoHecho(fj,m){var k=fj.id+"|"+m+"|";if(L.fijos.some(function(s){return s.indexOf(k)===0}))return true;var nx=n2(fj.x||"");
+ return L.expenses.some(function(e){return e.f.slice(0,7)===m&&e.x!=="Ajuste de saldo"&&((e.c===fj.c&&e.m===fj.m)||(nx.length>=3&&n2(e.x||"").indexOf(nx)>=0))})}
+function fijoMarca(fj,m,s){var k=fj.id+"|"+m+"|";L.fijos=L.fijos.filter(function(x){return x.indexOf(k)!==0});L.fijos.push(k+s);if(L.fijos.length>500)L.fijos.splice(0,L.fijos.length-500)}
+function cargarFijo(fj,m){m=m||ym;if(!cargarGasto(fj.m,BUDGET[fj.c]!=null?fj.c:"Otros",fj.x,fj.me,true))return;fijoMarca(fj,m,"ok");save();render();toast("Cargué "+fj.x+": "+money(fj.m)+".")}
+// Los de este mes que faltan: los vencidos y los que vencen en los próximos 5 días.
+function fijosPend(){return FIJOS.filter(function(fj){return!fijoHecho(fj,ym)}).map(function(fj){var f=fijoDia(fj,ym);return{fj:fj,f:f,n:difDias(today,f)}})
+ .filter(function(p){return p.n<=5}).sort(function(a,b){return a.n-b.n})}
+function renderFijos(){
+ var w=$("fijp");if(w){w.innerHTML="";var P=fijosPend();w.hidden=!P.length;
+  if(P.length){w.appendChild(el("b","fjt","📌 Gastos fijos de este mes"));
+   P.slice(0,4).forEach(function(p){var r=el("div","fjr"+(p.n<0?" venc":"")),t=el("span","fjx");t.appendChild(el("b","",p.fj.x));t.appendChild(document.createTextNode(" "+money(p.fj.m)));
+    t.appendChild(el("small","",p.n<0?"Venció el "+fd(p.f):p.n===0?"Vence hoy":p.n===1?"Vence mañana":"Vence el "+fd(p.f)));
+    var bs=el("span","fjb"),ok=el("button","","Cargar"),ya=el("button","x","Ya está"),no=el("button","x","Este mes no");ok.type=ya.type=no.type="button";
+    ok.setAttribute("aria-label","Cargar "+p.fj.x+" "+money(p.fj.m));ya.title="Ya lo cargaste o lo pagaste de otra forma";no.title="Este mes no se paga";
+    ok.onclick=function(){cargarFijo(p.fj,ym)};ya.onclick=function(){fijoMarca(p.fj,ym,"ok");save();render()};no.onclick=function(){fijoMarca(p.fj,ym,"no");save();render()};
+    bs.appendChild(ok);bs.appendChild(ya);bs.appendChild(no);r.appendChild(t);r.appendChild(bs);w.appendChild(r)});
+   if(P.length>4)w.appendChild(el("p","sem","Y "+(P.length-4)+" más en Gastos del mes."))}}
+ var l=$("fijl");if(!l)return;l.innerHTML="";
+ FIJOS.slice().sort(function(a,b){return a.d-b.d}).forEach(function(fj){var r=el("div","row"),s=el("span","",fj.x),h=fijoHecho(fj,ym);
+  s.appendChild(el("small","","Día "+fj.d+" · "+(BUDGET[fj.c]!=null?fj.c:"Otros")+" · "+medTxt(fj.me)+(h?" · ✓ este mes":"")));
+  var rt=el("span","",money(fj.m)),b=el("button","x","✎"),c=el("button","x","×");b.setAttribute("aria-label","Editar "+fj.x);c.setAttribute("aria-label","Borrar "+fj.x);
+  b.onclick=function(){fijoEditar(fj)};c.onclick=function(){drop(FIJOS,fj);HAVECFG=true;save();render();toast("Borré el gasto fijo "+fj.x+".")};
+  rt.appendChild(b);rt.appendChild(c);r.appendChild(s);r.appendChild(rt);l.appendChild(r)});
+ if(!FIJOS.length)l.appendChild(el("div","none","Todavía no cargaste gastos fijos."))}
+function fijoEditar(fj){FEDIT=fj;$("fjx").value=fj.x;$("fjm").value=fj.m;$("fjd").value=fj.d;$("fjc").value=BUDGET[fj.c]!=null?fj.c:"Otros";$("fjme").value=fj.me==="e"?"e":"t";
+ $("fjb").textContent="Guardar cambios";$("fjcan").hidden=false;$("fjmsg").textContent="";var d=$("fijd");mostrar(d);d.open=true;$("fjx").focus()}
+function fijoCerrar(){FEDIT=null;["fjx","fjm","fjd"].forEach(function(i){$(i).value=""});$("fjb").textContent="Agregar gasto fijo";$("fjcan").hidden=true}
+$("fjcan").onclick=function(){fijoCerrar();$("fjmsg").textContent=""};
+$("fjb").onclick=function(){var x=$("fjx").value.trim(),m=parseFloat($("fjm").value),d=parseInt($("fjd").value,10),msg=$("fjmsg");
+ if(!x)return(msg.textContent="Poné qué es (ej: Alquiler).");if(!(m>0))return(msg.textContent="Poné cuánto pagás por mes.");if(!(d>=1&&d<=31))return(msg.textContent="El día del mes tiene que ser de 1 a 31.");
+ var o={id:FEDIT?FEDIT.id:"f"+Date.now().toString(36),x:x,m:m,c:$("fjc").value,d:d,me:$("fjme").value==="e"?"e":"t"},nuevo=!FEDIT;
+ if(FEDIT){var i=FIJOS.indexOf(FEDIT);if(i>=0)FIJOS[i]=o;else FIJOS.push(o)}else FIJOS.push(o);
+ fijoCerrar();HAVECFG=true;save();render();msg.textContent=(nuevo?"Agregué ":"Guardé ")+x+": "+money(m)+" el día "+d+" de cada mes."};
+
+// ===== Histórico: cuánto gastaste por mes =====
+// Columnas de los últimos 6 meses (sin los ajustes de saldo), del color del equipo: finitas, con la punta redondeada y
+// creciendo desde la base. Se etiqueta el mes más alto y el actual; el resto se ve al tocar o pasar el mouse por la
+// columna, y todos están en "Ver como tabla".
+function pasoLindo(x){if(!(x>0))return 1;var p=Math.pow(10,Math.floor(Math.log10(x))),r=x/p;return(r<=1?1:r<=2?2:r<=2.5?2.5:r<=5?5:10)*p}
+function moneyCorto(v){return v>=1e6?"$"+num(v/1e6,1)+" M":v>=1e3?"$"+num(v/1e3,0)+" mil":money(v)}
+function renderChart(){var w=$("hchart");if(!w)return;w.innerHTML="";var ms=[],p=ym.split("-");
+ for(var i=5;i>=0;i--){var d=new Date(+p[0],+p[1]-1-i,1);ms.push({k:iso(d).slice(0,7),n:MESN[d.getMonth()],y:d.getFullYear(),v:0})}
+ L.expenses.forEach(function(e){if(e.x==="Ajuste de saldo")return;var k=e.f.slice(0,7);for(var j=0;j<ms.length;j++)if(ms[j].k===k){ms[j].v+=e.m;break}});
+ var mx=0,imx=0;ms.forEach(function(m,j){if(m.v>mx){mx=m.v;imx=j}});
+ w.appendChild(el("h3","hct","Cuánto gastaste por mes"));
+ if(!(mx>0)){w.appendChild(el("p","sem","Cuando cargues gastos, acá vas a ver cuánto gastaste cada mes."));return}
+ var paso=pasoLindo(mx/3),tope=Math.ceil(mx/paso)*paso,plot=el("div","hcp"),cols=el("div","hcc"),tip=el("div","hctip");tip.setAttribute("aria-hidden","true");tip.hidden=true;
+ for(var g=0;g<=tope+paso/2;g+=paso){var gl=el("div","hcg");gl.style.bottom=(g/tope*100)+"%";gl.appendChild(el("span","",moneyCorto(g)));plot.appendChild(gl)}
+ ms.forEach(function(m,j){var c=el("div","hcol"),b=el("div","hcb"),lb=el("span","hcx"+(j===5?" act":""),m.n.slice(0,3));
+  b.style.height=(m.v>0?Math.max(1.5,m.v/tope*100):0)+"%";b.tabIndex=0;b.setAttribute("role","img");b.setAttribute("aria-label",m.n+" "+m.y+": "+money(m.v)+(j===5?" (en curso)":""));
+  if(m.v>0&&(j===imx||j===5))b.appendChild(el("span","hcv",moneyCorto(m.v)));
+  function ver(){tip.textContent="";tip.appendChild(el("b","",money(m.v)));tip.appendChild(el("span","",m.n+" "+m.y+(j===5?" · en curso":"")));tip.hidden=false;
+   var pr=plot.getBoundingClientRect(),br=b.getBoundingClientRect();tip.style.left=Math.min(Math.max(br.left-pr.left+br.width/2,64),pr.width-64)+"px";tip.style.bottom=Math.min(96,m.v/tope*100)+"%"}
+  function ocultar(){tip.hidden=true}
+  b.addEventListener("pointerenter",ver);b.addEventListener("pointerleave",ocultar);b.addEventListener("focus",ver);b.addEventListener("blur",ocultar);
+  c.appendChild(b);c.appendChild(lb);cols.appendChild(c)});
+ plot.appendChild(cols);plot.appendChild(tip);w.appendChild(plot);
+ var dt=el("details","hctabla"),tb=el("table"),th=el("tr");dt.appendChild(el("summary","","Ver como tabla"));
+ th.appendChild(el("th","","Mes"));th.appendChild(el("th","","Gastaste"));tb.appendChild(th);
+ ms.slice().reverse().forEach(function(m){var tr=el("tr");tr.appendChild(el("td","",m.n+" "+m.y+(m.k===ym?" (en curso)":"")));tr.appendChild(el("td","",money(m.v)));tb.appendChild(tr)});
+ dt.appendChild(tb);w.appendChild(dt)}
+
+// ===== Avisos: Telegram y notificaciones en este celular =====
+// Telegram se vincula con un link (t.me/bot?start=código) que abre la propia persona: la función "avisos" ve el código y
+// une ese chat con la cuenta. Las notificaciones del celular usan Web Push (necesitan el service worker, sw.js).
+var VAPID_PUB="BFYYqeaPixjw8-2GrIXtPJFQXmlgvL_w9slTrZbqqoTfhXVH7qNMfn8vUMcueRE97nxehSOuqL117Nxzgvx4aec";
+function pushOk(){return"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window&&window.isSecureContext}
+function esIOS(){return/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)}
+function instalada(){return!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true}
+function u8(b64){var s=String(b64).replace(/-/g,"+").replace(/_/g,"/");s+="=".repeat((4-s.length%4)%4);var r=atob(s),a=new Uint8Array(r.length);for(var i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a}
+function b64u(a){return btoa(String.fromCharCode.apply(null,new Uint8Array(a))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+// El service worker listo (si en unos segundos no está, por ejemplo la primera vez sin conexión, se avisa en vez de esperar para siempre).
+function swListo(ms){return Promise.race([navigator.serviceWorker.ready,new Promise(function(ok){setTimeout(function(){ok(null)},ms||4000)})])}
+async function pushSub(){if(!pushOk())return null;var r=await swListo();return r?r.pushManager.getSubscription():null}
+async function pushGuardar(s){var j=s.toJSON(),r=await SB.from("push_subs").upsert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,user_id:UID});if(r.error)throw r.error}
+async function pushUI(){var m=$("pshm"),on=$("psh"),off=$("pshx");if(!m)return;
+ if(!pushOk()){m.textContent=esIOS()&&!instalada()?"En iPhone, primero agregá Petaca a la pantalla de inicio (Compartir → Agregar a inicio) y abrila desde ahí: así se pueden activar los avisos.":"Este navegador no puede recibir avisos. Probá con Chrome o con Petaca instalada en el celular.";on.hidden=off.hidden=true;return}
+ if(Notification.permission==="denied"){m.textContent="Los avisos de Petaca están bloqueados en este dispositivo. Habilitalos en los ajustes del navegador (o del celular) y volvé acá.";on.hidden=off.hidden=true;return}
+ m.textContent="Revisando…";var r=await swListo();if(!r){m.textContent="Para activar los avisos, cerrá Petaca y volvé a abrirla (con conexión).";on.hidden=off.hidden=true;return}
+ var s=null;try{s=await r.pushManager.getSubscription()}catch(e){}
+ m.textContent=s?"✅ Este dispositivo recibe los avisos.":"Este dispositivo todavía no recibe avisos.";on.hidden=!!s;off.hidden=!s}
+$("psh").onclick=async function(){var m=$("pshm"),b=this;if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");b.disabled=true;
+ try{if(await Notification.requestPermission()!=="granted"){await pushUI();return}
+  var reg=await swListo(10000);if(!reg)throw new Error("la app todavía se está instalando: cerrala y abrila de nuevo");var s=await reg.pushManager.getSubscription();
+  if(!s)s=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(VAPID_PUB)});
+  await pushGuardar(s);if(!PUSH){PUSH=1;HAVECFG=true;save();render()}await pushUI();$("tgpm").textContent="Listo: probalo con \"Mandarme un aviso de prueba\"."}
+ catch(e){m.textContent="No pude activar los avisos: "+(e&&e.message||e)}finally{b.disabled=false}};
+$("pshx").onclick=async function(){await pushApagar();await pushUI()};
+async function pushApagar(){try{var s=await pushSub();if(s){if(SB&&UID)await SB.from("push_subs").delete().eq("endpoint",s.endpoint);await s.unsubscribe()}}catch(e){}}
+// Si este dispositivo ya tenía los avisos, la suscripción se vuelve a guardar al entrar (el navegador a veces la cambia).
+async function pushSync(){try{if(!pushOk()||Notification.permission!=="granted"||!SB||!UID)return;var s=await pushSub();if(s){await pushGuardar(s);if(!PUSH){PUSH=1;HAVECFG=true;save0();render()}}}catch(e){}}
+async function avisosFn(body){var r=await SB.functions.invoke("avisos",{body:body});if(r.error){var t=r.error.message;try{var b=await r.error.context.json();if(b&&b.error)t=b.error}catch(e){}throw new Error(t)}return r.data||{}}
+var TGPOLL=null;
+function tgUI(){$("tgdd").value=(TGAV.d||[]).join(", ");$("tgdh").value=TGAV.h||"09:00";$("tghs").value=TGAV.hs||"";$("tgam").textContent="";
+ if(!TGPOLL)$("tgm").textContent=TGCHAT?"✅ Telegram vinculado: te aviso por ahí.":"Se vincula con un toque: se abre el chat de Petaca en Telegram y tocás Iniciar.";
+ $("tgv").hidden=!!TGCHAT;$("tgx").hidden=!TGCHAT;pushUI()}
+$("tgd").addEventListener("toggle",function(){if($("tgd").open)tgUI()});
+$("tgv").onclick=async function(){var m=$("tgm"),b=this;if(!SB||!UID)return(m.textContent="Iniciá sesión primero.");b.disabled=true;m.textContent="Preparando el link…";
+ try{var d=await avisosFn({vincular:true});m.textContent="";m.appendChild(document.createTextNode("Tocá el botón: se abre el chat con @"+(d.bot||TG_BOT)+". Ahí tocá Iniciar y volvé a Petaca. "));
+  var a=el("a","btnlink","✈️ Abrir Telegram");a.href=d.link;a.target="_blank";a.rel="noopener";a.onclick=function(){tgEsperar()};m.appendChild(a)}
+ catch(e){m.textContent="No pude preparar el link: "+(e&&e.message||e)}finally{b.disabled=false}};
+function tgEsperar(){clearInterval(TGPOLL);var n=0,p=$("tgpm");p.textContent="Esperando que toques Iniciar en Telegram…";
+ async function ver(){if(++n>45){clearInterval(TGPOLL);TGPOLL=null;p.textContent="No vi que lo vincularas. Si ya tocaste Iniciar, tocá Vincular de nuevo.";return}
+  try{var d=await avisosFn({vinculado:true});if(d.chat){clearInterval(TGPOLL);TGPOLL=null;TGCHAT=String(d.chat);TG=true;HAVECFG=true;save();render();tgUI();p.textContent="¡Listo! Telegram quedó vinculado ✅";toast("Telegram vinculado: te aviso por ahí.")}}catch(e){}}
+ TGPOLL=setInterval(ver,4000)}
+$("tgx").onclick=async function(){try{await avisosFn({desvincular:true})}catch(e){}TGCHAT="";TG=false;HAVECFG=true;save();render();tgUI()};
+$("tgt").onclick=async function(){var p=$("tgpm");if(!SB||!UID)return(p.textContent="Iniciá sesión primero.");p.textContent="Enviando…";
+ try{await push();var d=await avisosFn({prueba:true});p.textContent="Listo: mandé el aviso"+(d.telegram&&d.celulares?" por Telegram y a "+cant(d.celulares,"dispositivo","dispositivos"):d.telegram?" por Telegram":" a "+cant(d.celulares||0,"dispositivo","dispositivos"))+"."}
+ catch(e){p.textContent="No pude enviarlo: "+(e&&e.message||e)}};
+$("tgo").onclick=function(){var d=$("tgd");mostrar(d);d.open=true;tgUI();d.scrollIntoView({behavior:QUIETO?"auto":"smooth",block:"start"})};
+
+// ===== Pantalla: tema claro u oscuro (tema.js lo aplica antes de dibujar la página) =====
+function temaUI(){var t=window.petacaTemaActual?petacaTemaActual():"auto",g=$("temas");if(!g)return;g.setAttribute("data-v",t);
+ [].forEach.call(g.querySelectorAll("[data-t]"),function(b){b.setAttribute("aria-checked",String(b.dataset.t===t));b.tabIndex=b.dataset.t===t?0:-1})}
+function temaPoner(t){if(window.petacaTema)petacaTema(t);temaUI();vestir()}
+[].forEach.call(document.querySelectorAll("#temas [data-t]"),function(b){b.onclick=function(){temaPoner(b.dataset.t)}});
+$("temas").addEventListener("keydown",function(e){if(e.key!=="ArrowLeft"&&e.key!=="ArrowRight")return;e.preventDefault();var ts=["auto","claro","oscuro"],t=window.petacaTemaActual?petacaTemaActual():"auto",i=ts.indexOf(t);
+ t=ts[(i+(e.key==="ArrowRight"?1:2))%3];temaPoner(t);$("temas").querySelector('[data-t="'+t+'"]').focus()});
+temaUI();
+
+// ===== Bloqueo con PIN (y huella o Face ID) =====
+// Es por dispositivo: el PIN se guarda como huella SHA-256 con sal (nunca tal cual) y la huella o Face ID usa una passkey
+// del propio celular (WebAuthn), sin servidor. Se pide al abrir Petaca y al volver después del tiempo elegido.
+// Es una traba de privacidad: los datos siguen protegidos por la contraseña de la cuenta.
+function lockCfg(){try{return JSON.parse(localStorage.getItem("panel-pin")||"null")}catch(e){return null}}
+function lockGuardar(o){try{if(o)localStorage.setItem("panel-pin",JSON.stringify(o));else localStorage.removeItem("panel-pin")}catch(e){}}
+async function pinHash(pin,sal){return b64u(await crypto.subtle.digest("SHA-256",new TextEncoder().encode("petaca|"+sal+"|"+pin)))}
+async function bioHay(){try{return!!(window.PublicKeyCredential&&window.isSecureContext&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}}
+async function bioCrear(){var c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:"PETACA"},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:"PETACA",displayName:"PETACA"},
+ pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required",residentKey:"discouraged"},timeout:60000,attestation:"none"}});return b64u(c.rawId)}
+async function bioProbar(id){return!!await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:"public-key",id:u8(id)}],userVerification:"required",timeout:60000}})}
+var LOCKED=false,LOCKFAL=0,LOCKHASTA=0,OCULTO=0,LOCKTECLA=null;
+function lockMostrar(){var c=lockCfg();if(!c||!UID){lockAbrir();return}LOCKED=true;document.documentElement.classList.add("bloqueado");cerrarMas();
+ var w=$("lock"),pin="",box=el("div","lockc"),im=el("img"),t=el("h2","","Petaca está bloqueado"),sub=el("p","sem","Ingresá tu PIN"),dots=el("div","lockd"),msg=el("p","lockm"),tec=el("div","lockp");
+ w.hidden=false;w.innerHTML="";im.src=pose("sentado",EQUIPO);im.alt="";t.id="lockt";dots.setAttribute("aria-hidden","true");msg.setAttribute("role","status");
+ for(var i=0;i<c.n;i++)dots.appendChild(el("i"));
+ function pinta(){[].forEach.call(dots.children,function(d,j){d.classList.toggle("on",j<pin.length)})}
+ async function probar(){if(await pinHash(pin,c.s)===c.h){LOCKFAL=0;lockAbrir();return}LOCKFAL++;pin="";pinta();dots.classList.remove("mal");void dots.offsetWidth;dots.classList.add("mal");
+  if(LOCKFAL>=5){LOCKFAL=0;LOCKHASTA=Date.now()+30000;msg.textContent="Demasiados intentos: esperá 30 segundos."}else msg.textContent="PIN incorrecto."}
+ function tecla(d){if(Date.now()<LOCKHASTA){msg.textContent="Esperá unos segundos.";return}if(d==="<"){pin=pin.slice(0,-1);pinta();return}if(pin.length>=c.n)return;pin+=d;pinta();msg.textContent="";if(pin.length===c.n)probar()}
+ function bio(){bioProbar(c.bio).then(function(ok){if(ok){LOCKFAL=0;lockAbrir()}},function(){msg.textContent="No pude usar la huella o Face ID: usá tu PIN."})}
+ "123456789".split("").concat([c.bio?"bio":"","0","<"]).forEach(function(k){var b=el("button","",k==="<"?"⌫":k==="bio"?"Huella / Face ID":k);b.type="button";
+  if(!k){b.disabled=true;b.className="vacia";b.setAttribute("aria-hidden","true")}
+  else if(k==="bio"){b.className="bio";b.onclick=bio}
+  else{if(k==="<")b.setAttribute("aria-label","Borrar");b.onclick=function(){tecla(k)}}tec.appendChild(b)});
+ var olv=el("button","lk","¿Te olvidaste el PIN? Cerrá sesión y entrá con tu contraseña");olv.type="button";
+ olv.onclick=function(){if(confirm("Para entrar sin el PIN tenés que iniciar sesión de nuevo con tu contraseña. ¿Cerrar sesión?")){lockGuardar(null);$("lo").click()}};
+ [im,t,sub,dots,msg,tec,olv].forEach(function(x){box.appendChild(x)});w.appendChild(box);
+ if(LOCKTECLA)document.removeEventListener("keydown",LOCKTECLA);
+ LOCKTECLA=function(e){if(!LOCKED)return;if(/^\d$/.test(e.key)){tecla(e.key);e.preventDefault()}else if(e.key==="Backspace"){tecla("<");e.preventDefault()}};
+ document.addEventListener("keydown",LOCKTECLA);var f=tec.querySelector("button:not([disabled])");if(f)f.focus({preventScroll:true})}
+function lockAbrir(){LOCKED=false;document.documentElement.classList.remove("bloqueado");var w=$("lock");if(w){w.hidden=true;w.innerHTML=""}if(LOCKTECLA){document.removeEventListener("keydown",LOCKTECLA);LOCKTECLA=null}}
+document.addEventListener("visibilitychange",function(){if(document.hidden){OCULTO=Date.now();return}var c=lockCfg();if(c&&UID&&!LOCKED&&OCULTO&&Date.now()-OCULTO>=(c.min||0)*60000)lockMostrar()});
+$("lockb").onclick=function(){lockMostrar()};
+// Configuración → Pantalla y bloqueo
+async function lockUI(){var w=$("lockf");if(!w)return;var c=lockCfg(),hay=await bioHay();w.innerHTML="";
+ if(!c){var a=el("div","add"),p1=el("input"),p2=el("input"),ok=el("button","","Activar el PIN"),msg=el("p","sem");
+  [p1,p2].forEach(function(i,j){i.type="password";i.inputMode="numeric";i.autocomplete="new-password";i.maxLength=6;i.placeholder=j?"Repetí el PIN":"PIN nuevo (4 a 6 números)";i.setAttribute("aria-label",i.placeholder)});
+  ok.onclick=async function(){var a1=p1.value.trim(),a2=p2.value.trim();if(!/^\d{4,6}$/.test(a1))return(msg.textContent="El PIN tiene que ser de 4 a 6 números.");if(a1!==a2)return(msg.textContent="Los dos PIN no son iguales.");
+   var s=b64u(crypto.getRandomValues(new Uint8Array(16)));lockGuardar({s:s,h:await pinHash(a1,s),n:a1.length,min:1});toast("Listo: Petaca va a pedir el PIN en este dispositivo.");lockUI()};
+  p2.onkeydown=function(e){if(e.key==="Enter")ok.click()};a.appendChild(p1);a.appendChild(p2);a.appendChild(ok);w.appendChild(a);w.appendChild(msg);return}
+ w.appendChild(el("p","sem","✅ Petaca pide el PIN en este dispositivo."+(c.bio?" También podés abrirlo con la huella o Face ID.":"")));
+ var r1=el("div","add"),lb=el("label","sem","Pedirlo de nuevo"),sel=el("select");
+ [[0,"Cada vez que volvés a la app"],[1,"Si estuvo cerrada más de 1 minuto"],[5,"Si estuvo cerrada más de 5 minutos"],[15,"Si estuvo cerrada más de 15 minutos"]].forEach(function(o){var op=el("option","",o[1]);op.value=o[0];sel.appendChild(op)});
+ sel.value=String(c.min||0);sel.onchange=function(){c.min=+sel.value;lockGuardar(c)};lb.appendChild(sel);r1.appendChild(lb);w.appendChild(r1);
+ var r2=el("div","add"),msg2=el("p","sem");
+ if(hay){var bb=el("button",c.bio?"x":"",c.bio?"Dejar de usar la huella / Face ID":"Usar también la huella o Face ID");
+  bb.onclick=async function(){if(c.bio){delete c.bio;lockGuardar(c);lockUI();return}try{c.bio=await bioCrear();lockGuardar(c);toast("Listo: ya podés abrir Petaca con la huella o Face ID.");lockUI()}catch(e){msg2.textContent="No pude activarlo: "+(e&&e.message||e)}};r2.appendChild(bb)}
+ var q=el("button","x","Quitar el PIN");q.onclick=function(){var v=prompt("Para quitar el bloqueo, escribí tu PIN actual:");if(v==null)return;
+  pinHash(v.trim(),c.s).then(function(h){if(h!==c.h){msg2.textContent="Ese no es tu PIN.";return}lockGuardar(null);toast("Quité el PIN de este dispositivo.");lockUI()})};
+ r2.appendChild(q);w.appendChild(r2);w.appendChild(msg2)}
+$("prd").addEventListener("toggle",function(){if($("prd").open){temaUI();lockUI()}});
+
+// ===== Arriba: ⋯ (Configuración, guía, armar la formación, bloquear y cerrar sesión) =====
+function cerrarMas(){var p=$("maspop");if(p&&!p.hidden){p.hidden=true;$("masb").setAttribute("aria-expanded","false")}}
+(function(){var b=$("masb"),pop=$("maspop");if(!b||!pop)return;
+ b.onclick=function(e){e.stopPropagation();if(!pop.hidden)return cerrarMas();$("lockb").hidden=!lockCfg();pop.hidden=false;b.setAttribute("aria-expanded","true");var f=pop.querySelector("button:not([hidden])");if(f)f.focus()};
+ document.addEventListener("click",function(e){if(!pop.hidden&&!pop.contains(e.target))cerrarMas()});
+ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!pop.hidden){cerrarMas();b.focus()}});
+ pop.addEventListener("click",function(e){if(e.target.closest("button"))cerrarMas()})})();
+$("cfgb").onclick=function(){var g=document.querySelector('.grupo[data-g="ajustes"]');menuAbrir(g,true);if(g)g.scrollIntoView({behavior:QUIETO?"auto":"smooth",block:"start"})};
+
+// ===== Atajos del ícono de la app (Android): ?a=gasto, ?a=nota o ?a=agenda =====
+(function(){var a=(location.search.match(/[?&]a=(gasto|nota|agenda)\b/)||[])[1];if(!a)return;try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
+ setTimeout(function(){if(a==="gasto"){hModo("g");var x=$("hgm");x.scrollIntoView({block:"center"});x.focus()}else $("tabs").querySelector('[data-g="'+(a==="nota"?"nota":"fechas")+'"]').click()},400)})();
+
+// ===== Sin conexión y avisos al celular: el service worker (sw.js) =====
+if("serviceWorker" in navigator&&window.isSecureContext&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(function(){});
+window.addEventListener("offline",function(){toast("Sin conexión: lo que cargues queda en este dispositivo y se sube solo cuando vuelva internet.")});
