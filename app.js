@@ -53,7 +53,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],inv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(!L.inv)L.inv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v74";
+var DOC=null,VER="v75";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -1862,25 +1862,28 @@ document.querySelectorAll(".grupo.menu .menub").forEach(function(b){b.onclick=fu
 document.addEventListener("toggle",function(e){if(e.target.open)mostrar(e.target)},true);
 marcarMenus();
 // Barra de abajo en el celu: salta a cada parte del panel y marca en cuál estás con una pastilla que se desliza.
-// Mientras la página baja (o sube) hasta lo que tocaste, la marca se queda en esa pestaña: no pasa por las del medio.
+// Al tocar una pestaña, la marca se queda en esa hasta que te muevas vos (con el dedo, la rueda o el teclado): no pasa por
+// las del medio ni cambia sola mientras la página termina de moverse o se abre el teclado.
 // "Contale" te deja escribiendo la nota. Que se esconda mientras escribís lo resuelve el CSS (ver .tabs en styles.css).
-(function(){var n=$("tabs");if(!n)return;var bs=[].slice.call(n.querySelectorAll("button[data-g]")),TAB={dinero:"plata",tiempo:"fechas"},fijo=null,suelta=0,pend=0;
+(function(){var n=$("tabs");if(!n)return;var bs=[].slice.call(n.querySelectorAll("button[data-g]")),TAB={dinero:"plata",tiempo:"fechas"},fijo=null,pend=0;
  function pinta(g){bs.forEach(function(b,i){var on=b.dataset.g===g;b.setAttribute("aria-current",String(on));if(on)n.style.setProperty("--i",i)})}
- function soltar(){fijo=null;marca()}
- function ir(g){fijo=g;pinta(g);clearTimeout(suelta);suelta=setTimeout(soltar,1500);
+ function soltar(e){if(fijo&&!n.contains(e.target)){fijo=null;marca()}}
+ ["touchstart","wheel","keydown"].forEach(function(t){addEventListener(t,soltar,{passive:true})});
+ function ir(g){fijo=g;pinta(g);
+  // Lo que tenía el foco se suelta: si no, el iPhone vuelve a mostrar ese campo
+  var a=document.activeElement;if(a&&a!==document.body&&a.blur&&!n.contains(a))a.blur();
   if(g==="inicio")return scrollTo({top:0,behavior:QUIETO?"auto":"smooth"});
   var x=document.querySelector('.grupo[data-g="'+g+'"]');if(!x)return;menuAbrir(x,true);
   // Contale: salto directo y el foco en el mismo toque (si no, el iPhone no abre el teclado, y un desplazamiento suave pelea con él)
   if(g==="nota"){x.scrollIntoView({block:"start"});var t=$("nt");if(t)t.focus({preventScroll:true});return}
   x.scrollIntoView({behavior:QUIETO?"auto":"smooth",block:"start"})}
  bs.forEach(function(b){b.onclick=function(){ir(b.dataset.g)}});
- // La parte en la que estás: la última que empieza en el tercio de arriba de la pantalla. Abajo de todo, la última que se ve.
- function marca(){pend=0;if(fijo)return;var h=innerHeight*.35,act="inicio",fin=scrollY+innerHeight>=document.documentElement.scrollHeight-8;
-  if(scrollY>40)document.querySelectorAll(".grupo").forEach(function(x){var t=x.getBoundingClientRect().top;if(t<h||fin&&t<innerHeight-60)act=TAB[x.dataset.g]||x.dataset.g});
+ // La parte en la que estás: la que pasa por una línea cerca de arriba de la pantalla (la última que empieza antes de esa línea),
+ // así una parte corta no le pasa la marca a la siguiente. Abajo de todo, la última que se ve.
+ function marca(){pend=0;if(fijo)return;var h=Math.min(innerHeight*.25,120),act="inicio",fin=scrollY+innerHeight>=document.documentElement.scrollHeight-8;
+  if(scrollY>40)document.querySelectorAll(".grupo").forEach(function(x){var t=x.getBoundingClientRect().top;if(t<=h||fin&&t<innerHeight-60)act=TAB[x.dataset.g]||x.dataset.g});
   pinta(act)}
  addEventListener("scroll",function(){if(!pend)pend=requestAnimationFrame(marca)},{passive:true});
- // Donde el navegador avisa que terminó de desplazarse, la marca vuelve a seguir el scroll enseguida
- addEventListener("scrollend",function(){if(fijo){clearTimeout(suelta);suelta=setTimeout(soltar,150)}});
  marca()})();
 // Guía de uso: se abre sola la primera vez. Cerrada no ocupa lugar en el panel: se vuelve a abrir con "📖 Guía", arriba.
 // Las recomendaciones 💡 de cada sección se pueden ocultar desde la guía (se recuerda en este dispositivo).
