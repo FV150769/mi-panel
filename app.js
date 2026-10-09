@@ -53,7 +53,7 @@ function vestir(){var a=document.body.classList.contains("auth"),e=EQS[a?"":EQUI
    cr.appendChild(document.createTextNode(", por "+f.a+" ("));var l2=document.createElement("a");l2.href=f.lu;l2.target="_blank";l2.rel="noopener";l2.textContent=f.l;cr.appendChild(l2);cr.appendChild(document.createTextNode("), vía Wikimedia Commons."))}}}
 var KEY="panel-local-v1",L={events:[],expenses:[],saves:[],hidden:[],skip:[],ing:[],mv:[],inv:[],bal:{},fxAuto:true};
 try{var s=localStorage.getItem(KEY);if(s)L=JSON.parse(s);if(!L.saves)L.saves=[];if(!L.hidden)L.hidden=[];if(!L.skip)L.skip=[];if(!L.ing)L.ing=[];if(!L.bal)L.bal={};if(!L.rskip)L.rskip=[];if(!L.calno)L.calno=[];if(!L.mv)L.mv=[];if(!L.inv)L.inv=[];if(L.fxAuto==null)L.fxAuto=true}catch(e){}
-var DOC=null,VER="v71";
+var DOC=null,VER="v72";
 var SUPABASE_URL="https://jrsjnmutdnzuxqimroaa.supabase.co";
 var SUPABASE_KEY="sb_publishable__BLdyenbNV0eqb-5MdL2Cw_48V2WwDA";
 var SB=null,UID=null;
@@ -152,17 +152,24 @@ function editEv(row,o){
  ok.onclick=function(){if(!d.value||!x.value.trim())return;o.f=d.value;o.t=h.value;o.x=x.value.trim();save();render()};no.onclick=function(){render()};
  [d,h,x,ok,no].forEach(function(n){row.appendChild(n)})}
 // ¿Qué tenés hoy?: arriba del panel, la rutina y lo que tenés agendado para hoy. Si hoy no hay nada, muestra lo próximo de la semana.
+// ¿Qué tenés hoy?: también mañana y pasado, con los botones o deslizando el dedo de costado (HOYD: 0 hoy, 1 mañana, 2 pasado).
+var HOYD=0,HOYN=["hoy","mañana","pasado mañana"];
 function renderHoy(){
- var a=$("hoy");if(!a)return;a.innerHTML="";a.style.display="";var d=new Date(today+"T00:00"),t=el("b","","¿Qué tenés hoy?");
+ var a=$("hoy");if(!a)return;a.innerHTML="";a.style.display="";var dia=plus(today,HOYD),d=new Date(dia+"T00:00"),t=el("b","","¿Qué tenés "+HOYN[HOYD]+"?");
  t.appendChild(el("small","",DN[d.getDay()]+" "+d.getDate()));a.appendChild(t);
+ var nv=el("nav","hoyd");nv.setAttribute("aria-label","Elegir el día");["Hoy","Mañana","Pasado"].forEach(function(n,i){var b=el("button",i===HOYD?"on":"",n);b.type="button";b.setAttribute("aria-pressed",i===HOYD?"true":"false");b.onclick=function(){hoyIr(i)};nv.appendChild(b)});a.appendChild(nv);
  function orden(x,y){return(x.t||"").localeCompare(y.t||"")}
- var list=occs(today).sort(orden);
+ var list=occs(dia).sort(orden);
  list.forEach(function(e){var r=el("div","ev");r.appendChild(el("time","",e.r?e.r.t+(e.r.t2?"–"+e.r.t2:""):e.t||"Todo el día"));r.appendChild(el("span","",e.r?e.r.x:e.x));
   if(e.r)r.appendChild(el("small","tag","rutina"));a.appendChild(r)});
  if(list.length)return;
- a.appendChild(el("div","none","Hoy no tenés nada agendado."));
+ a.appendChild(el("div","none",HOYD?"Ese día no tenés nada agendado.":"Hoy no tenés nada agendado."));if(HOYD)return;
  for(var i=1;i<=7;i++){var f=plus(today,i),q=occs(f).sort(orden);if(!q.length)continue;var e=q[0];
   a.appendChild(el("p","sem hoyprox","Lo próximo: "+(e.r?e.r.x:e.x)+" · "+(i===1?"mañana":DN[new Date(f+"T00:00").getDay()].toLowerCase()+" "+fd(f))+(e.t?" a las "+e.t:"")));break}}
+function hoyIr(i){i=Math.max(0,Math.min(2,i));if(i===HOYD)return;var a=$("hoy"),dr=i>HOYD?"izq":"der";HOYD=i;renderHoy();if(a){a.classList.remove("izq","der");void a.offsetWidth;a.classList.add(dr)}}
+(function(){var a=$("hoy"),x0=null,y0=0;if(!a)return;
+ a.addEventListener("touchstart",function(e){var t=e.touches[0];x0=t.clientX;y0=t.clientY},{passive:true});
+ a.addEventListener("touchend",function(e){if(x0==null)return;var t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)hoyIr(HOYD+(dx<0?1:-1))},{passive:true})})();
 function renderMes(){
  var g=$("mg");g.innerHTML="";
  var b=MON||new Date(now.getFullYear(),now.getMonth(),1),st=VSTART||today;

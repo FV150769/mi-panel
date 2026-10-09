@@ -243,6 +243,15 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:var(--acc);box-sh
 #hoy .ev small.tag{flex:none;font:700 11px/1 var(--f-cond);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);border:1.5px solid var(--linea-aviso);border-radius:999px;padding:3px 8px}
 #hoy .none{padding:4px 0}
 #hoy .hoyprox{margin:2px 0 0;font-weight:600}
+#hoy{touch-action:pan-y}
+#hoy .hoyd{display:flex;gap:6px;margin:4px 0 8px}
+#hoy .hoyd button{width:auto;min-height:0;padding:5px 12px;border-radius:999px;font:700 13px/1 var(--f-cond);letter-spacing:.04em;text-transform:uppercase;background:transparent;color:var(--ink);border:1.5px solid var(--linea-aviso);box-shadow:none}
+#hoy .hoyd button.on{background:var(--ink);color:var(--papel-aviso);border-color:var(--ink)}
+#hoy.izq>*:not(b):not(nav){animation:hoyIzq .22s ease-out}
+#hoy.der>*:not(b):not(nav){animation:hoyDer .22s ease-out}
+@keyframes hoyIzq{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes hoyDer{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#hoy.izq>*,#hoy.der>*{animation:none!important}}
 
 /* ===== El fixture: agenda y calendario ===== */
 .day{padding:8px 0;border-top:1.5px dashed var(--line)}
